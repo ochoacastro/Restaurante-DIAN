@@ -5675,7 +5675,10 @@ function abrirDrawer(key) {
     if (slot) slot.style.display = k === key ? 'block' : 'none';
   });
 
-  document.getElementById('drawerTitle').textContent = DRAWER_TITULOS[key];
+  const tituloPago = (key === 'pago' && usuarioActivo?.rol === 'mesero')
+    ? '📤 Enviar cuenta al cajero'
+    : DRAWER_TITULOS[key];
+  document.getElementById('drawerTitle').textContent = tituloPago;
 
   // Mostrar botón hamburguesa solo en el carrito, con badge de pedidos
   const btnNuevaOrden = document.getElementById('drawerNuevaOrdenBtn');
@@ -6756,9 +6759,17 @@ function renderCarrito() {
       ${(()=>{ const resumen = {}; carrito.forEach(item => { const tasa = (item.iva !== undefined && item.iva !== null) ? Number(item.iva) : 8; if (tasa === 0) return; const precioTotal = item.precio * item.cantidad; const base = Math.round(precioTotal / (1 + tasa / 100)); const imp = precioTotal - base; if (!resumen[tasa]) resumen[tasa] = 0; resumen[tasa] += imp; }); return Object.entries(resumen).filter(([,v])=>v>0).map(([tasa,imp])=>`<div class="total-row" style="font-size:12px;opacity:0.75;"><span>${Number(tasa)===8?'Impoconsumo 8%':'IVA '+tasa+'%'} (incl.)</span><span class="val">${fmt(imp)}</span></div>`).join(''); })()}
       <div class="total-row grande" style="color:${uc};"><span>TOTAL</span><span class="val" style="color:${uc};">${fmt(total)}</span></div>
     </div>
-    <button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
-      💳 Pagar Cuenta
-    </button>
+    ${(()=>{
+      const rolBtn = usuarioActivo ? usuarioActivo.rol : 'admin';
+      if (rolBtn === 'mesero') {
+        return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(21,101,192,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
+          📤 Enviar cuenta al cajero
+        </button>`;
+      }
+      return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
+          💳 Pagar Cuenta
+        </button>`;
+    })()}
     <div style="height:24px"></div>`;
 }
 
@@ -6810,7 +6821,18 @@ function renderPago() {
 
   const esDom = tipoOrden === 'domicilio';
 
+  const rolPago = usuarioActivo ? usuarioActivo.rol : 'admin';
+
   el.innerHTML = `
+    ${rolPago === 'mesero' ? `
+    <!-- Banner mesero -->
+    <div style="background:linear-gradient(135deg,#1565C020,#1976D215);border:1.5px solid #1976D240;border-radius:var(--r);padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:24px;">📤</span>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#1565C0;">Enviar cuenta al cajero</div>
+        <div style="font-size:11px;color:var(--gris);margin-top:2px;">Completa los datos y el cajero procesará el cobro</div>
+      </div>
+    </div>` : ''}
     <!-- Resumen de la orden -->
     <div style="background:${ucSoft};border:1.5px solid ${uc}33;border-radius:var(--r);padding:14px 16px;margin-bottom:14px;">
       <div style="font-size:11px;font-weight:700;color:${uc};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Orden</div>
@@ -6959,7 +6981,7 @@ function toggleServido(idx, unidad) {
     return item.servido.length >= item.cantidad && item.servido.every(Boolean);
   });
   if (todosCompletos && carrito.length > 0) {
-    showToast('🍽️ ¡Todo entregado! Presiona "Pagar Cuenta" cuando el cliente esté listo.', 4000);
+    showToast('🍽️ ¡Todo entregado! Presiona "' + (usuarioActivo?.rol === 'mesero' ? 'Enviar cuenta al cajero' : 'Pagar Cuenta') + '" cuando el cliente esté listo.', 4000);
   }
 }
 
@@ -11511,12 +11533,16 @@ function renderRecibosPendientes() {
   list.innerHTML = cobros.map(c => {
     const hora = new Date(c.ts).toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
     const itemsPreview = c.items.slice(0,3).map(i => i.cantidad + '× ' + i.nombre).join(', ') + (c.items.length > 3 ? ' +' + (c.items.length-3) + ' más' : '');
+    const idCorto = c.id.replace('r_','').substring(0,10);
     return `<div class="recibo-card urgente" onclick="abrirCobroDesdeRecibo('${c.id}')">
       <div class="recibo-header">
         <span class="recibo-mesa">🍽️ ${esc(c.mesa)}</span>
         <span class="recibo-total">${fmt(c.total)}</span>
       </div>
-      <div class="recibo-meta">Enviado a las ${hora} · por ${esc(c.meseroCajero)}</div>
+      <div class="recibo-meta" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>👤 ${esc(c.meseroCajero || '—')} · ${hora}</span>
+        <span style="font-family:var(--font-num);font-size:10px;color:var(--gris);background:var(--gris-cl);border-radius:4px;padding:1px 5px;">#${idCorto}</span>
+      </div>
       <div class="recibo-items-preview">${esc(itemsPreview)}</div>
     </div>`;
   }).join('');
@@ -11575,6 +11601,8 @@ function renderModalCobro(total, subtotal, descMonto) {
   const faltante = total - totalPagado;
 
   const mesaLabel = _cobroActual ? _cobroActual.mesa : mesaNumero || '—';
+  const meseroLabel = _cobroActual ? (_cobroActual.meseroCajero || '—') : (usuarioActivo?.nombre || '—');
+  const reciboIdLabel = _cobroActual ? _cobroActual.id : '';
 
   // Fix 2 & 3: input tipo text con formato de miles, valor empieza vacío
   const pagosHTML = metodos.map(m => {
@@ -11608,9 +11636,24 @@ function renderModalCobro(total, subtotal, descMonto) {
   const btnLabel = _cobroActual ? '✅ Cobrar y finalizar' : '✅ Cobrar y generar factura';
 
   document.getElementById('modalCobroContenido').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <h3 style="font-size:18px;font-weight:900;color:var(--negro);margin:0;">💰 Cobro — ${esc(mesaLabel)}</h3>
       <button onclick="cerrarModal('modalCobro')" style="border:none;background:var(--gris-cl);color:var(--gris-osc);border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- Mesero e ID de pedido -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--fondo);border:1.5px solid var(--borde);border-radius:var(--r-sm);padding:8px 12px;margin-bottom:12px;gap:8px;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:15px;">👤</span>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;">Atendido por</div>
+          <div style="font-size:13px;font-weight:800;color:var(--negro);">${esc(meseroLabel)}</div>
+        </div>
+      </div>
+      ${reciboIdLabel ? `<div style="text-align:right;">
+        <div style="font-size:10px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;">ID Pedido</div>
+        <div style="font-size:10px;font-weight:700;color:var(--gris-osc);font-family:var(--font-num);">${esc(reciboIdLabel.replace('r_','').substring(0,12))}</div>
+      </div>` : ''}
     </div>
 
     <!-- Resumen total -->
@@ -11722,6 +11765,46 @@ async function ejecutarCobro(total) {
 
   if (_cobroActual) {
     // Cobro de recibo pendiente de cajero
+    // ── PROTECCIÓN ANTI-DOBLE COBRO ──────────────────────────────────────
+    // Verificar que este recibo no haya sido cobrado ya (por otro dispositivo o pestaña)
+    const reciboIdCheck = _cobroActual.id;
+    const cobrosActuales = getCobros();
+    const reciboCheck = cobrosActuales.find(c => c.id === reciboIdCheck);
+    if (!reciboCheck || reciboCheck.estado === 'cobrado') {
+      showToast('⛔ Este pedido ya fue cobrado anteriormente', 4000);
+      cerrarModal('modalRecibosCajero');
+      renderRecibosPendientes();
+      actualizarBadgeCajero();
+      return;
+    }
+    // Marcar como 'procesando' localmente ANTES de continuar (bloqueo optimista)
+    const ciCheck = cobrosActuales.findIndex(c => c.id === reciboIdCheck);
+    if (ciCheck >= 0) cobrosActuales[ciCheck].estado = 'procesando';
+    setCobros(cobrosActuales);
+    // Si Firebase disponible, usar transacción atómica para garantizar unicidad
+    if (window._FB && window._FB.db) {
+      try {
+        const { db, ref, runTransaction } = window._FB;
+        const estadoRef = ref(db, 'helechos/cobros/' + reciboIdCheck + '/estado');
+        const resultado = await runTransaction(estadoRef, (estadoActual) => {
+          if (estadoActual === 'cobrado' || estadoActual === 'procesando') {
+            return; // abortar transacción
+          }
+          return 'procesando';
+        });
+        if (!resultado.committed) {
+          // Revertir el bloqueo local
+          const cobrosRev = getCobros();
+          const ciRev = cobrosRev.findIndex(c => c.id === reciboIdCheck);
+          if (ciRev >= 0) cobrosRev[ciRev].estado = 'pendiente';
+          setCobros(cobrosRev);
+          showToast('⛔ Este pedido ya está siendo cobrado en otro dispositivo', 4000);
+          return;
+        }
+      } catch(_) { /* Si falla Firebase, continuar con bloqueo local */ }
+    }
+    // ── FIN PROTECCIÓN ───────────────────────────────────────────────────
+
     // Restaurar carrito temporalmente desde el recibo para generar factura
     const reciboId = _cobroActual.id;
     const recibo = _cobroActual;
