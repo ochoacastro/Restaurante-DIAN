@@ -2189,19 +2189,21 @@
   body.rol-mesero .tab-config,
   body.rol-mesero .tab-stats { display: none !important; }
 
-  /* Mesero: ocultar configuración, editar menú, estadísticas e historial */
+  /* Mesero: ocultar configuración, editar menú, estadísticas */
   body.rol-mesero #btnConfigHome { display: none !important; }
   body.rol-mesero #btnRowAdminHome { display: none !important; }
-  body.rol-mesero #btnHistorialHome { display: none !important; }
+  /* Mesero: mostrar historial */
+  body.rol-mesero #btnHistorialHome { display: flex !important; }
 
-  /* Cajero: ocultar tab menú, config, stats y pedidos */
+  /* Cajero: ocultar tab menú, config y stats; mostrar historial y cobros */
   body.rol-cajero .tab-config,
   body.rol-cajero .tab-stats,
-  body.rol-cajero .tab-menu,
-  body.rol-cajero .tab-pedidos { display: none !important; }
+  body.rol-cajero .tab-menu { display: none !important; }
   body.rol-cajero #btnConfigHome { display: none !important; }
   body.rol-cajero #btnRowAdminHome { display: none !important; }
-  body.rol-cajero #pedidosSideFooter { display: none !important; }
+  body.rol-cajero #btnHistorialHome { display: flex !important; }
+  body.rol-cajero #btnPedidosHome { display: none !important; }
+  body.rol-cajero #sidebarBtnPedidos { display: none !important; }
 
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin-icon { display: inline-block; animation: spin 0.9s linear infinite; }
@@ -2833,7 +2835,7 @@
     <!-- Saludo al usuario -->
     <div id="homeGreeting" class="home-greeting" style="font-size:20px;font-weight:900;color:var(--negro);letter-spacing:-0.4px;margin-bottom:2px;padding:0 4px;"></div>
     <!-- Órdenes pendientes — primero y destacado -->
-    <button onclick="showTab('pedidos')" style="
+    <button id="btnPedidosHome" onclick="showTab('pedidos')" style="
       width:100%;padding:18px 20px;
       background:linear-gradient(135deg,#7B1FA2,#9C27B0);
       color:#fff;border:none;border-radius:16px;
@@ -2974,7 +2976,7 @@
       <button class="pedidos-side-close" onclick="cerrarPedidosPanel()">✕</button>
     </div>
     <div class="pedidos-side-body" id="pedidosSideBody"></div>
-    <div class="pedidos-side-footer" id="pedidosSideFooter">
+    <div class="pedidos-side-footer">
       <button class="pedidos-side-nueva-btn" onclick="cerrarPedidosPanel();abrirModalNuevaOrden()">➕ Nueva orden</button>
     </div>
   </div>
@@ -3629,7 +3631,7 @@
         <span id="sidebarBadgeCarrito" style="display:none;background:var(--rappi);color:white;border-radius:50%;min-width:20px;height:20px;font-size:11px;font-weight:800;align-items:center;justify-content:center;margin-left:auto;padding:0 4px;">0</span>
       </button>
 
-      <button class="sidebar-item" onclick="cerrarSidebar();showTab('pedidos')">
+      <button id="sidebarBtnPedidos" class="sidebar-item" onclick="cerrarSidebar();showTab('pedidos')">
         <span class="sidebar-item-icon">📑</span>Pedidos
         <span id="sidebarBadgePedidos" style="display:none;background:#7B1FA2;color:white;border-radius:50%;min-width:20px;height:20px;font-size:11px;font-weight:800;align-items:center;justify-content:center;margin-left:auto;padding:0 4px;">0</span>
       </button>
@@ -5632,9 +5634,6 @@ function abrirDrawer(key) {
   const esCajeroDrawer = usuarioActivo?.rol === 'cajero';
   if (esCajeroDrawer && (key === 'editmenu' || key === 'config' || key === 'stats')) return;
 
-  // Mesero no puede acceder al drawer de pago — debe usar "Enviar a Caja"
-  if (usuarioActivo?.rol === 'mesero' && key === 'pago') { enviarAlCajero(); return; }
-
   // Fijar el drawer activo ANTES de renderizar para que el contenido pueda leerlo
   _drawerActual = key;
 
@@ -5683,7 +5682,8 @@ function abrirDrawer(key) {
   // Mostrar botón hamburguesa solo en el carrito, con badge de pedidos
   const btnNuevaOrden = document.getElementById('drawerNuevaOrdenBtn');
   if (btnNuevaOrden) {
-    btnNuevaOrden.style.display = (key === 'carrito' || key === 'pago') ? 'flex' : 'none';
+    const esCajeroHamb = usuarioActivo?.rol === 'cajero';
+    btnNuevaOrden.style.display = (!esCajeroHamb && (key === 'carrito' || key === 'pago')) ? 'flex' : 'none';
     // Badge de conteo sobre el ☰
     const esAdminB = usuarioActivo?.rol === 'admin' || usuarioActivo?.rol === 'master';
     const miIdB    = usuarioActivo?.id ?? null;
@@ -6759,15 +6759,9 @@ function renderCarrito() {
       ${(()=>{ const resumen = {}; carrito.forEach(item => { const tasa = (item.iva !== undefined && item.iva !== null) ? Number(item.iva) : 8; if (tasa === 0) return; const precioTotal = item.precio * item.cantidad; const base = Math.round(precioTotal / (1 + tasa / 100)); const imp = precioTotal - base; if (!resumen[tasa]) resumen[tasa] = 0; resumen[tasa] += imp; }); return Object.entries(resumen).filter(([,v])=>v>0).map(([tasa,imp])=>`<div class="total-row" style="font-size:12px;opacity:0.75;"><span>${Number(tasa)===8?'Impoconsumo 8%':'IVA '+tasa+'%'} (incl.)</span><span class="val">${fmt(imp)}</span></div>`).join(''); })()}
       <div class="total-row grande" style="color:${uc};"><span>TOTAL</span><span class="val" style="color:${uc};">${fmt(total)}</span></div>
     </div>
-    ${(usuarioActivo?.rol === 'mesero')
-      ? `<button onclick="enviarAlCajero()" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(21,101,192,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
-        💰 Enviar a Caja
-       </button>
-       <div style="font-size:12px;color:var(--gris);text-align:center;padding:6px 0 0;">El cajero recibirá este recibo para procesarlo</div>`
-      : `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
-        💳 Pagar Cuenta
-       </button>`
-    }
+    <button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
+      💳 Pagar Cuenta
+    </button>
     <div style="height:24px"></div>`;
 }
 
@@ -6782,7 +6776,7 @@ function renderPago() {
     return;
   }
 
-  const esAdmin = usuarioActivo?.rol === 'admin' || usuarioActivo?.rol === 'master' || usuarioActivo?.rol === 'cajero';
+  const esAdmin = usuarioActivo?.rol === 'admin' || usuarioActivo?.rol === 'master';
   const ucDueno = usuarios.find(u => u.id === ordenActiva?.usuarioId);
   const uc = ensureVibrante((ucDueno && ucDueno.color) || ordenActiva?.usuarioColor || usuarioActivo?.color || '#FF441A');
   const ucSoft = uc + '18';
@@ -7520,9 +7514,8 @@ function renderHistorial() {
   const esCajero = usuarioActivo?.rol === 'cajero';
   const esMeseroHist = usuarioActivo?.rol === 'mesero';
   const nombreCajero = usuarioActivo?.nombre || '';
-  const miIdHist = usuarioActivo?.id ?? null;
   const historialVisible = esMeseroHist
-    ? historial.filter(f => f.usuarioId === miIdHist || f.usuarioId == null && f.cajero === nombreCajero)
+    ? historial.filter(f => f.cajero === nombreCajero)
     : historial;
 
   if (historialVisible.length === 0) {
@@ -7684,10 +7677,7 @@ function generarTextoResumenFiltrado(paraBluetooth) {
   var esCajero = usuarioActivo && usuarioActivo.rol === 'cajero';
   var esMeseroResumen = usuarioActivo && usuarioActivo.rol === 'mesero';
   var nombreCajero = (usuarioActivo && usuarioActivo.nombre) || '';
-  var miIdResumen = (usuarioActivo && usuarioActivo.id) ?? null;
-  var base = esMeseroResumen
-    ? historial.filter(function(f){ return f.usuarioId === miIdResumen || (f.usuarioId == null && f.cajero === nombreCajero); })
-    : historial.slice();
+  var base = esMeseroResumen ? historial.filter(function(f){ return f.cajero === nombreCajero; }) : historial.slice();
 
   if (_histFiltros.pago !== 'todos') base = base.filter(function(f){ return f.pago === _histFiltros.pago; });
   if (_histFiltros.tipo === 'fe')             base = base.filter(function(f){ return f.esFacturaElectronica; });
@@ -8269,7 +8259,6 @@ function generarTextoTicket() {
     tipoOrden,
     mesaNumero,
     cajero: usuarioActivo?.nombre || '',
-    usuarioId: usuarioActivo?.id ?? null,
     esFacturaElectronica,
     feNombre: esFacturaElectronica ? feNombre : '',
     feNit:    esFacturaElectronica ? feNit    : '',
@@ -8969,7 +8958,6 @@ async function finalizarFactura() {
     tipoOrden,
     mesaNumero,
     cajero: usuarioActivo?.nombre || '',
-    usuarioId: usuarioActivo?.id ?? null,
     esFacturaElectronica,
     feNombre: esFacturaElectronica ? feNombre : '',
     feNit:    esFacturaElectronica ? feNit    : '',
@@ -11550,8 +11538,6 @@ let _cobroActual = null; // recibo desde cola cajero o null (cobro directo)
 let _pagosSeleccionados = {}; // { 'Efectivo': 15000, 'Nequi': 10000 }
 
 function abrirModalCobro() {
-  // Mesero no puede cobrar directamente — debe enviar al cajero
-  if (usuarioActivo?.rol === 'mesero') { enviarAlCajero(); return; }
   // Cobro directo desde admin/cajero en el carrito actual
   if (carrito.length === 0) { showToast('⚠️ El carrito está vacío'); return; }
   const subtotal = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
