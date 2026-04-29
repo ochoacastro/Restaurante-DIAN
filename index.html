@@ -176,7 +176,8 @@
   body.dark .role-opt { background: #252525; border-color: #333; color: #CCC; }
   body.dark .role-opt.active-admin  { background: rgba(255,68,26,0.18); border-color: var(--rappi); color: var(--rappi); }
   body.dark .role-opt.active-mesero { background: rgba(46,125,50,0.2);  border-color: #4CAF50; color: #4CAF50; }
-  body.dark .role-opt.active-cocina { background: rgba(255,152,0,0.18); border-color: #FF9800; color: #FF9800; }
+  body.dark .role-opt.active-cocina  { background: rgba(255,152,0,0.18); border-color: #FF9800; color: #FF9800; }
+  body.dark .role-opt.active-cajero  { background: rgba(21,101,192,0.2);  border-color: #1976D2; color: #64B5F6; }
   body.dark .pwa-banner { background: #1E1E1E; border-color: #333; }
   body.dark .login-back-btn { background: #252525; border-color: #333; color: #F0F0F0; }
   body.dark .login-greeting { color: #F0F0F0; }
@@ -2034,6 +2035,7 @@
   .role-admin  { background: rgba(255,68,26,0.12); color: var(--rappi); }
   .role-mesero { background: rgba(46,125,50,0.12); color: var(--verde-ok); }
   .role-cocina { background: rgba(255,152,0,0.12); color: #FF9800; border: 1px solid rgba(255,152,0,0.3); }
+  .role-cajero { background: rgba(21,101,192,0.1); color: #1565C0; border: 1px solid rgba(21,101,192,0.3); }
   .role-master { background: linear-gradient(135deg, rgba(123,31,162,0.15), rgba(123,31,162,0.08)); color: #7B1FA2; border: 1px solid rgba(123,31,162,0.3); font-weight: 800; }
   .user-arrow { color: var(--gris); font-size: 18px; }
 
@@ -2192,6 +2194,12 @@
   body.rol-mesero #btnRowAdminHome { display: none !important; }
   /* Mesero: mostrar historial */
   body.rol-mesero #btnHistorialHome { display: flex !important; }
+
+  /* Cajero: ocultar tabs de menú/config/stats, mostrar panel cobros */
+  body.rol-cajero .tab-config,
+  body.rol-cajero .tab-stats { display: none !important; }
+  body.rol-cajero #btnConfigHome { display: none !important; }
+  body.rol-cajero #btnRowAdminHome { display: none !important; }
 
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin-icon { display: inline-block; animation: spin 0.9s linear infinite; }
@@ -2470,6 +2478,43 @@
   .catimg-actions { display: flex; gap: 8px; padding: 10px; }
   .catimg-upload-label { flex: 1; cursor: pointer; text-align: center; background: var(--blanco); border: 1.5px solid var(--borde); border-radius: 10px; padding: 9px; font-size: 13px; font-weight: 700; color: var(--negro); }
   .catimg-del-btn { border: none; background: #D32F2F; color: #fff; border-radius: 10px; padding: 9px 12px; font-weight: 900; font-size: 13px; cursor: pointer; }
+
+  /* ── ROL CAJERO ── */
+  .role-cajero { background: rgba(21,101,192,0.08); color: #1565C0; border: 1.5px solid rgba(21,101,192,0.3); border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
+  body.dark .role-cajero { background: rgba(21,101,192,0.18); color: #64B5F6; border-color: rgba(30,136,229,0.4); }
+
+  /* ── PANEL CAJERO (recibos pendientes) ── */
+  .cajero-panel { display: flex; flex-direction: column; gap: 10px; }
+  .recibo-card { background: var(--blanco); border: 1.5px solid var(--borde); border-radius: var(--r); padding: 14px 16px; cursor: pointer; transition: all 0.15s; box-shadow: var(--sombra-s); }
+  .recibo-card:active { transform: scale(0.98); }
+  .recibo-card.urgente { border-color: var(--rappi); background: var(--rappi-soft); }
+  body.dark .recibo-card { background: #1E1E1E; border-color: #2A2A2A; }
+  body.dark .recibo-card.urgente { border-color: var(--rappi); background: rgba(255,68,26,0.1); }
+  .recibo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .recibo-mesa { font-size: 16px; font-weight: 900; color: var(--negro); }
+  .recibo-total { font-size: 16px; font-weight: 900; color: var(--rappi); font-family: var(--font-num); }
+  .recibo-meta { font-size: 11px; color: var(--gris); font-weight: 600; }
+  .recibo-items-preview { font-size: 12px; color: var(--gris-osc); margin-top: 4px; }
+  .badge-cajero { background: var(--rappi); color: #fff; border-radius: 50%; min-width: 18px; height: 18px; font-size: 10px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; padding: 0 3px; }
+
+  /* ── PAGO COMBINADO ── */
+  .pago-combinado-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .pago-combinado-item { display: flex; align-items: center; gap: 8px; background: var(--fondo); border: 1.5px solid var(--borde); border-radius: 12px; padding: 10px 12px; }
+  .pago-combinado-item.activo { border-color: var(--rappi); background: var(--rappi-soft); }
+  body.dark .pago-combinado-item { background: #252525; border-color: #333; }
+  body.dark .pago-combinado-item.activo { border-color: var(--rappi); background: rgba(255,68,26,0.1); }
+  .pago-comb-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--negro); }
+  .pago-comb-input { width: 110px; padding: 8px 10px; border: 1.5px solid var(--borde); border-radius: 10px; font-size: 14px; font-family: var(--font-num); font-weight: 700; text-align: right; background: var(--blanco); color: var(--negro); outline: none; }
+  .pago-comb-input:focus { border-color: var(--rappi); }
+  body.dark .pago-comb-input { background: #1A1A1A; border-color: #444; color: #F0F0F0; }
+  .cambio-box { background: linear-gradient(135deg, #1b5e20, #2e7d32); border-radius: var(--r); padding: 16px 18px; margin-top: 10px; color: #fff; display: flex; align-items: center; justify-content: space-between; }
+  .cambio-label { font-size: 13px; font-weight: 700; opacity: 0.85; }
+  .cambio-monto { font-size: 26px; font-weight: 900; font-family: var(--font-num); letter-spacing: -0.5px; }
+  .faltante-box { background: rgba(211,47,47,0.1); border: 1.5px solid rgba(211,47,47,0.3); border-radius: var(--r); padding: 12px 16px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .faltante-label { font-size: 13px; font-weight: 700; color: var(--rojo); }
+  .faltante-monto { font-size: 20px; font-weight: 900; color: var(--rojo); font-family: var(--font-num); }
+  .btn-cobrar-final { width: 100%; padding: 18px; background: linear-gradient(135deg, #1b5e20, #2e7d32); color: #fff; border: none; border-radius: var(--r); font-size: 18px; font-weight: 800; font-family: 'Inter', sans-serif; cursor: pointer; margin-top: 10px; margin-bottom: 8px; box-shadow: 0 6px 20px rgba(46,125,50,0.4); display: flex; align-items: center; justify-content: center; gap: 10px; -webkit-tap-highlight-color: rgba(255,255,255,0.1); }
+  .btn-cobrar-final:disabled { opacity: 0.45; pointer-events: none; }
 </style>
 </head>
 <body class="app-hidden">
@@ -2844,6 +2889,13 @@
         <span>Estadísticas</span>
       </button>
     </div>
+    <!-- Cobros pendientes — cajero y admin -->
+    <button id="btnCobrosHome" onclick="abrirRecibosPendientes()" style="display:none;width:100%;padding:16px 20px;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;border:none;border-radius:16px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;align-items:center;gap:12px;box-shadow:0 4px 16px rgba(46,125,50,0.3);touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
+      <span style="font-size:24px;">&#128176;</span>
+      <div style="text-align:left;flex:1;"><div>Cobros Pendientes</div><div id="cobrosSubtitle" style="font-size:12px;font-weight:600;opacity:0.75;margin-top:2px;">Recibos de meseros</div></div>
+      <span id="badgeCajero" style="display:none;background:#fff;color:#1b5e20;border-radius:999px;min-width:28px;height:28px;padding:0 8px;font-size:14px;font-weight:900;align-items:center;justify-content:center;flex-shrink:0;">0</span>
+      <span style="font-size:20px;opacity:0.6;">&#8250;</span>
+    </button>
     <!-- Configuración — solo admins -->
     <button id="btnConfigHome" onclick="cerrarSidebar();abrirDrawer('config')" style="
       width:100%;padding:16px 20px;
@@ -3182,7 +3234,7 @@
           <div style="display:flex;gap:8px;">
             <label style="flex:1;cursor:pointer;">
               <div class="btn-save-config" style="text-align:center;padding:10px;font-size:13px;width:100%;">🖼️ <span id="closedBgUploadTxt">Subir imagen</span></div>
-              <input type="file" id="closedBgInput" accept="image/*" style="display:none" onchange="cargarClosedBg(this)">
+              <input type="file" id="closedBgInput" accept="image/*" style="display:none" onchange="subirClosedBg(this)">
             </label>
             <button id="closedBgQuitarBtn" style="display:none;background:#D32F2F;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;padding:10px 14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;" onclick="quitarClosedBg()">✕ Quitar</button>
           </div>
@@ -3308,6 +3360,15 @@
           <label>📲 WhatsApp para pedidos de domicilio</label>
           <input class="config-input" id="cfgWaDomicilio" type="tel" placeholder="Ej: 3001234567 (sin +57)" inputmode="numeric">
           <div style="font-size:11px;color:var(--gris);margin-top:4px;">Se pre-llenará al enviar domicilios por WhatsApp y es el número al que los clientes del menú digital envían sus pedidos.</div>
+        </div>
+        <div class="config-field">
+          <label>💬 Mensaje de WhatsApp (factura)</label>
+          <textarea class="config-input" id="cfgWaMensaje" rows="3"
+            placeholder="Ej: Hola, te envío tu factura. Que la disfrutes 😊"
+            style="width:100%;resize:vertical;font-family:inherit;font-size:14px;line-height:1.5;box-sizing:border-box;"></textarea>
+          <div style="font-size:11px;color:var(--gris);margin-top:4px;">
+            Texto que acompaña la factura. Usa <b>{factura}</b> para insertar el número y <b>{negocio}</b> para el nombre del negocio.
+          </div>
         </div>
 
         <!-- Horarios de atención -->
@@ -3465,6 +3526,23 @@
   <span id="seccionUsuarios" style="display:none;"></span>
   <span id="seccionFirebase" style="display:none;"></span>
   <span id="seccionBackup" style="display:none;"></span>
+
+  <!-- FACTURA ELECTRÓNICA -->
+  <div class="cfg-acc" id="cfgAccFE">
+    <div class="cfg-acc-header" data-cfgacc="cfgAccFE">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="cfg-acc-icon">🧾</div>
+        <div>
+          <div class="cfg-acc-title">Factura Electrónica DIAN</div>
+          <div class="cfg-acc-sub">Configurar backend y resolución</div>
+        </div>
+      </div>
+      <span class="cfg-acc-arrow">▼</span>
+    </div>
+    <div class="cfg-acc-body">
+      <div class="cfg-acc-inner" id="feConfigInner"></div>
+    </div>
+  </div>
 
       </div>
       <div id="drawer-slot-stats" style="display:none;padding:14px 14px 20px;">
@@ -3752,6 +3830,7 @@
       <div class="role-selector">
         <div class="role-opt" id="roleOptAdmin"  onclick="selRol('admin')">👑 Admin</div>
         <div class="role-opt" id="roleOptMesero" onclick="selRol('mesero')">🧾 Mesero</div>
+        <div class="role-opt" id="roleOptCajero" onclick="selRol('cajero')">💰 Cajero</div>
         <div class="role-opt" id="roleOptCocina" onclick="selRol('cocina')">🍳 Cocina</div>
       </div>
     </div>
@@ -3821,6 +3900,26 @@
         <span class="ot-sub">Precio domicilio</span>
       </div>
     </div>
+  </div>
+</div>
+
+
+<!-- MODAL COBRO (Cajero/Admin) -->
+<div class="modal-overlay" id="modalCobro">
+  <div class="modal" style="max-width:480px;max-height:94vh;overflow-y:auto;">
+    <div class="modal-handle"></div>
+    <div id="modalCobroContenido"></div>
+  </div>
+</div>
+
+<!-- MODAL RECIBOS PENDIENTES (Panel Cajero) -->
+<div class="modal-overlay" id="modalRecibosCajero" style="align-items:flex-end;">
+  <div class="modal" style="width:100%;max-width:480px;max-height:92vh;border-radius:var(--r-xl) var(--r-xl) 0 0;overflow-y:auto;">
+    <div class="modal-handle"></div>
+    <h3 style="font-size:18px;font-weight:900;margin-bottom:4px;">💰 Recibos Pendientes</h3>
+    <p id="recibosPendientesCount" style="font-size:12px;color:var(--gris);margin-bottom:14px;">Facturas enviadas por meseros</p>
+    <div id="recibosPendientesList" class="cajero-panel"></div>
+    <button class="btn-modal-close" onclick="cerrarModal('modalRecibosCajero')" style="margin-top:8px;">Cerrar</button>
   </div>
 </div>
 
@@ -4133,10 +4232,12 @@ function renderLoginUserList() {
   if (!grid) return;
   const perms = (typeof loadMasterPerms === 'function') ? loadMasterPerms() : { cocina: true };
   const meseros = usuarios.filter(u => u.rol === 'mesero');
+  const cajeros = usuarios.filter(u => u.rol === 'cajero');
 
   const roles = [
     { rol: 'admin',   icon: '👑', name: 'Administrador', desc: 'Gestión completa del sistema',           habilitado: true },
     { rol: 'mesero',  icon: '🧾', name: 'Mesero',         desc: meseros.length ? `${meseros.length} mesero${meseros.length > 1 ? 's' : ''} disponible${meseros.length > 1 ? 's' : ''}` : 'Sin meseros registrados', habilitado: meseros.length > 0 },
+    { rol: 'cajero',  icon: '💰', name: 'Cajero',          desc: cajeros.length ? `${cajeros.length} cajero${cajeros.length > 1 ? 's' : ''} disponible${cajeros.length > 1 ? 's' : ''}` : 'Sin cajeros registrados', habilitado: cajeros.length > 0 },
     { rol: 'cocina',  icon: '🍳', name: 'Cocina',          desc: 'Visualización de pedidos en tiempo real', habilitado: !!perms.cocina },
   ];
 
@@ -4167,6 +4268,36 @@ function renderLoginUserList() {
 }
 
 function renderLoginUsers() { renderLoginUserList(); }
+
+// Lista de cajeros para login
+function renderLoginCajeroList() {
+  const grid = document.getElementById('loginRolGrid');
+  if (!grid) return;
+  const cajeros = usuarios.filter(u => u.rol === 'cajero');
+  let html = `<div style="font-size:12px;color:var(--gris);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;text-align:center;margin-bottom:4px;">Selecciona tu nombre</div>`;
+  html += cajeros.map(u => `
+    <div class="login-rol-card rol-cajero" onclick="seleccionarUsuarioCajero(${u.id})" style="border-left-color:#1565C0;">
+      <div class="login-rol-icon" style="background:${u.color};font-size:20px;font-weight:800;color:#fff;font-family:'Inter',sans-serif;">
+        ${u.nombre.charAt(0).toUpperCase()}
+      </div>
+      <div class="login-rol-info">
+        <div class="login-rol-name">${esc(u.nombre)}</div>
+        <div class="login-rol-desc">Cajero</div>
+      </div>
+      <span class="login-rol-arrow">›</span>
+    </div>`).join('');
+  grid.innerHTML = html;
+  const label = document.querySelector('.user-selector-label');
+  if (label) label.textContent = '¿Qué cajero eres?';
+  document.getElementById('loginVolverRolBtn').style.display = 'flex';
+}
+
+function seleccionarUsuarioCajero(uid) {
+  const u = usuarios.find(u => u.id === uid);
+  if (!u) return;
+  loginTargetUser = u;
+  irAlPin();
+}
 
 // Paso 2a: al tocar "Mesero" → mostrar lista de meseros individuales
 function renderLoginMeseroList() {
@@ -4201,6 +4332,10 @@ function seleccionarRolLogin(rol) {
 
   if (rol === 'mesero') {
     renderLoginMeseroList();
+    return;
+  }
+  if (rol === 'cajero') {
+    renderLoginCajeroList();
     return;
   }
 
@@ -4392,8 +4527,13 @@ function aplicarRolUI() {
   }
   if (usuarioActivo.rol === 'mesero') {
     document.body.classList.add('rol-mesero');
+    document.body.classList.remove('rol-cajero');
+  } else if (usuarioActivo.rol === 'cajero') {
+    document.body.classList.add('rol-cajero');
+    document.body.classList.remove('rol-mesero');
   } else {
     document.body.classList.remove('rol-mesero');
+    document.body.classList.remove('rol-cajero');
   }
 }
 
@@ -4420,8 +4560,8 @@ function abrirMenuUsuario() {
       </div>
       <div>
         <div style="font-size:18px;font-weight:700;color:var(--negro);font-family:'Inter',sans-serif;">${usuarioActivo.nombre}</div>
-        <span class="user-role-badge ${usuarioActivo.rol === 'master' ? 'role-master' : usuarioActivo.rol === 'admin' ? 'role-admin' : usuarioActivo.rol === 'cocina' ? 'role-cocina' : 'role-mesero'}" style="margin-top:4px;display:inline-block;">
-          ${usuarioActivo.rol === 'master' ? '💎 Master' : usuarioActivo.rol === 'admin' ? '👑 Administrador' : usuarioActivo.rol === 'cocina' ? '🍳 Cocina' : '🧾 Mesero'}
+        <span class="user-role-badge ${usuarioActivo.rol === 'master' ? 'role-master' : usuarioActivo.rol === 'admin' ? 'role-admin' : usuarioActivo.rol === 'cajero' ? 'role-cajero' : usuarioActivo.rol === 'cocina' ? 'role-cocina' : 'role-mesero'}" style="margin-top:4px;display:inline-block;">
+          ${usuarioActivo.rol === 'master' ? '💎 Master' : usuarioActivo.rol === 'admin' ? '👑 Administrador' : usuarioActivo.rol === 'cajero' ? '💰 Cajero' : usuarioActivo.rol === 'cocina' ? '🍳 Cocina' : '🧾 Mesero'}
         </span>
       </div>
     </div>
@@ -4521,8 +4661,8 @@ function renderUsuariosConfig() {
       <div class="user-mgmt-info">
         <div class="user-mgmt-name">${esc(u.nombre)}</div>
         <div class="user-mgmt-sub">
-          <span class="user-role-badge ${u.rol === 'master' ? 'role-master' : u.rol === 'admin' ? 'role-admin' : u.rol === 'cocina' ? 'role-cocina' : 'role-mesero'}" style="padding:1px 6px;">
-            ${u.rol === 'master' ? '💎 Master' : u.rol === 'admin' ? '👑 Admin' : u.rol === 'cocina' ? '🍳 Cocina' : '🧾 Mesero'}
+          <span class="user-role-badge ${u.rol === 'master' ? 'role-master' : u.rol === 'admin' ? 'role-admin' : u.rol === 'cajero' ? 'role-cajero' : u.rol === 'cocina' ? 'role-cocina' : 'role-mesero'}" style="padding:1px 6px;">
+            ${u.rol === 'master' ? '💎 Master' : u.rol === 'admin' ? '👑 Admin' : u.rol === 'cajero' ? '💰 Cajero' : u.rol === 'cocina' ? '🍳 Cocina' : '🧾 Mesero'}
           </span>
           &nbsp;PIN: ${'•'.repeat((u.pin || '').length || 4)}
         </div>
@@ -4632,6 +4772,7 @@ function selRol(rol) {
   const opts = {
     admin:  { id: 'roleOptAdmin',  label: '👑 Admin',  cls: 'active-admin'  },
     mesero: { id: 'roleOptMesero', label: '🧾 Mesero', cls: 'active-mesero' },
+    cajero: { id: 'roleOptCajero', label: '💰 Cajero', cls: 'active-cajero' },
     cocina: { id: 'roleOptCocina', label: '🍳 Cocina', cls: 'active-cocina' },
   };
   Object.entries(opts).forEach(([r, o]) => {
@@ -4881,6 +5022,7 @@ function cargarConfig() {
   document.getElementById('cfgTel').value    = config.telefono;
   document.getElementById('cfgMsg').value    = config.mensaje;
   document.getElementById('cfgWaDomicilio').value = config.waTelDomicilio || '';
+  document.getElementById('cfgWaMensaje').value = config.waMensaje || '';
   renderHorarios();
   actualizarConsecDisplay();
   try {
@@ -5230,7 +5372,7 @@ function renderClosedHorarioOverlay() {
     </div>`).join('');
 }
 
-function cargarClosedBg(input) {
+function subirClosedBg(input) {
   const file = input.files && input.files[0];
   if (!file) return;
   if (file.size > 5 * 1024 * 1024) { showToast('⚠️ Imagen muy grande (máx 5 MB)'); input.value = ''; return; }
@@ -5361,6 +5503,7 @@ function saveConfig() {
   config.waTelDomicilio = rawNum.startsWith('57') && rawNum.length > 10
     ? rawNum.slice(2)
     : rawNum;
+  config.waMensaje = document.getElementById('cfgWaMensaje').value.trim();
   localStorage.setItem('helechos_config', JSON.stringify(config));
 
   // ── Sincronizar con el menú digital ──
@@ -5707,6 +5850,13 @@ function showTab(tab, forzar) {
     }
     // Refrescar badge de pedidos al volver al home
     actualizarBadge();
+    // Mostrar/ocultar botón de cobros pendientes según rol
+    const btnCobros = document.getElementById('btnCobrosHome');
+    if (btnCobros) {
+      const esCajeroOAdmin = usuarioActivo && (usuarioActivo.rol === 'cajero' || usuarioActivo.rol === 'admin' || usuarioActivo.rol === 'master');
+      btnCobros.style.display = esCajeroOAdmin ? 'flex' : 'none';
+      if (esCajeroOAdmin) actualizarBadgeCajero();
+    }
   } else {
     const panelEl = document.getElementById('panel-' + tab);
     if (panelEl) panelEl.classList.add('active');
@@ -6588,24 +6738,7 @@ function renderCarrito() {
     <div class="totales" style="border-top:2px solid ${uc}22;">
       <div class="total-row"><span>Subtotal</span><span class="val" style="color:${uc}99;">${fmt(subtotal)}</span></div>
       ${descMonto > 0 ? `<div class="total-row" style="color:${uc};"><span>Descuento</span><span class="val">−${fmt(descMonto)}</span></div>` : ''}
-      ${(()=>{ // Desglose IVA en carrito
-        const resumen = {};
-        carrito.forEach(item => {
-          const tasa = (item.iva !== undefined && item.iva !== null) ? Number(item.iva) : 8;
-          if (tasa === 0) return;
-          const precioTotal = item.precio * item.cantidad;
-          const base = Math.round(precioTotal / (1 + tasa / 100));
-          const imp  = precioTotal - base;
-          if (!resumen[tasa]) resumen[tasa] = 0;
-          resumen[tasa] += imp;
-        });
-        return Object.entries(resumen).filter(([,v])=>v>0).map(([tasa,imp])=>
-          `<div class="total-row" style="font-size:12px;opacity:0.75;">
-            <span>${Number(tasa)===8?'Impoconsumo 8%':'IVA '+tasa+'%'} (incl.)</span>
-            <span class="val">${fmt(imp)}</span>
-          </div>`
-        ).join('');
-      })()}
+      ${(()=>{ const resumen = {}; carrito.forEach(item => { const tasa = (item.iva !== undefined && item.iva !== null) ? Number(item.iva) : 8; if (tasa === 0) return; const precioTotal = item.precio * item.cantidad; const base = Math.round(precioTotal / (1 + tasa / 100)); const imp = precioTotal - base; if (!resumen[tasa]) resumen[tasa] = 0; resumen[tasa] += imp; }); return Object.entries(resumen).filter(([,v])=>v>0).map(([tasa,imp])=>`<div class="total-row" style="font-size:12px;opacity:0.75;"><span>${Number(tasa)===8?'Impoconsumo 8%':'IVA '+tasa+'%'} (incl.)</span><span class="val">${fmt(imp)}</span></div>`).join(''); })()}
       <div class="total-row grande" style="color:${uc};"><span>TOTAL</span><span class="val" style="color:${uc};">${fmt(total)}</span></div>
     </div>
     <button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
@@ -6734,38 +6867,18 @@ function renderPago() {
     <div class="totales" style="border-top:2px solid ${uc}22;margin-bottom:8px;">
       <div class="total-row"><span>Subtotal</span><span class="val" style="color:${uc}99;">${fmt(subtotal)}</span></div>
       ${descMonto > 0 ? `<div class="total-row" style="color:${uc};"><span>Descuento</span><span class="val">−${fmt(descMonto)}</span></div>` : ''}
-      ${(()=>{ // Desglose IVA en pago
-        const resumen = {};
-        carrito.forEach(item => {
-          const tasa = (item.iva !== undefined && item.iva !== null) ? Number(item.iva) : 8;
-          if (tasa === 0) return;
-          const precioTotal = item.precio * item.cantidad;
-          const base = Math.round(precioTotal / (1 + tasa / 100));
-          const imp  = precioTotal - base;
-          if (!resumen[tasa]) resumen[tasa] = { imp: 0, base: 0 };
-          resumen[tasa].imp  += imp;
-          resumen[tasa].base += base;
-        });
-        const entradas = Object.entries(resumen).filter(([,v])=>v.imp>0);
-        if (!entradas.length) return '';
-        return `<div style="border-top:1px solid ${uc}22;padding-top:6px;margin-top:2px;">` +
-          entradas.map(([tasa, v]) =>
-            `<div class="total-row" style="font-size:12px;opacity:0.8;">
-              <span>Base ${tasa}%</span><span class="val">${fmt(v.base)}</span>
-            </div>
-            <div class="total-row" style="font-size:12px;color:${uc};">
-              <span>${Number(tasa)===8?'Impoconsumo 8%':'IVA '+tasa+'%'} (incluido)</span>
-              <span class="val" style="font-weight:700;">${fmt(v.imp)}</span>
-            </div>`
-          ).join('') + `</div>`;
-      })()}
+      ${(()=>{ const resumen = {}; carrito.forEach(item => { const tasa = (item.iva !== undefined && item.iva !== null) ? Number(item.iva) : 8; if (tasa === 0) return; const precioTotal = item.precio * item.cantidad; const base = Math.round(precioTotal / (1 + tasa / 100)); const imp = precioTotal - base; if (!resumen[tasa]) resumen[tasa] = { imp: 0, base: 0 }; resumen[tasa].imp += imp; resumen[tasa].base += base; }); const entradas = Object.entries(resumen).filter(([,v])=>v.imp>0); if (!entradas.length) return ''; return `<div style="border-top:1px solid ${uc}22;padding-top:6px;margin-top:2px;">` + entradas.map(([tasa, v]) => `<div class="total-row" style="font-size:12px;opacity:0.8;"><span>Base ${tasa}%</span><span class="val">${fmt(v.base)}</span></div><div class="total-row" style="font-size:12px;color:${uc};"><span>${Number(tasa)===8?'Impoconsumo 8%':'IVA '+tasa+'%'} (incluido)</span><span class="val" style="font-weight:700;">${fmt(v.imp)}</span></div>`).join('') + `</div>`; })()}
       <div class="total-row grande" style="color:${uc};"><span>TOTAL</span><span class="val" style="color:${uc};">${fmt(total)}</span></div>
     </div>
 
     <!-- Botones de acción -->
-    <button onclick="abrirModalImprimir()" style="width:100%;padding:18px;background:${uc};color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px ${uc}44;-webkit-tap-highlight-color:rgba(255,255,255,0.1);margin-bottom:10px;">
-      🖨️ Imprimir Factura
-    </button>
+    ${(()=>{
+      const rolActual = usuarioActivo ? usuarioActivo.rol : 'admin';
+      if (rolActual === 'mesero') {
+        return '<button onclick="enviarAlCajero()" style="width:100%;padding:18px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(21,101,192,0.4);margin-bottom:10px;">&#128176; Enviar a Caja</button><div style="font-size:12px;color:var(--gris);text-align:center;padding-bottom:8px;">El cajero recibirá este recibo para procesarlo</div>';
+      }
+      return '<button onclick="abrirModalCobro()" style="width:100%;padding:18px;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.4);margin-bottom:10px;">&#128176; Cobrar</button><button onclick="abrirModalImprimir()" style="width:100%;padding:14px;background:var(--fondo);color:var(--negro);border:1.5px solid var(--borde);border-radius:var(--r);font-size:15px;font-weight:700;font-family:Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">&#128424;&#65039; Solo imprimir</button>';
+    })()}
     <div style="height:28px"></div>`;
 }
 
@@ -8062,7 +8175,18 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
   }
   t += fila('TOTAL:', p(f.total)) + '\n';
   t += doble + '\n';
-  t += 'Pago: ' + proc(f.pago) + '\n';
+  // ── Pago / pagos combinados ─────────────────────────────────────────
+  if (f.pagos && f.pagos.length > 1) {
+    t += linea + '\n';
+    t += proc('FORMAS DE PAGO:') + '\n';
+    f.pagos.forEach(pg => { t += fila(proc(pg.label) + ':', p(pg.monto)) + '\n'; });
+    if (f.totalRecibido !== undefined) t += fila('Total recibido:', p(f.totalRecibido)) + '\n';
+    if (f.cambio > 0) t += fila('CAMBIO:', p(f.cambio)) + '\n';
+    t += linea + '\n';
+  } else {
+    t += 'Pago: ' + proc(f.pago) + '\n';
+    if (f.cambio > 0) t += fila('Cambio:', p(f.cambio)) + '\n';
+  }
   if (f.tipoOrden === 'mesa' && f.mesaNumero) t += proc('Mesa: ' + f.mesaNumero) + '\n';
   if (f.clienteNombre)    t += proc('Cliente: '   + f.clienteNombre)    + '\n';
   if (f.clienteTelefono)  t += proc('Tel: '        + f.clienteTelefono)  + '\n';
@@ -8646,10 +8770,11 @@ function waPaso3Abrir() {
 }
 
 function waPaso3EnviarWhatsapp() {
-  const mensaje = encodeURIComponent(
-    `Hola, te envío tu factura *${_waNombreArchivo.replace('Factura_','').replace('.pdf','')}* de ${config.nombre}. 🧾\n` +
-    `📎 Adjunta el PDF descargado: _${_waNombreArchivo}_`
-  );
+  const numFactura = _waNombreArchivo.replace('Factura_','').replace('.pdf','');
+  const plantilla = (config.waMensaje || 'Hola, te envío tu factura *{factura}* de {negocio}. 🧾')
+    .replace('{factura}', numFactura)
+    .replace('{negocio}', config.nombre);
+  const mensaje = encodeURIComponent(plantilla);
   window.open(`https://wa.me/${_waNumero}?text=${mensaje}`, '_blank');
   cerrarModal('modalWhatsapp');
 }
@@ -8826,6 +8951,11 @@ async function finalizarFactura() {
   localStorage.setItem('helechos_historial', JSON.stringify(historial));
   fbSyncFactura(factura); // fix #13: subir solo la factura nueva, no el array completo
   actualizarBadgeHistorial();
+
+  // ── FACTURA ELECTRÓNICA: enviar al backend → DIAN ─────────────────────
+  if (factura.esFacturaElectronica) {
+    _feEnviarConReintentos(factura);
+  }
 
   // Contador de sesión
   sesionFacturas++;
@@ -9123,7 +9253,7 @@ function showToast(msg, duracion) {
   setTimeout(() => t.classList.remove('show'), duracion || 2200);
 }
 
-['modalBt','modalPrecio','modalDetalle','modalUsuarioMenu','modalEditUsuario','modalEditProducto','modalNota','modalInformeMes','modalAlertaHistorial','modalEditMaster','modalWhatsapp','modalConfirm'].forEach(id => {
+['modalBt','modalPrecio','modalDetalle','modalUsuarioMenu','modalEditUsuario','modalEditProducto','modalNota','modalInformeMes','modalAlertaHistorial','modalEditMaster','modalWhatsapp','modalConfirm','modalCobro','modalRecibosCajero'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('click', function(e) {
     if (e.target === this) cerrarModal(id);
@@ -9785,6 +9915,7 @@ function fbEscucharCambios() {
         document.getElementById('cfgTel').value    = config.telefono  || '';
         document.getElementById('cfgMsg').value    = config.mensaje   || '';
         document.getElementById('cfgWaDomicilio').value = config.waTelDomicilio || '';
+        document.getElementById('cfgWaMensaje').value = config.waMensaje || '';
         // Sincronizar con menú digital
         try {
           const raw2 = localStorage.getItem('helechos_menu_settings_v1');
@@ -10585,6 +10716,10 @@ function onCfgAccOpen(id) {
   if (id === 'cfgacc-precios')  { renderPreciosConfig(); }
   if (id === 'cfgacc-diseno')   { cfgRenderDiseno(); renderClosedBgPreview(); renderClassicBgPreview(); }
   if (id === 'cfgacc-restaurante') { renderHorarios(); renderFestivos(); }
+  if (id === 'cfgAccFE') {
+    const inner = document.getElementById('feConfigInner');
+    if (inner) inner.innerHTML = feRenderConfigPanel();
+  }
 }
 
 // ══════════════════════════════════════
@@ -11142,6 +11277,582 @@ async function cfgQrShare() {
 
 // Prellenar URL con la del propio archivo
 (function(){ const inp = document.getElementById('qrUrlInput'); if (inp && !inp.value) inp.value = 'https://ochoacastro.github.io/Restaurante-los-helechos/menu.html'; })();
+
+// ══════════════════════════════════════════════════════════════════════
+// MÓDULO FACTURA ELECTRÓNICA — CLIENTE
+// ══════════════════════════════════════════════════════════════════════
+
+const FE_CONFIG_KEY = 'helechos_fe_config';
+const FE_COLA_KEY   = 'helechos_fe_cola';
+
+function feGetConfig() { try { const r = localStorage.getItem(FE_CONFIG_KEY); return r ? JSON.parse(r) : {}; } catch(e) { return {}; } }
+function feGuardarConfig(cfg) { localStorage.setItem(FE_CONFIG_KEY, JSON.stringify(cfg)); }
+function feGetBackendUrl() { return (feGetConfig().backendUrl || '').replace(/\/$/, ''); }
+
+function feGetCola() { try { const r = localStorage.getItem(FE_COLA_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
+function feGuardarCola(cola) { try { localStorage.setItem(FE_COLA_KEY, JSON.stringify(cola)); } catch(e) {} }
+function feAgregarACola(num, payload) { const c = feGetCola(); if (c.find(x=>x.numero===num)) return; c.push({numero:num,payload,intentos:0,ts:Date.now()}); feGuardarCola(c); }
+function feRemoverDeCola(num) { feGuardarCola(feGetCola().filter(c=>c.numero!==num)); }
+
+function feConstruirPayload(factura) {
+  const cfg = feGetConfig();
+  return {
+    emisor: { nit: config.nit||cfg.nit||'', nombre: config.nombre||'', direccion: config.direccion||'', ciudad: cfg.ciudad||'Bogotá', departamento: cfg.departamento||'Cundinamarca', codigoCiudad: cfg.codigoCiudad||'11001', prefijo: cfg.prefijo||'FE', resolucion: cfg.resolucion||'', fechaResolucion: cfg.fechaResolucion||'', rangoDesde: cfg.rangoDesde||'1', rangoHasta: cfg.rangoHasta||'5000' },
+    receptor: { tipoDocumento: factura.feTipoDoc||'CC', documento: factura.feNit||'222222222', nombre: factura.feNombre||'Consumidor Final', correo: factura.feCorreo||'' },
+    factura: { numero: factura.numero, fecha: factura.fecha, hora: factura.hora, total: factura.total, totalBase: factura.totalBaseIva||factura.total, totalImpuestos: factura.totalImpuestos||0, metodoPago: factura.pago, items: factura.items.map(i => ({ nombre:i.nombre, cantidad:i.cantidad, precioUnitario:i.precio, total:i.precio*i.cantidad, iva:(i.iva!==undefined&&i.iva!==null)?Number(i.iva):8, base:i.iva>0?Math.round((i.precio*i.cantidad)/(1+Number(i.iva)/100)):(i.precio*i.cantidad) })), ivaResumen: factura.ivaResumen||{} }
+  };
+}
+
+async function feEnviarUna(factura) {
+  const url = feGetBackendUrl();
+  if (!url) throw new Error('Backend no configurado');
+  const resp = await fetch(url + '/emitir-factura', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(feConstruirPayload(factura)), signal: AbortSignal.timeout(30000) });
+  if (!resp.ok) { const err = await resp.text().catch(()=>resp.statusText); throw new Error('Backend '+resp.status+': '+err); }
+  const data = await resp.json();
+  if (!data.cufe) throw new Error('Sin CUFE: '+JSON.stringify(data));
+  return data;
+}
+
+function feActualizarFactura(numero, cufe, estado) {
+  const f = historial.find(x=>x.numero===numero);
+  if (!f) return;
+  f.feCufe = cufe; f.feEstado = estado||'ACEPTADA';
+  localStorage.setItem('helechos_historial', JSON.stringify(historial));
+  try { if (window.fbSync) { window.fbSync('facturas/'+numero+'/feCufe', cufe); window.fbSync('facturas/'+numero+'/feEstado', estado||'ACEPTADA'); } } catch(_) {}
+}
+
+async function _feEnviarConReintentos(factura) {
+  const url = feGetBackendUrl();
+  const marcarPendiente = () => { factura.feEstado='PENDIENTE'; const i=historial.findIndex(x=>x.numero===factura.numero); if(i>=0) historial[i].feEstado='PENDIENTE'; localStorage.setItem('helechos_historial',JSON.stringify(historial)); };
+  if (!url) { marcarPendiente(); feAgregarACola(factura.numero, feConstruirPayload(factura)); showToast('⚠️ FE en cola — configura el backend en Ajustes', 4000); return; }
+  marcarPendiente();
+  let err = '';
+  for (let i=1; i<=3; i++) {
+    try { const r = await feEnviarUna(factura); feActualizarFactura(factura.numero,r.cufe,r.estado||'ACEPTADA'); feRemoverDeCola(factura.numero); showToast('✅ Factura electrónica aceptada por la DIAN', 5000); return; }
+    catch(e) { err=e.message; if(i<3) await new Promise(r=>setTimeout(r,i*3000)); }
+  }
+  feAgregarACola(factura.numero, feConstruirPayload(factura));
+  showToast('⚠️ FE pendiente — se reintentará automáticamente', 4000);
+  console.warn('FE falló:', err);
+}
+
+async function feProcesarCola() {
+  const cola = feGetCola(); if (!cola.length) return;
+  const url = feGetBackendUrl(); if (!url) return;
+  for (const item of [...cola]) {
+    if (item.intentos >= 10) continue;
+    try {
+      const f = historial.find(x=>x.numero===item.numero);
+      if (!f) { feRemoverDeCola(item.numero); continue; }
+      const r = await feEnviarUna(f);
+      feActualizarFactura(item.numero, r.cufe, r.estado||'ACEPTADA');
+      feRemoverDeCola(item.numero);
+      showToast('✅ FE #'+item.numero+' aceptada por la DIAN', 4000);
+    } catch(e) { const c=feGetCola(); const ci=c.findIndex(x=>x.numero===item.numero); if(ci>=0){c[ci].intentos++;feGuardarCola(c);} }
+  }
+}
+
+setInterval(() => { if (navigator.onLine && feGetCola().length>0) feProcesarCola(); }, 5*60*1000);
+window.addEventListener('online', () => { if (feGetCola().length>0) setTimeout(feProcesarCola, 2000); });
+
+function feRenderConfigPanel() {
+  const cfg = feGetConfig();
+  const cola = feGetCola();
+  return `
+  <div style="padding:4px 0;">
+    <p style="font-size:12px;color:var(--gris);margin-bottom:12px;line-height:1.5;">Pega aquí la URL de tu backend Railway. Mientras no esté configurado, las FE quedan en cola local.</p>
+    <label class="form-label" style="font-size:12px;">URL del backend Railway</label>
+    <input class="config-input" id="feBackendUrlInput" type="url" placeholder="https://tu-app.railway.app" value="${esc(cfg.backendUrl||'')}" style="margin-bottom:10px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div><label class="form-label" style="font-size:11px;">NIT del restaurante</label><input class="config-input" id="feNitInput" placeholder="900123456-7" value="${esc(cfg.nit||config.nit||'')}"></div>
+      <div><label class="form-label" style="font-size:11px;">Prefijo resolución</label><input class="config-input" id="fePrefijInput" placeholder="FE" value="${esc(cfg.prefijo||'FE')}"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div><label class="form-label" style="font-size:11px;">Nro. Resolución DIAN</label><input class="config-input" id="feResolucionInput" placeholder="18764000000001" value="${esc(cfg.resolucion||'')}"></div>
+      <div><label class="form-label" style="font-size:11px;">Fecha resolución</label><input class="config-input" id="feResolucionFechaInput" type="date" value="${esc(cfg.fechaResolucion||'')}"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div><label class="form-label" style="font-size:11px;">Rango desde</label><input class="config-input" id="feRangoDesdeInput" placeholder="1" value="${esc(cfg.rangoDesde||'1')}"></div>
+      <div><label class="form-label" style="font-size:11px;">Rango hasta</label><input class="config-input" id="feRangoHastaInput" placeholder="5000" value="${esc(cfg.rangoHasta||'5000')}"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div><label class="form-label" style="font-size:11px;">Ciudad</label><input class="config-input" id="feCiudadInput" placeholder="Bogotá" value="${esc(cfg.ciudad||'')}"></div>
+      <div><label class="form-label" style="font-size:11px;">Código DANE</label><input class="config-input" id="feCodigoCiudadInput" placeholder="11001" value="${esc(cfg.codigoCiudad||'')}"></div>
+    </div>
+    <button onclick="feGuardarConfigUI()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1565C0,#1976D2);color:white;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;">💾 Guardar configuración FE</button>
+    <button onclick="feTestConexion()" style="width:100%;padding:11px;background:transparent;color:#1565C0;border:2px solid #1565C0;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;">🔌 Probar conexión con backend</button>
+    ${cola.length>0?`<div style="background:rgba(255,152,0,0.1);border:1.5px solid rgba(255,152,0,0.4);border-radius:var(--r-sm);padding:10px 12px;">
+      <div style="font-size:12px;font-weight:700;color:#E65100;margin-bottom:4px;">⏳ Cola pendiente: ${cola.length} factura${cola.length!==1?'s':''}</div>
+      <div style="font-size:11px;color:var(--gris);margin-bottom:8px;">${cola.map(c=>'#'+c.numero).join(', ')}</div>
+      <button onclick="feProcesarCola().then(()=>{const i=document.getElementById('feConfigInner');if(i)i.innerHTML=feRenderConfigPanel();});" style="width:100%;padding:9px;background:#E65100;color:white;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🔄 Reintentar ahora</button>
+    </div>`:`<div style="background:rgba(46,125,50,0.1);border:1.5px solid rgba(46,125,50,0.3);border-radius:var(--r-sm);padding:8px 12px;font-size:12px;color:#2E7D32;font-weight:600;">✅ Sin facturas pendientes en cola</div>`}
+  </div>`;
+}
+
+function feGuardarConfigUI() {
+  const g = id => document.getElementById(id)?.value?.trim()||'';
+  feGuardarConfig({ backendUrl:g('feBackendUrlInput'), nit:g('feNitInput'), prefijo:g('fePrefijInput')||'FE', resolucion:g('feResolucionInput'), fechaResolucion:g('feResolucionFechaInput'), rangoDesde:g('feRangoDesdeInput')||'1', rangoHasta:g('feRangoHastaInput')||'5000', ciudad:g('feCiudadInput'), codigoCiudad:g('feCodigoCiudadInput') });
+  showToast('✅ Configuración FE guardada');
+  if (feGetCola().length>0 && feGetBackendUrl()) setTimeout(()=>feProcesarCola().then(()=>{const i=document.getElementById('feConfigInner');if(i)i.innerHTML=feRenderConfigPanel();}), 500);
+}
+
+async function feTestConexion() {
+  const url = feGetBackendUrl();
+  if (!url) { showToast('⚠️ Ingresa la URL del backend primero'); return; }
+  showToast('🔌 Probando conexión...');
+  try { const r = await fetch(url+'/ping', {signal:AbortSignal.timeout(8000)}); const d = await r.json(); showToast(d.ok?'✅ Backend conectado · '+(d.ambiente||'OK'):'⚠️ Backend respondió con error', 4000); }
+  catch(e) { showToast('❌ No se pudo conectar: '+e.message, 5000); }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MÓDULO CAJERO — COBROS, PAGOS COMBINADOS, RECIBOS PENDIENTES
+// ══════════════════════════════════════════════════════════════════════
+
+const COBROS_PENDIENTES_KEY = 'helechos_cobros_pendientes';
+
+function getCobros() {
+  try { const r = localStorage.getItem(COBROS_PENDIENTES_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; }
+}
+function setCobros(list) { try { localStorage.setItem(COBROS_PENDIENTES_KEY, JSON.stringify(list)); } catch(e) {} }
+
+// Mesero envía la orden a la cola de cobros
+function enviarAlCajero() {
+  if (carrito.length === 0) { showToast('⚠️ El carrito está vacío'); return; }
+  const ordenActiva = getOrdenActiva();
+  const subtotal = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  let descMonto = 0;
+  if (descuentoValor > 0) {
+    descMonto = descuentoTipo === 'pct' ? Math.round(subtotal * descuentoValor / 100) : Math.min(descuentoValor, subtotal);
+    descMonto = Math.min(descMonto, subtotal);
+  }
+  const total = subtotal - descMonto;
+  const recibo = {
+    id: 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    ts: Date.now(),
+    mesa: mesaNumero || (ordenActiva ? ordenActiva.mesa : '?'),
+    items: carrito.map(i => ({...i})),
+    subtotal, descMonto, descuentoTipo, descuentoValor, total,
+    tipoOrden: tipoOrden || 'mesa',
+    clienteNombre, clienteTelefono, clienteDireccion, observaciones,
+    pagoMetodoSugerido: pagoMetodo,
+    meseroCajero: usuarioActivo ? usuarioActivo.nombre : '',
+    esFacturaElectronica, feNombre, feNit, feCorreo,
+    estado: 'pendiente'
+  };
+  const cobros = getCobros();
+  cobros.push(recibo);
+  setCobros(cobros);
+
+  // Sincronizar a Firebase si disponible
+  if (window._FB && window._FB.db) {
+    try {
+      const { db, ref, set } = window._FB;
+      set(ref(db, 'helechos/cobros/' + recibo.id), recibo);
+    } catch(_) {}
+  }
+
+  actualizarBadgeCajero();
+  showToast('✅ Recibo enviado a caja — ' + fmt(total), 3500);
+  cerrarDrawer();
+}
+
+// Badge del cajero en tab o header
+function actualizarBadgeCajero() {
+  const pendientes = getCobros().filter(c => c.estado === 'pendiente').length;
+  const badge = document.getElementById('badgeCajero');
+  if (badge) {
+    badge.textContent = pendientes;
+    badge.style.display = pendientes > 0 ? 'flex' : 'none';
+  }
+  // También actualizar en panel de pedidos si el cajero lo tiene abierto
+  const countEl = document.getElementById('recibosPendientesCount');
+  if (countEl) {
+    const total = getCobros().filter(c => c.estado === 'pendiente').length;
+    countEl.textContent = total === 0 ? 'Sin recibos pendientes' : total + ' recibo' + (total > 1 ? 's' : '') + ' esperando cobro';
+  }
+}
+
+// Abrir panel de cobros pendientes (cajero/admin)
+function abrirRecibosPendientes() {
+  renderRecibosPendientes();
+  document.getElementById('modalRecibosCajero').classList.add('show');
+}
+
+function renderRecibosPendientes() {
+  const list = document.getElementById('recibosPendientesList');
+  if (!list) return;
+  const cobros = getCobros().filter(c => c.estado === 'pendiente');
+  const countEl = document.getElementById('recibosPendientesCount');
+  if (countEl) countEl.textContent = cobros.length === 0 ? 'Sin recibos pendientes' : cobros.length + ' recibo' + (cobros.length > 1 ? 's' : '') + ' esperando cobro';
+
+  if (cobros.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 16px;color:var(--gris);"><div style="font-size:40px;margin-bottom:10px;">✅</div><p style="font-size:14px;font-weight:600;">Sin cobros pendientes</p></div>';
+    return;
+  }
+  list.innerHTML = cobros.map(c => {
+    const hora = new Date(c.ts).toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+    const itemsPreview = c.items.slice(0,3).map(i => i.cantidad + '× ' + i.nombre).join(', ') + (c.items.length > 3 ? ' +' + (c.items.length-3) + ' más' : '');
+    return `<div class="recibo-card urgente" onclick="abrirCobroDesdeRecibo('${c.id}')">
+      <div class="recibo-header">
+        <span class="recibo-mesa">🍽️ ${esc(c.mesa)}</span>
+        <span class="recibo-total">${fmt(c.total)}</span>
+      </div>
+      <div class="recibo-meta">Enviado a las ${hora} · por ${esc(c.meseroCajero)}</div>
+      <div class="recibo-items-preview">${esc(itemsPreview)}</div>
+    </div>`;
+  }).join('');
+}
+
+// Abrir cobro de un recibo pendiente
+function abrirCobroDesdeRecibo(reciboId) {
+  const recibo = getCobros().find(c => c.id === reciboId);
+  if (!recibo) { showToast('⚠️ Recibo no encontrado'); return; }
+  cerrarModal('modalRecibosCajero');
+  abrirModalCobroConRecibo(recibo);
+}
+
+// Estado del modal de cobro
+let _cobroActual = null; // recibo desde cola cajero o null (cobro directo)
+let _pagosSeleccionados = {}; // { 'Efectivo': 15000, 'Nequi': 10000 }
+
+function abrirModalCobro() {
+  // Cobro directo desde admin/cajero en el carrito actual
+  if (carrito.length === 0) { showToast('⚠️ El carrito está vacío'); return; }
+  const subtotal = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  let descMonto = 0;
+  if (descuentoValor > 0) {
+    descMonto = descuentoTipo === 'pct' ? Math.round(subtotal * descuentoValor / 100) : Math.min(descuentoValor, subtotal);
+    descMonto = Math.min(descMonto, subtotal);
+  }
+  const total = subtotal - descMonto;
+  _cobroActual = null;
+  _pagosSeleccionados = {};
+  // Preseleccionar método si ya había uno
+  if (pagoMetodo) _pagosSeleccionados[pagoMetodo] = total;
+  renderModalCobro(total, subtotal, descMonto);
+  document.getElementById('modalCobro').classList.add('show');
+}
+
+function abrirModalCobroConRecibo(recibo) {
+  _cobroActual = recibo;
+  _pagosSeleccionados = {};
+  if (recibo.pagoMetodoSugerido) _pagosSeleccionados[recibo.pagoMetodoSugerido] = recibo.total;
+  renderModalCobro(recibo.total, recibo.subtotal, recibo.descMonto || 0);
+  document.getElementById('modalCobro').classList.add('show');
+}
+
+function renderModalCobro(total, subtotal, descMonto) {
+  // Obtener métodos de pago habilitados
+  let metodos = [];
+  try { const r = localStorage.getItem('helechos_metodos_pago'); if (r) metodos = JSON.parse(r).filter(m => m.habilitado !== false); } catch(_) {}
+  if (!metodos.length) metodos = [{label:'Efectivo',emoji:'💵'},{label:'Nequi',emoji:'📱'},{label:'Bancolombia',emoji:'🏦'},{label:'Tarjeta',emoji:'💳'},{label:'Daviplata',emoji:'🟠'}];
+
+  const totalPagado = Object.values(_pagosSeleccionados).reduce((s,v) => s + (Number(v)||0), 0);
+  const cambio = totalPagado - total;
+  const faltante = total - totalPagado;
+
+  const mesaLabel = _cobroActual ? _cobroActual.mesa : mesaNumero || '—';
+
+  const pagosHTML = metodos.map(m => {
+    const val = _pagosSeleccionados[m.label] !== undefined ? _pagosSeleccionados[m.label] : '';
+    const activo = _pagosSeleccionados[m.label] !== undefined;
+    return `<div class="pago-combinado-item ${activo ? 'activo' : ''}">
+      <span style="font-size:20px;">${m.emoji}</span>
+      <span class="pago-comb-label">${esc(m.label)}</span>
+      <input class="pago-comb-input" type="number" inputmode="numeric" min="0"
+        placeholder="0"
+        value="${val}"
+        oninput="setCobPago('${esc(m.label)}', this.value, ${total})"
+        onfocus="if(!_pagosSeleccionados['${esc(m.label)}']) { _pagosSeleccionados['${esc(m.label)}']=0; }"
+      >
+    </div>`;
+  }).join('');
+
+  let cambioHTML = '';
+  if (totalPagado > 0) {
+    if (cambio > 0) {
+      cambioHTML = `<div class="cambio-box"><span class="cambio-label">💵 Cambio / Vuelto</span><span class="cambio-monto">${fmt(cambio)}</span></div>`;
+    } else if (faltante > 0) {
+      cambioHTML = `<div class="faltante-box"><span class="faltante-label">⚠️ Falta por pagar</span><span class="faltante-monto">${fmt(faltante)}</span></div>`;
+    } else {
+      cambioHTML = `<div class="cambio-box" style="background:linear-gradient(135deg,#1565C0,#1976D2);"><span class="cambio-label">✅ Pago exacto</span><span class="cambio-monto" style="font-size:18px;">¡Perfecto!</span></div>`;
+    }
+  }
+
+  const pagoOk = totalPagado >= total;
+  const btnLabel = _cobroActual ? '✅ Cobrar y finalizar' : '✅ Cobrar y generar factura';
+
+  document.getElementById('modalCobroContenido').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="font-size:18px;font-weight:900;color:var(--negro);margin:0;">💰 Cobro — ${esc(mesaLabel)}</h3>
+      <button onclick="cerrarModal('modalCobro')" style="border:none;background:var(--gris-cl);color:var(--gris-osc);border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- Resumen total -->
+    <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.2);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;">
+      ${descMonto > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--gris-osc);margin-bottom:4px;"><span>Subtotal</span><span>${fmt(subtotal)}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--rappi);margin-bottom:6px;"><span>Descuento</span><span>-${fmt(descMonto)}</span></div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:14px;font-weight:700;color:var(--gris-osc);">TOTAL A COBRAR</span>
+        <span style="font-size:28px;font-weight:900;color:var(--rappi);font-family:var(--font-num);">${fmt(total)}</span>
+      </div>
+    </div>
+
+    <!-- Formas de pago -->
+    <div style="font-size:12px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
+      Ingresa el monto por cada forma de pago
+    </div>
+    <div class="pago-combinado-list" id="cobPagosList">${pagosHTML}</div>
+
+    <!-- Resumen del pago -->
+    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--negro);margin-top:10px;padding:10px 0;border-top:1.5px solid var(--borde);">
+      <span>Total recibido</span>
+      <span id="cobTotalRecibido" style="font-family:var(--font-num);color:${pagoOk ? 'var(--verde-ok)' : 'var(--gris)'};">${fmt(totalPagado)}</span>
+    </div>
+
+    <div id="cobCambioBox">${cambioHTML}</div>
+
+    <!-- Botón cobrar -->
+    <button id="btnCobrarFinal" class="btn-cobrar-final" ${pagoOk ? '' : 'disabled'} onclick="ejecutarCobro(${total})">
+      ${btnLabel}
+    </button>
+  `;
+}
+
+function setCobPago(metodo, valor, total) {
+  const num = Math.max(0, parseFloat(valor) || 0);
+  if (num === 0) {
+    delete _pagosSeleccionados[metodo];
+  } else {
+    _pagosSeleccionados[metodo] = num;
+  }
+  // Re-render solo las partes dinámicas
+  const totalPagado = Object.values(_pagosSeleccionados).reduce((s,v) => s + (Number(v)||0), 0);
+  const cambio = totalPagado - total;
+  const faltante = total - totalPagado;
+  const pagoOk = totalPagado >= total;
+
+  // Actualizar colores de items
+  document.querySelectorAll('.pago-combinado-item').forEach(el => {
+    const inp = el.querySelector('.pago-comb-input');
+    const lbl = el.querySelector('.pago-comb-label');
+    if (!inp || !lbl) return;
+    const key = lbl.textContent.trim();
+    const hasVal = _pagosSeleccionados[key] && _pagosSeleccionados[key] > 0;
+    el.classList.toggle('activo', hasVal);
+  });
+
+  const totalRecibidoEl = document.getElementById('cobTotalRecibido');
+  if (totalRecibidoEl) {
+    totalRecibidoEl.textContent = fmt(totalPagado);
+    totalRecibidoEl.style.color = pagoOk ? 'var(--verde-ok)' : 'var(--gris)';
+  }
+
+  const cambioBox = document.getElementById('cobCambioBox');
+  if (cambioBox) {
+    if (totalPagado > 0) {
+      if (cambio > 0) {
+        cambioBox.innerHTML = `<div class="cambio-box"><span class="cambio-label">💵 Cambio / Vuelto</span><span class="cambio-monto">${fmt(cambio)}</span></div>`;
+      } else if (faltante > 0) {
+        cambioBox.innerHTML = `<div class="faltante-box"><span class="faltante-label">⚠️ Falta por pagar</span><span class="faltante-monto">${fmt(faltante)}</span></div>`;
+      } else {
+        cambioBox.innerHTML = `<div class="cambio-box" style="background:linear-gradient(135deg,#1565C0,#1976D2);"><span class="cambio-label">✅ Pago exacto</span><span class="cambio-monto" style="font-size:18px;">¡Perfecto!</span></div>`;
+      }
+    } else {
+      cambioBox.innerHTML = '';
+    }
+  }
+
+  const btnFinal = document.getElementById('btnCobrarFinal');
+  if (btnFinal) {
+    btnFinal.disabled = !pagoOk;
+  }
+}
+
+async function ejecutarCobro(total) {
+  const totalPagado = Object.values(_pagosSeleccionados).reduce((s,v) => s + (Number(v)||0), 0);
+  if (totalPagado < total) { showToast('⚠️ El monto recibido es insuficiente'); return; }
+
+  const cambio = totalPagado - total;
+
+  // Construir string de método de pago para factura
+  const pagosEntries = Object.entries(_pagosSeleccionados).filter(([,v]) => v > 0);
+  const pagoLabel = pagosEntries.length === 1
+    ? pagosEntries[0][0]
+    : pagosEntries.map(([k,v]) => k + ' ' + fmt(v)).join(' + ');
+
+  cerrarModal('modalCobro');
+
+  if (_cobroActual) {
+    // Cobro de recibo pendiente de cajero
+    // Restaurar carrito temporalmente desde el recibo para generar factura
+    const reciboId = _cobroActual.id;
+    const recibo = _cobroActual;
+
+    // Guardar estado del carrito actual
+    const savedCarrito = [...carrito];
+    const savedMesa = mesaNumero;
+    const savedPagoMetodo = pagoMetodo;
+    const savedDesc = { descuentoValor, descuentoTipo };
+    const savedCliente = { clienteNombre, clienteTelefono, clienteDireccion, observaciones };
+    const savedEsFE = esFacturaElectronica;
+    const savedFeData = { feNombre, feNit, feCorreo };
+
+    // Cargar datos del recibo
+    carrito = recibo.items.map(i => ({...i}));
+    mesaNumero = recibo.mesa;
+    pagoMetodo = pagoLabel;
+    descuentoValor = recibo.descuentoValor || 0;
+    descuentoTipo = recibo.descuentoTipo || 'pct';
+    clienteNombre = recibo.clienteNombre || '';
+    clienteTelefono = recibo.clienteTelefono || '';
+    clienteDireccion = recibo.clienteDireccion || '';
+    observaciones = recibo.observaciones || '';
+    esFacturaElectronica = recibo.esFacturaElectronica || false;
+    feNombre = recibo.feNombre || '';
+    feNit = recibo.feNit || '';
+    feCorreo = recibo.feCorreo || '';
+
+    // Generar factura
+    const factura = await finalizarFactura();
+
+    // Guardar info de pago combinado y cambio en la factura del historial
+    if (factura) {
+      factura.pagos = pagosEntries.map(([label, monto]) => ({ label, monto }));
+      factura.totalRecibido = totalPagado;
+      factura.cambio = cambio;
+      factura.pago = pagoLabel;
+      // Actualizar en historial
+      const idx = historial.findIndex(x => x.numero === factura.numero);
+      if (idx >= 0) historial[idx] = factura;
+      localStorage.setItem('helechos_historial', JSON.stringify(historial));
+    }
+
+    // Marcar recibo como cobrado
+    const cobros = getCobros();
+    const ci = cobros.findIndex(c => c.id === reciboId);
+    if (ci >= 0) cobros[ci].estado = 'cobrado';
+    setCobros(cobros);
+    if (window._FB && window._FB.db) {
+      try { const {db,ref,set} = window._FB; set(ref(db,'helechos/cobros/'+reciboId+'/estado'), 'cobrado'); } catch(_) {}
+    }
+    actualizarBadgeCajero();
+
+    // Restaurar carrito original
+    carrito = savedCarrito;
+    mesaNumero = savedMesa;
+    pagoMetodo = savedPagoMetodo;
+    descuentoValor = savedDesc.descuentoValor;
+    descuentoTipo = savedDesc.descuentoTipo;
+    clienteNombre = savedCliente.clienteNombre;
+    clienteTelefono = savedCliente.clienteTelefono;
+    clienteDireccion = savedCliente.clienteDireccion;
+    observaciones = savedCliente.observaciones;
+    esFacturaElectronica = savedEsFE;
+    feNombre = savedFeData.feNombre;
+    feNit = savedFeData.feNit;
+    feCorreo = savedFeData.feCorreo;
+
+    // Mostrar resumen de cobro con cambio
+    mostrarResumenCobro(factura, pagosEntries, totalPagado, cambio);
+    renderRecibosPendientes();
+
+  } else {
+    // Cobro directo (admin en su propio carrito)
+    pagoMetodo = pagoLabel;
+    const factura = await finalizarFactura();
+    if (factura) {
+      factura.pagos = pagosEntries.map(([label, monto]) => ({ label, monto }));
+      factura.totalRecibido = totalPagado;
+      factura.cambio = cambio;
+      factura.pago = pagoLabel;
+      const idx = historial.findIndex(x => x.numero === factura.numero);
+      if (idx >= 0) historial[idx] = factura;
+      localStorage.setItem('helechos_historial', JSON.stringify(historial));
+    }
+    mostrarResumenCobro(factura, pagosEntries, totalPagado, cambio);
+  }
+}
+
+function mostrarResumenCobro(factura, pagosEntries, totalRecibido, cambio) {
+  const numFact = factura ? factura.numero : '------';
+  const totalFact = factura ? factura.total : 0;
+
+  document.getElementById('modalCobroContenido').innerHTML = `
+    <div style="text-align:center;padding:10px 0 16px;">
+      <div style="font-size:52px;margin-bottom:8px;">✅</div>
+      <div style="font-size:20px;font-weight:900;color:var(--negro);margin-bottom:4px;">¡Cobro exitoso!</div>
+      <div style="font-size:13px;color:var(--gris);">Factura #${numFact}</div>
+    </div>
+
+    <!-- Pagos recibidos -->
+    <div style="background:var(--fondo);border:1.5px solid var(--borde);border-radius:var(--r);padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Formas de pago</div>
+      ${pagosEntries.map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;padding:4px 0;border-bottom:1px solid var(--gris-cl);"><span>${esc(k)}</span><span style="font-family:var(--font-num);">${fmt(v)}</span></div>`).join('')}
+      <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--gris);margin-top:8px;"><span>Total recibido</span><span style="font-family:var(--font-num);">${fmt(totalRecibido)}</span></div>
+    </div>
+
+    ${cambio > 0 ? `<div class="cambio-box" style="margin-bottom:12px;"><span class="cambio-label">💵 Cambio para el cliente</span><span class="cambio-monto">${fmt(cambio)}</span></div>` : `<div class="cambio-box" style="background:linear-gradient(135deg,#1565C0,#1976D2);margin-bottom:12px;"><span class="cambio-label">✅ Pago exacto</span><span class="cambio-monto" style="font-size:16px;">Sin vuelto</span></div>`}
+
+    <button onclick="cerrarModal('modalCobro');if(typeof abrirModalImprimir==='function')abrirModalImprimir();" style="width:100%;padding:14px;background:var(--rappi);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;">
+      🖨️ Imprimir factura
+    </button>
+    <button onclick="cerrarModal('modalCobro');" style="width:100%;padding:12px;background:var(--fondo);color:var(--negro);border:1.5px solid var(--borde);border-radius:var(--r);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;">
+      Cerrar
+    </button>
+  `;
+  document.getElementById('modalCobro').classList.add('show');
+}
+
+// Desglose de pagos integrado directamente en generarTextoDesdeFactura
+
+
+
+// Agregar botón de recibos pendientes al header del cajero
+function renderBadgeCajeroHeader() {
+  const esAdminOrCajero = usuarioActivo && (usuarioActivo.rol === 'cajero' || usuarioActivo.rol === 'admin' || usuarioActivo.rol === 'master');
+  if (!esAdminOrCajero) return;
+  // Actualizar badge
+  actualizarBadgeCajero();
+}
+
+// Inicializar badge al cargar
+window.addEventListener('firebase-ready', () => {
+  setTimeout(actualizarBadgeCajero, 500);
+});
+
+// Sincronizar cobros desde Firebase
+function fbSyncCobros() {
+  if (!window._FB || !window._FB.db) return;
+  const { db, ref, onValue } = window._FB;
+  onValue(ref(db, 'helechos/cobros'), (snap) => {
+    const data = snap.val();
+    if (!data) return;
+    const lista = Object.values(data);
+    // Merge con cobros locales (no sobreescribir cobrados localmente)
+    const locales = getCobros();
+    const merged = lista.map(remote => {
+      const local = locales.find(l => l.id === remote.id);
+      // Si local ya está cobrado, mantener estado local
+      if (local && local.estado === 'cobrado') return local;
+      return remote;
+    });
+    // Agregar cobros locales que no estén en Firebase
+    locales.forEach(l => { if (!merged.find(m => m.id === l.id)) merged.push(l); });
+    setCobros(merged);
+    actualizarBadgeCajero();
+    if (document.getElementById('modalRecibosCajero')?.classList.contains('show')) {
+      renderRecibosPendientes();
+    }
+  });
+}
+
+// Llamar sync en init
+if (typeof fbSyncCobros !== 'undefined') {
+  window.addEventListener('firebase-ready', () => {
+    setTimeout(fbSyncCobros, 1000);
+  });
+}
+
 </script>
 </body>
 </html>
