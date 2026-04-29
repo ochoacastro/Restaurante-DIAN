@@ -6756,32 +6756,9 @@ function renderCarrito() {
       ${(()=>{ const resumen = {}; carrito.forEach(item => { const tasa = (item.iva !== undefined && item.iva !== null) ? Number(item.iva) : 8; if (tasa === 0) return; const precioTotal = item.precio * item.cantidad; const base = Math.round(precioTotal / (1 + tasa / 100)); const imp = precioTotal - base; if (!resumen[tasa]) resumen[tasa] = 0; resumen[tasa] += imp; }); return Object.entries(resumen).filter(([,v])=>v>0).map(([tasa,imp])=>`<div class="total-row" style="font-size:12px;opacity:0.75;"><span>${Number(tasa)===8?'Impoconsumo 8%':'IVA '+tasa+'%'} (incl.)</span><span class="val">${fmt(imp)}</span></div>`).join(''); })()}
       <div class="total-row grande" style="color:${uc};"><span>TOTAL</span><span class="val" style="color:${uc};">${fmt(total)}</span></div>
     </div>
-    ${(()=>{
-      // Verificar si TODOS los ítems están marcados como entregados
-      const todosEntregados = carrito.every(item => {
-        if (!Array.isArray(item.servido)) return false;
-        return item.servido.length >= item.cantidad && item.servido.slice(0, item.cantidad).every(Boolean);
-      });
-      const esMesero = usuarioActivo?.rol === 'mesero';
-      const bloqueado = esMesero && !todosEntregados;
-
-      if (bloqueado) {
-        const totalItems = carrito.reduce((s, i) => s + i.cantidad, 0);
-        const entregados = carrito.reduce((s, i) => s + (Array.isArray(i.servido) ? i.servido.slice(0, i.cantidad).filter(Boolean).length : 0), 0);
-        return `
-          <button disabled style="width:100%;padding:18px;margin-top:8px;background:#555;color:#999;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:10px;opacity:0.6;">
-            🔒 Pagar Cuenta
-          </button>
-          <div style="text-align:center;font-size:12px;font-weight:700;color:#FF6B00;margin-top:8px;padding:8px 14px;background:rgba(255,107,0,0.1);border:1.5px solid rgba(255,107,0,0.3);border-radius:10px;">
-            ⚠️ Marca todos los platos como entregados (${entregados}/${totalItems}) para habilitar el cobro
-          </div>`;
-      } else {
-        return `
-          <button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
-            💳 Pagar Cuenta
-          </button>`;
-      }
-    })()}
+    <button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
+      💳 Pagar Cuenta
+    </button>
     <div style="height:24px"></div>`;
 }
 
@@ -7535,7 +7512,7 @@ function renderHistorial() {
   const esMeseroHist = usuarioActivo?.rol === 'mesero';
   const nombreCajero = usuarioActivo?.nombre || '';
   const historialVisible = esMeseroHist
-    ? historial.filter(f => f.cajero === nombreCajero)
+    ? historial.filter(f => f.cajero === nombreCajero || f.mesero === nombreCajero)
     : historial;
 
   if (historialVisible.length === 0) {
@@ -7591,7 +7568,7 @@ function renderHistorial() {
             <div class="hist-num">Factura #${f.numero}</div>
             <div class="hist-fecha">${f.fecha} ${f.hora}</div>
           </div>
-          ${!esCajero && f.cajero ? `<div style="font-size:11px;color:var(--gris);margin-bottom:3px;">👤 ${esc(f.cajero)}</div>` : ''}
+          ${!esCajero && f.cajero ? `<div style="font-size:11px;color:var(--gris);margin-bottom:3px;">👤 ${esc(f.cajero)}${esMeseroHist && f.cajero !== nombreCajero ? ' <span style="color:#1976D2;font-weight:700;">(cobró)</span>' : ''}</div>` : ''}
           <div class="hist-items-list">${resumen.length > 60 ? resumen.substring(0, 60) + '…' : resumen}</div>
           <div class="hist-footer">
             <div class="hist-total">${fmt(f.total)}</div>
@@ -7697,7 +7674,7 @@ function generarTextoResumenFiltrado(paraBluetooth) {
   var esCajero = usuarioActivo && usuarioActivo.rol === 'cajero';
   var esMeseroResumen = usuarioActivo && usuarioActivo.rol === 'mesero';
   var nombreCajero = (usuarioActivo && usuarioActivo.nombre) || '';
-  var base = esMeseroResumen ? historial.filter(function(f){ return f.cajero === nombreCajero; }) : historial.slice();
+  var base = esMeseroResumen ? historial.filter(function(f){ return f.cajero === nombreCajero || f.mesero === nombreCajero; }) : historial.slice();
 
   if (_histFiltros.pago !== 'todos') base = base.filter(function(f){ return f.pago === _histFiltros.pago; });
   if (_histFiltros.tipo === 'fe')             base = base.filter(function(f){ return f.esFacturaElectronica; });
@@ -11496,35 +11473,6 @@ function enviarAlCajero() {
   actualizarBadgeCajero();
   showToast('✅ Recibo enviado a caja — ' + fmt(total), 3500);
   cerrarDrawer();
-
-  // Si es mesero: cerrar la orden enviada y redirigir al home para tomar nuevas órdenes
-  if (usuarioActivo?.rol === 'mesero') {
-    const idxOActiva = ordenes.findIndex(o => o.id === ordenActiva?.id);
-    if (idxOActiva >= 0) {
-      ordenes.splice(idxOActiva, 1);
-      guardarOrdenes();
-    }
-    // Resetear estado del carrito local
-    carrito = [];
-    mesaNumero = '';
-    tipoOrden = 'mesa';
-    pagoMetodo = 'Efectivo';
-    descuentoValor = 0;
-    descuentoTipo = 'pct';
-    clienteNombre = '';
-    clienteTelefono = '';
-    clienteDireccion = '';
-    observaciones = '';
-    // Activar otra orden propia si existe, o limpiar selección
-    const miOrdenSiguiente = ordenes.find(o => o.usuarioId === usuarioActivo.id);
-    if (miOrdenSiguiente) {
-      setOrdenActiva(miOrdenSiguiente.id);
-    } else {
-      setOrdenActiva(null);
-    }
-    // Volver al inicio del perfil del mesero
-    setTimeout(() => showTab('home'), 350);
-  }
 }
 
 // Badge del cajero en tab o header
@@ -11811,6 +11759,8 @@ async function ejecutarCobro(total) {
       factura.totalRecibido = totalPagado;
       factura.cambio = cambio;
       factura.pago = pagoLabel;
+      // Guardar el mesero que tomó la orden para que aparezca en su historial
+      if (recibo.meseroCajero) factura.mesero = recibo.meseroCajero;
       // Actualizar en historial
       const idx = historial.findIndex(x => x.numero === factura.numero);
       if (idx >= 0) historial[idx] = factura;
