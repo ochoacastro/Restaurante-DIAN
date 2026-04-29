@@ -2202,8 +2202,6 @@
   body.rol-cajero #btnConfigHome { display: none !important; }
   body.rol-cajero #btnRowAdminHome { display: none !important; }
   body.rol-cajero #btnHistorialHome { display: flex !important; }
-  body.rol-cajero #btnPedidosHome { display: none !important; }
-  body.rol-cajero #sidebarBtnPedidos { display: none !important; }
 
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin-icon { display: inline-block; animation: spin 0.9s linear infinite; }
@@ -2508,7 +2506,7 @@
   body.dark .pago-combinado-item { background: #252525; border-color: #333; }
   body.dark .pago-combinado-item.activo { border-color: var(--rappi); background: rgba(255,68,26,0.1); }
   .pago-comb-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--negro); }
-  .pago-comb-input { width: 110px; padding: 8px 10px; border: 1.5px solid var(--borde); border-radius: 10px; font-size: 14px; font-family: var(--font-num); font-weight: 700; text-align: right; background: var(--blanco); color: var(--negro); outline: none; }
+  .pago-comb-input { width: 130px; padding: 8px 10px; border: 1.5px solid var(--borde); border-radius: 10px; font-size: 14px; font-family: var(--font-num); font-weight: 700; text-align: right; background: var(--blanco); color: var(--negro); outline: none; }
   .pago-comb-input:focus { border-color: var(--rappi); }
   body.dark .pago-comb-input { background: #1A1A1A; border-color: #444; color: #F0F0F0; }
   .cambio-box { background: linear-gradient(135deg, #1b5e20, #2e7d32); border-radius: var(--r); padding: 16px 18px; margin-top: 10px; color: #fff; display: flex; align-items: center; justify-content: space-between; }
@@ -2835,7 +2833,7 @@
     <!-- Saludo al usuario -->
     <div id="homeGreeting" class="home-greeting" style="font-size:20px;font-weight:900;color:var(--negro);letter-spacing:-0.4px;margin-bottom:2px;padding:0 4px;"></div>
     <!-- Órdenes pendientes — primero y destacado -->
-    <button id="btnPedidosHome" onclick="showTab('pedidos')" style="
+    <button onclick="showTab('pedidos')" style="
       width:100%;padding:18px 20px;
       background:linear-gradient(135deg,#7B1FA2,#9C27B0);
       color:#fff;border:none;border-radius:16px;
@@ -3631,7 +3629,7 @@
         <span id="sidebarBadgeCarrito" style="display:none;background:var(--rappi);color:white;border-radius:50%;min-width:20px;height:20px;font-size:11px;font-weight:800;align-items:center;justify-content:center;margin-left:auto;padding:0 4px;">0</span>
       </button>
 
-      <button id="sidebarBtnPedidos" class="sidebar-item" onclick="cerrarSidebar();showTab('pedidos')">
+      <button class="sidebar-item" onclick="cerrarSidebar();showTab('pedidos')">
         <span class="sidebar-item-icon">📑</span>Pedidos
         <span id="sidebarBadgePedidos" style="display:none;background:#7B1FA2;color:white;border-radius:50%;min-width:20px;height:20px;font-size:11px;font-weight:800;align-items:center;justify-content:center;margin-left:auto;padding:0 4px;">0</span>
       </button>
@@ -5682,8 +5680,7 @@ function abrirDrawer(key) {
   // Mostrar botón hamburguesa solo en el carrito, con badge de pedidos
   const btnNuevaOrden = document.getElementById('drawerNuevaOrdenBtn');
   if (btnNuevaOrden) {
-    const esCajeroHamb = usuarioActivo?.rol === 'cajero';
-    btnNuevaOrden.style.display = (!esCajeroHamb && (key === 'carrito' || key === 'pago')) ? 'flex' : 'none';
+    btnNuevaOrden.style.display = (key === 'carrito' || key === 'pago') ? 'flex' : 'none';
     // Badge de conteo sobre el ☰
     const esAdminB = usuarioActivo?.rol === 'admin' || usuarioActivo?.rol === 'master';
     const miIdB    = usuarioActivo?.id ?? null;
@@ -6759,9 +6756,32 @@ function renderCarrito() {
       ${(()=>{ const resumen = {}; carrito.forEach(item => { const tasa = (item.iva !== undefined && item.iva !== null) ? Number(item.iva) : 8; if (tasa === 0) return; const precioTotal = item.precio * item.cantidad; const base = Math.round(precioTotal / (1 + tasa / 100)); const imp = precioTotal - base; if (!resumen[tasa]) resumen[tasa] = 0; resumen[tasa] += imp; }); return Object.entries(resumen).filter(([,v])=>v>0).map(([tasa,imp])=>`<div class="total-row" style="font-size:12px;opacity:0.75;"><span>${Number(tasa)===8?'Impoconsumo 8%':'IVA '+tasa+'%'} (incl.)</span><span class="val">${fmt(imp)}</span></div>`).join(''); })()}
       <div class="total-row grande" style="color:${uc};"><span>TOTAL</span><span class="val" style="color:${uc};">${fmt(total)}</span></div>
     </div>
-    <button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
-      💳 Pagar Cuenta
-    </button>
+    ${(()=>{
+      // Verificar si TODOS los ítems están marcados como entregados
+      const todosEntregados = carrito.every(item => {
+        if (!Array.isArray(item.servido)) return false;
+        return item.servido.length >= item.cantidad && item.servido.slice(0, item.cantidad).every(Boolean);
+      });
+      const esMesero = usuarioActivo?.rol === 'mesero';
+      const bloqueado = esMesero && !todosEntregados;
+
+      if (bloqueado) {
+        const totalItems = carrito.reduce((s, i) => s + i.cantidad, 0);
+        const entregados = carrito.reduce((s, i) => s + (Array.isArray(i.servido) ? i.servido.slice(0, i.cantidad).filter(Boolean).length : 0), 0);
+        return `
+          <button disabled style="width:100%;padding:18px;margin-top:8px;background:#555;color:#999;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:10px;opacity:0.6;">
+            🔒 Pagar Cuenta
+          </button>
+          <div style="text-align:center;font-size:12px;font-weight:700;color:#FF6B00;margin-top:8px;padding:8px 14px;background:rgba(255,107,0,0.1);border:1.5px solid rgba(255,107,0,0.3);border-radius:10px;">
+            ⚠️ Marca todos los platos como entregados (${entregados}/${totalItems}) para habilitar el cobro
+          </div>`;
+      } else {
+        return `
+          <button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
+            💳 Pagar Cuenta
+          </button>`;
+      }
+    })()}
     <div style="height:24px"></div>`;
 }
 
@@ -11476,6 +11496,35 @@ function enviarAlCajero() {
   actualizarBadgeCajero();
   showToast('✅ Recibo enviado a caja — ' + fmt(total), 3500);
   cerrarDrawer();
+
+  // Si es mesero: cerrar la orden enviada y redirigir al home para tomar nuevas órdenes
+  if (usuarioActivo?.rol === 'mesero') {
+    const idxOActiva = ordenes.findIndex(o => o.id === ordenActiva?.id);
+    if (idxOActiva >= 0) {
+      ordenes.splice(idxOActiva, 1);
+      guardarOrdenes();
+    }
+    // Resetear estado del carrito local
+    carrito = [];
+    mesaNumero = '';
+    tipoOrden = 'mesa';
+    pagoMetodo = 'Efectivo';
+    descuentoValor = 0;
+    descuentoTipo = 'pct';
+    clienteNombre = '';
+    clienteTelefono = '';
+    clienteDireccion = '';
+    observaciones = '';
+    // Activar otra orden propia si existe, o limpiar selección
+    const miOrdenSiguiente = ordenes.find(o => o.usuarioId === usuarioActivo.id);
+    if (miOrdenSiguiente) {
+      setOrdenActiva(miOrdenSiguiente.id);
+    } else {
+      setOrdenActiva(null);
+    }
+    // Volver al inicio del perfil del mesero
+    setTimeout(() => showTab('home'), 350);
+  }
 }
 
 // Badge del cajero en tab o header
@@ -11564,9 +11613,13 @@ function abrirModalCobroConRecibo(recibo) {
 }
 
 function renderModalCobro(total, subtotal, descMonto) {
-  // Obtener métodos de pago habilitados
+  // Fix 1: usar cfgGetPayments() — misma fuente que configura el admin
   let metodos = [];
-  try { const r = localStorage.getItem('helechos_metodos_pago'); if (r) metodos = JSON.parse(r).filter(m => m.habilitado !== false); } catch(_) {}
+  try {
+    const all = cfgGetPayments ? cfgGetPayments() : [];
+    const esDom = (_cobroActual ? _cobroActual.tipoOrden : tipoOrden) === 'domicilio';
+    metodos = all.filter(m => esDom ? m.visibleDom !== false : m.visibleRest !== false);
+  } catch(_) {}
   if (!metodos.length) metodos = [{label:'Efectivo',emoji:'💵'},{label:'Nequi',emoji:'📱'},{label:'Bancolombia',emoji:'🏦'},{label:'Tarjeta',emoji:'💳'},{label:'Daviplata',emoji:'🟠'}];
 
   const totalPagado = Object.values(_pagosSeleccionados).reduce((s,v) => s + (Number(v)||0), 0);
@@ -11575,17 +11628,19 @@ function renderModalCobro(total, subtotal, descMonto) {
 
   const mesaLabel = _cobroActual ? _cobroActual.mesa : mesaNumero || '—';
 
+  // Fix 2 & 3: input tipo text con formato de miles, valor empieza vacío
   const pagosHTML = metodos.map(m => {
-    const val = _pagosSeleccionados[m.label] !== undefined ? _pagosSeleccionados[m.label] : '';
-    const activo = _pagosSeleccionados[m.label] !== undefined;
+    const numVal = _pagosSeleccionados[m.label] || 0;
+    const displayVal = numVal > 0 ? numVal.toLocaleString('es-CO') : '';
+    const activo = numVal > 0;
     return `<div class="pago-combinado-item ${activo ? 'activo' : ''}">
       <span style="font-size:20px;">${m.emoji}</span>
       <span class="pago-comb-label">${esc(m.label)}</span>
-      <input class="pago-comb-input" type="number" inputmode="numeric" min="0"
+      <input class="pago-comb-input" type="text" inputmode="numeric"
         placeholder="0"
-        value="${val}"
-        oninput="setCobPago('${esc(m.label)}', this.value, ${total})"
-        onfocus="if(!_pagosSeleccionados['${esc(m.label)}']) { _pagosSeleccionados['${esc(m.label)}']=0; }"
+        value="${displayVal}"
+        oninput="formatCobInput(this, '${esc(m.label)}', ${total})"
+        onfocus="this.select()"
       >
     </div>`;
   }).join('');
@@ -11638,6 +11693,19 @@ function renderModalCobro(total, subtotal, descMonto) {
       ${btnLabel}
     </button>
   `;
+}
+
+// Formatea el input de cobro con puntos de miles mientras se escribe
+function formatCobInput(input, metodo, total) {
+  // Extraer solo dígitos
+  const raw = input.value.replace(/\D/g, '');
+  const num = parseInt(raw, 10) || 0;
+  // Mostrar con formato de miles
+  const formatted = num > 0 ? num.toLocaleString('es-CO') : '';
+  // Guardar posición del cursor antes de cambiar value
+  input.value = formatted;
+  // Delegar a setCobPago con el número limpio
+  setCobPago(metodo, num, total);
 }
 
 function setCobPago(metodo, valor, total) {
