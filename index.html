@@ -2195,11 +2195,13 @@
   /* Mesero: mostrar historial */
   body.rol-mesero #btnHistorialHome { display: flex !important; }
 
-  /* Cajero: ocultar tabs de menú/config/stats, mostrar panel cobros */
+  /* Cajero: ocultar tab menú, config y stats; mostrar historial y cobros */
   body.rol-cajero .tab-config,
-  body.rol-cajero .tab-stats { display: none !important; }
+  body.rol-cajero .tab-stats,
+  body.rol-cajero .tab-menu { display: none !important; }
   body.rol-cajero #btnConfigHome { display: none !important; }
   body.rol-cajero #btnRowAdminHome { display: none !important; }
+  body.rol-cajero #btnHistorialHome { display: flex !important; }
 
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin-icon { display: inline-block; animation: spin 0.9s linear infinite; }
@@ -4933,6 +4935,8 @@ function cerrarInicioSheet() {
 }
 
 function activarNavCompleto() {
+  // El cajero nunca usa el nav de órdenes
+  if (usuarioActivo?.rol === 'cajero') return;
   // Solo mostrar nav completo si el usuario tiene órdenes propias (o es admin/master)
   const esAdmin = usuarioActivo?.rol === 'admin' || usuarioActivo?.rol === 'master';
   const miId = usuarioActivo?.id ?? null;
@@ -5624,6 +5628,10 @@ let _drawerActual = null;
 function abrirDrawer(key) {
   if (!DRAWER_TITULOS[key]) return;
 
+  // Cajero no puede acceder a editmenu, config ni stats
+  const esCajeroDrawer = usuarioActivo?.rol === 'cajero';
+  if (esCajeroDrawer && (key === 'editmenu' || key === 'config' || key === 'stats')) return;
+
   // Fijar el drawer activo ANTES de renderizar para que el contenido pueda leerlo
   _drawerActual = key;
 
@@ -5835,6 +5843,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── TABS ──────────────────────────────────────────────────────────────
 function showTab(tab, forzar) {
+  // Cajero no puede ir al menú (no toma pedidos)
+  if (tab === 'menu' && usuarioActivo?.rol === 'cajero') return;
+
   // Ocultar todos los panels
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   const homePanel = document.getElementById('panel-home');
@@ -5862,22 +5873,21 @@ function showTab(tab, forzar) {
     if (panelEl) panelEl.classList.add('active');
   }
 
-  // Mostrar ¡Empecemos! solo en home y solo si el usuario NO tiene órdenes propias
+  // Mostrar ¡Empecemos! solo en home, solo si NO es cajero, y solo si el usuario NO tiene órdenes propias
   const homeBar = document.getElementById('bottomBarHome');
   const fullBar  = document.getElementById('bottomBar');
+  const esCajeroNav = usuarioActivo?.rol === 'cajero';
   if (homeBar) {
-    if (tab !== 'home') {
+    if (tab !== 'home' || esCajeroNav) {
       homeBar.style.display = 'none';
     } else {
       const _miId    = usuarioActivo?.id ?? null;
       const _esAdminHome = usuarioActivo?.rol === 'admin' || usuarioActivo?.rol === 'master';
       const _tieneOrdenes = _esAdminHome ? ordenes.length > 0 : ordenes.some(o => o.usuarioId === _miId);
       if (_tieneOrdenes) {
-        // Ya hay órdenes — mostrar nav completo, ocultar empecemos
         homeBar.style.display = 'none';
         if (fullBar) fullBar.style.display = 'flex';
       } else {
-        // Sin órdenes propias — mostrar empecemos, ocultar nav completo
         homeBar.style.display = 'flex';
         if (fullBar) fullBar.style.display = 'none';
       }
@@ -6414,13 +6424,18 @@ function actualizarBadge() {
   // Sincronizar visibilidad del botón Empecemos con las órdenes actuales
   const _homePanel = document.getElementById('panel-home');
   if (_homePanel && _homePanel.classList.contains('active')) {
+    const _esCajeroSync = usuarioActivo?.rol === 'cajero';
     const _esAdmin2 = usuarioActivo?.rol === 'admin' || usuarioActivo?.rol === 'master';
     const _miId2    = usuarioActivo?.id ?? null;
     const _tiene2   = _esAdmin2 ? ordenes.length > 0 : ordenes.some(o => o.usuarioId === _miId2);
     const _hBar     = document.getElementById('bottomBarHome');
     const _fBar     = document.getElementById('bottomBar');
-    if (_hBar) _hBar.style.display = _tiene2 ? 'none' : 'flex';
-    if (_fBar) _fBar.style.display = _tiene2 ? 'flex' : 'none';
+    if (_esCajeroSync) {
+      if (_hBar) _hBar.style.display = 'none'; // cajero nunca ve Empecemos
+    } else {
+      if (_hBar) _hBar.style.display = _tiene2 ? 'none' : 'flex';
+      if (_fBar) _fBar.style.display = _tiene2 ? 'flex' : 'none';
+    }
   }
 }
 
@@ -6443,7 +6458,7 @@ function actualizarBtnVerCarrito() {
 function actualizarBadgeHistorial() {
   const badge = document.getElementById('badgeHistorial');
   if (!badge) return;
-  const esCajero = usuarioActivo?.rol === 'mesero';
+  const esCajero = usuarioActivo?.rol === 'cajero';
   const count = esCajero
     ? historial.filter(f => f.cajero === usuarioActivo?.nombre).length
     : historial.length;
@@ -7180,6 +7195,8 @@ function guardarOrdenActiva() {
 let _tipoNuevaOrden = null;
 
 function abrirModalNuevaOrden() {
+  // Cajero no crea órdenes
+  if (usuarioActivo?.rol === 'cajero') return;
   // Guardar estado actual antes de crear nueva
   guardarOrdenActiva();
   const modal = document.getElementById('modalNuevaOrden');
@@ -7490,10 +7507,11 @@ function renderHistorial() {
   const esMeseroPanel = usuarioActivo?.rol === 'mesero';
   if (panelHist) panelHist.style.paddingBottom = esMeseroPanel ? '90px' : '';
 
-  // ── Filtro por rol: cajero solo ve sus propias facturas ───────────────
-  const esCajero = usuarioActivo?.rol === 'mesero';
+  // ── Filtro por rol: cajero ve todas las facturas; mesero solo las suyas ──
+  const esCajero = usuarioActivo?.rol === 'cajero';
+  const esMeseroHist = usuarioActivo?.rol === 'mesero';
   const nombreCajero = usuarioActivo?.nombre || '';
-  const historialVisible = esCajero
+  const historialVisible = esMeseroHist
     ? historial.filter(f => f.cajero === nombreCajero)
     : historial;
 
@@ -7653,9 +7671,10 @@ function histLimpiarFiltros() {
 
 function generarTextoResumenFiltrado(paraBluetooth) {
   var proc = paraBluetooth ? escPos : function(x){ return x; };
-  var esCajero = usuarioActivo && usuarioActivo.rol === 'mesero';
+  var esCajero = usuarioActivo && usuarioActivo.rol === 'cajero';
+  var esMeseroResumen = usuarioActivo && usuarioActivo.rol === 'mesero';
   var nombreCajero = (usuarioActivo && usuarioActivo.nombre) || '';
-  var base = esCajero ? historial.filter(function(f){ return f.cajero === nombreCajero; }) : historial.slice();
+  var base = esMeseroResumen ? historial.filter(function(f){ return f.cajero === nombreCajero; }) : historial.slice();
 
   if (_histFiltros.pago !== 'todos') base = base.filter(function(f){ return f.pago === _histFiltros.pago; });
   if (_histFiltros.tipo === 'fe')             base = base.filter(function(f){ return f.esFacturaElectronica; });
@@ -7907,7 +7926,7 @@ function verDetalleFactura(numeroFactura) {
 }
 
 function limpiarHistorial() {
-  if (usuarioActivo?.rol === 'mesero') { showToast('⚠️ Solo el administrador puede borrar el historial'); return; }
+  if (usuarioActivo?.rol === 'mesero' || usuarioActivo?.rol === 'cajero') { showToast('⚠️ Solo el administrador puede borrar el historial'); return; }
 
   // Calcular meses con datos para mostrar en la advertencia
   const meses = getMesesDisponibles();
