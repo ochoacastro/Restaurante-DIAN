@@ -6799,9 +6799,29 @@ function renderCarrito() {
           <div style="font-size:11px;color:var(--gris);text-align:center;">Marca el ✓ de cada plato al entregarlo · el botón de pago aparecerá al completar todos</div>
         </div>`;
       }
-      return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
-          💳 Pagar Cuenta
-        </button>`;
+      // Admin/master también deben esperar que todos los ítems estén entregados
+      const totalUnidadesA = carrito.reduce((s, i) => s + i.cantidad, 0);
+      const totalServidosA = carrito.reduce((s, i) => {
+        if (!Array.isArray(i.servido)) return s;
+        return s + i.servido.filter(Boolean).length;
+      }, 0);
+      const todosServidos = totalUnidadesA > 0 && totalServidosA >= totalUnidadesA;
+      if (todosServidos) {
+        return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
+            💳 Pagar Cuenta
+          </button>`;
+      }
+      const pctA = totalUnidadesA > 0 ? Math.round(totalServidosA / totalUnidadesA * 100) : 0;
+      return `<div style="width:100%;padding:14px 16px;margin-top:8px;background:var(--fondo);border:2px dashed var(--borde);border-radius:var(--r);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;font-weight:700;color:var(--gris);">${totalServidosA===0?'⏳ En preparación':'🍽️ Entregando…'}</span>
+          <span style="font-size:13px;font-weight:800;color:var(--rappi);font-family:var(--font-num);">${totalServidosA}/${totalUnidadesA}</span>
+        </div>
+        <div style="width:100%;height:7px;background:var(--borde);border-radius:999px;overflow:hidden;margin-bottom:8px;">
+          <div style="height:100%;width:${pctA}%;background:linear-gradient(90deg,var(--rappi),#FF7A5C);border-radius:999px;transition:width 0.4s ease;"></div>
+        </div>
+        <div style="font-size:11px;color:var(--gris);text-align:center;">Marca el ✓ de cada plato al entregarlo · el botón de pago aparecerá al completar todos</div>
+      </div>`;
     })()}
     <div style="height:24px"></div>`;
 }
@@ -6916,6 +6936,26 @@ function renderPago() {
       const rolActual = usuarioActivo ? usuarioActivo.rol : 'admin';
       if (rolActual === 'mesero') {
         return '<button onclick="enviarAlCajero()" style="width:100%;padding:18px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(21,101,192,0.4);margin-bottom:10px;">&#128176; Enviar a Caja</button><div style="font-size:12px;color:var(--gris);text-align:center;padding-bottom:8px;">El cajero recibirá este recibo para procesarlo</div>';
+      }
+      // Admin/master: verificar que todos los ítems estén entregados
+      const totalU = carrito.reduce((s, i) => s + i.cantidad, 0);
+      const totalS = carrito.reduce((s, i) => {
+        if (!Array.isArray(i.servido)) return s;
+        return s + i.servido.filter(Boolean).length;
+      }, 0);
+      const todosOk = totalU > 0 && totalS >= totalU;
+      if (!todosOk) {
+        const pctP = totalU > 0 ? Math.round(totalS / totalU * 100) : 0;
+        return `<div style="width:100%;padding:14px 16px;margin-bottom:10px;background:var(--fondo);border:2px dashed var(--borde);border-radius:var(--r);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:13px;font-weight:700;color:var(--gris);">${totalS===0?'⏳ En preparación':'🍽️ Entregando…'}</span>
+            <span style="font-size:13px;font-weight:800;color:var(--rappi);font-family:var(--font-num);">${totalS}/${totalU}</span>
+          </div>
+          <div style="width:100%;height:7px;background:var(--borde);border-radius:999px;overflow:hidden;margin-bottom:8px;">
+            <div style="height:100%;width:${pctP}%;background:linear-gradient(90deg,var(--rappi),#FF7A5C);border-radius:999px;transition:width 0.4s ease;"></div>
+          </div>
+          <div style="font-size:11px;color:var(--gris);text-align:center;">Marca el ✓ de cada plato al entregarlo · el botón de cobro aparecerá al completar todos</div>
+        </div>`;
       }
       return '<button onclick="abrirModalCobro()" style="width:100%;padding:18px;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.4);margin-bottom:10px;">&#128176; Cobrar</button><button onclick="abrirModalImprimir()" style="width:100%;padding:14px;background:var(--fondo);color:var(--negro);border:1.5px solid var(--borde);border-radius:var(--r);font-size:15px;font-weight:700;font-family:Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">&#128424;&#65039; Solo imprimir</button>';
     })()}
@@ -8192,7 +8232,6 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
 
     if (nombre.length <= PROD_W) {
       t += cant + ' ' + nombre.padEnd(PROD_W) + precioS + '\n';
-      if (item.nota) t += '   > ' + proc(item.nota).substring(0, A-5) + '\n';
     } else {
       const palabrasN = nombre.split(' ');
       let lineaActual = '';
@@ -8217,7 +8256,6 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
           t += ' '.repeat(CANT_W + 1) + lineaActual + '\n';
         }
       }
-      if (item.nota) t += '   > ' + proc(item.nota).substring(0, A-5) + '\n';
     }
   });
 
