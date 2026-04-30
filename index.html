@@ -17,7 +17,7 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue, off, serverTimestamp, remove, runTransaction }
+  import { getDatabase, ref, set, get, onValue, off, serverTimestamp, remove, runTransaction, update }
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   try {
 
@@ -44,7 +44,7 @@
 
   // ── EXPONER FUNCIONES AL SCOPE GLOBAL ────────────────────────────────
   window._FB = {
-    db, ref, set, get, onValue, off, serverTimestamp, remove, runTransaction,
+    db, ref, set, get, onValue, off, serverTimestamp, remove, runTransaction, update,
     SESSION_TAB_ID
   };
 
@@ -2784,6 +2784,350 @@
 #cocinaPanel {
   width: 100%;
 }
+
+/* ══════════════════════════════════════════════
+   KDS — PANTALLA DE COCINA (integrada)
+   Todos los selectores con prefijo #kdsScreen
+   para no interferir con el resto del POS
+   ══════════════════════════════════════════════ */
+#kdsScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: #0D0D0D;
+  color: #F0F0F0;
+  font-family: 'Inter', sans-serif;
+  overflow-y: auto;
+  flex-direction: column;
+}
+#kdsScreen.visible { display: flex; }
+
+/* Top bar */
+#kdsTopbar {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: #161616;
+  border-bottom: 2px solid #2A2A2A;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+#kdsTopbarRow1 {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  gap: 6px;
+}
+#kdsTopbarRow2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 8px;
+}
+#kdsTopbar .kds-brand {
+  font-family: 'Inter', sans-serif;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #FFD600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#kdsClock {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #888;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.kds-top-stats {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.kds-stat-pill {
+  background: #2A2A2A;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #888;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.kds-stat-pill b { color: #FFD600; margin-right: 3px; }
+#kdsBtnVolver {
+  flex: 1;
+  background: #FFD600;
+  border: none;
+  color: #111;
+  border-radius: 8px;
+  padding: 7px 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-align: center;
+}
+#kdsOfflineBar {
+  display: none;
+  position: sticky;
+  top: 58px;
+  z-index: 99;
+  background: #8B0000;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-align: center;
+  padding: 8px 16px;
+  border-bottom: 2px solid #FF3333;
+  animation: kds-pulse-bar 1.5s ease infinite;
+}
+#kdsScreen.kds-offline #kdsOfflineBar { display: block; }
+@keyframes kds-pulse-bar {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+#fbStatusDotKds {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #888; flex-shrink: 0;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+#kdsScreen.kds-online  #fbStatusDotKds { background: #00C853; box-shadow: 0 0 6px #00C853; }
+#kdsScreen.kds-offline #fbStatusDotKds { background: #E53935; box-shadow: 0 0 6px #E53935; }
+
+/* Grid */
+#kdsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 20px;
+  align-items: start;
+}
+
+/* Cards */
+.kds-order-card {
+  background: #1A1A1A;
+  border: 2px solid #2A2A2A;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color .3s, background .3s, box-shadow .3s;
+  animation: kds-cardIn .3s ease;
+}
+@keyframes kds-cardIn {
+  from { opacity: 0; transform: translateY(-10px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.kds-order-card.warn {
+  background: #1F1400;
+  border-color: #FF6B00;
+  box-shadow: 0 0 0 1px #FF6B0022, 0 4px 20px #FF6B0018;
+}
+.kds-order-card.danger {
+  background: #1F0A0A;
+  border-color: #E53935;
+  box-shadow: 0 0 0 1px #E5393522, 0 4px 20px #E5393518;
+  animation: kds-pulse 1.4s ease-in-out infinite;
+}
+.kds-order-card.done {
+  background: #061209;
+  border-color: #00C853;
+  box-shadow: 0 0 0 1px #00C85322, 0 4px 20px #00C85318;
+}
+@keyframes kds-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px #E5393522, 0 4px 20px #E5393518; }
+  50%       { box-shadow: 0 0 0 3px #E5393544, 0 6px 28px #E5393538; }
+}
+.kds-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid #2A2A2A;
+}
+.kds-card-mesa {
+  font-size: 26px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #F0F0F0;
+  line-height: 1;
+}
+.kds-card-tipo {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+.kds-card-timer {
+  font-family: 'DM Mono', monospace;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  min-width: 70px;
+  text-align: right;
+  transition: color .3s;
+}
+.kds-timer-ok     { color: #F0F0F0; }
+.kds-timer-warn   { color: #FF6B00; }
+.kds-timer-danger { color: #E53935; }
+.kds-timer-done   { color: #00C853; }
+.kds-card-items {
+  padding: 10px 16px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.kds-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 6px;
+  border-bottom: 1px solid #1E1E1E;
+  cursor: pointer;
+  transition: background .15s;
+  border-radius: 6px;
+}
+.kds-item-row:last-child { border-bottom: none; }
+.kds-item-row:hover { background: #ffffff08; }
+.kds-item-row.done-item .kds-item-name,
+.kds-item-row.done-item .kds-item-qty { opacity: .35; text-decoration: line-through; }
+.kds-item-check {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  border: 2px solid #2A2A2A;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background .15s, border-color .15s;
+  font-size: 14px;
+}
+.kds-item-row.done-item .kds-item-check {
+  background: #007A32;
+  border-color: #00C853;
+  color: #00C853;
+}
+.kds-item-qty {
+  font-size: 22px;
+  font-weight: 800;
+  color: #FFD600;
+  min-width: 28px;
+  line-height: 1;
+}
+.kds-item-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #F0F0F0;
+  flex: 1;
+  line-height: 1.3;
+}
+.kds-item-nota {
+  font-size: 11px;
+  color: #FF6B00;
+  font-style: italic;
+  margin-top: 2px;
+}
+.kds-card-footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px 14px;
+}
+.kds-btn-card {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.kds-btn-card:active { transform: scale(.97); }
+.kds-btn-listo { background: #00C853; color: #000; }
+.kds-btn-listo:hover { opacity: .88; }
+.kds-btn-reset { background: #2A2A2A; color: #888; flex: 0 0 auto; padding: 10px 14px; }
+.kds-btn-reset:hover { background: #333; color: #F0F0F0; }
+.kds-done-badge {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #00C853;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.kds-order-card.done .kds-done-badge { display: flex; }
+.kds-order-card.done .kds-card-footer { display: none; }
+@keyframes kds-cardOut {
+  0%   { opacity: 1; transform: scale(1);    max-height: 600px; }
+  40%  { opacity: 1; transform: scale(1.03); max-height: 600px; }
+  100% { opacity: 0; transform: scale(.92);  max-height: 0; margin-bottom: 0; padding: 0; }
+}
+.kds-order-card.closing {
+  animation: kds-cardOut .55s ease forwards;
+  overflow: hidden;
+  pointer-events: none;
+}
+#kdsEmptyState {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  gap: 16px;
+  text-align: center;
+}
+#kdsEmptyState .kds-empty-icon {
+  font-size: 72px;
+  opacity: .25;
+  animation: kds-breathe 3s ease-in-out infinite;
+}
+@keyframes kds-breathe {
+  0%, 100% { opacity: .20; transform: scale(1); }
+  50%       { opacity: .35; transform: scale(1.04); }
+}
+#kdsEmptyState h3 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #888;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+#kdsEmptyState p { color: #555; font-size: 14px; }
+#kdsNotif {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #FFD600;
+  color: #000;
+  padding: 12px 28px;
+  border-radius: 40px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+  z-index: 9999;
+  pointer-events: none;
+}
+#kdsNotif.show { transform: translateX(-50%) translateY(0); }
+/* ═══════════════ fin KDS styles ═══════════════ */
 </style>
 
 <!-- HEADER -->
@@ -3672,7 +4016,7 @@
 
     <!-- Navegación -->
     <nav class="sidebar-nav">
-      <button class="sidebar-item sidebar-admin-only" onclick="cerrarSidebar();(function(){ try{ const c=JSON.parse(localStorage.getItem('helechos_fb_config')||'{}'); const u=c.databaseURL?'cocina.html?fb='+encodeURIComponent(c.databaseURL):'cocina.html'; window.open(u,'_blank'); }catch(e){ window.open('cocina.html','_blank'); } })()">
+      <button class="sidebar-item sidebar-admin-only" onclick="cerrarSidebar();if(typeof window.abrirKDSInline==='function')window.abrirKDSInline();">
         <span class="sidebar-item-icon">🍳</span>Pantalla cocina
       </button>
       <button class="sidebar-item sidebar-admin-only" onclick="cerrarSidebar();abrirDrawer('editmenu')">
@@ -4562,20 +4906,11 @@ function abrirCocinaHtml() {
     btn.style.opacity = '0.7';
     btn.style.pointerEvents = 'none';
   }
-  try {
-    const raw = localStorage.getItem('helechos_fb_config');
-    const cfg = raw ? JSON.parse(raw) : {};
-    const url = cfg.databaseURL
-      ? 'cocina.html?fb=' + encodeURIComponent(cfg.databaseURL)
-      : 'cocina.html';
-    // Pequeño delay para que el usuario vea el feedback antes de navegar
-    setTimeout(() => window.open(url, '_blank'), 220);
-    setTimeout(() => {
-      if (btn) { btn.innerHTML = '🍳 &nbsp;Entrar a Cocina'; btn.style.opacity = ''; btn.style.pointerEvents = ''; }
-    }, 1000);
-  } catch(e) {
-    window.open('cocina.html', '_blank');
-  }
+  // Abrir KDS inline integrado (no requiere cocina.html externo)
+  setTimeout(() => {
+    if (typeof window.abrirKDSInline === 'function') window.abrirKDSInline();
+    if (btn) { btn.innerHTML = '🍳 &nbsp;Entrar a Cocina'; btn.style.opacity = ''; btn.style.pointerEvents = ''; }
+  }, 220);
 }
 
 function aplicarRolUI() {
@@ -12438,12 +12773,436 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cfgBrand) cfgBrand.value = brand || 'Los Helechos';
   if (cfgSub)   cfgSub.value   = sub   || 'Restaurante Campestre';
   if (cfgEmoji) cfgEmoji.value = emoji || '🌿';
-})();
+});
 
 
 
 
+/* ══════════════════════════════════════════════════════════════════
+   KDS INLINE — lógica completa de cocina embebida en index.html
+   Se activa cuando el usuario toca "Entrar a Cocina"
+   ══════════════════════════════════════════════════════════════════ */
+(function initKDS() {
+
+  let kdsOrdenes     = [];
+  let kdsItemStatus  = {};
+  let kdsDb          = null;
+  let kdsUnsub       = null;
+  let kdsTimerIv     = null;
+  const KDS_WARN_MS   = 8  * 60 * 1000;
+  const KDS_DANGER_MS = 15 * 60 * 1000;
+  const _kdsCerradas  = new Set();
+  const _kdsAutoCierre = {};
+
+  window.abrirKDSInline = function() {
+    const screen = document.getElementById('kdsScreen');
+    if (!screen) return;
+    screen.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+    kdsArrancar();
+    kdsTickClock();
+  };
+
+  window.cerrarKDSInline = function() {
+    const screen = document.getElementById('kdsScreen');
+    if (!screen) return;
+    screen.classList.remove('visible');
+    document.body.style.overflow = '';
+    if (kdsUnsub) { kdsUnsub(); kdsUnsub = null; }
+    if (kdsTimerIv) { clearInterval(kdsTimerIv); kdsTimerIv = null; }
+    if (typeof aplicarRolUI === 'function' && window.usuarioActivo) aplicarRolUI();
+  };
+
+  function kdsTickClock() {
+    const el = document.getElementById('kdsClock');
+    if (!el) return;
+    const now = new Date();
+    el.textContent = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  }
+  setInterval(kdsTickClock, 1000);
+
+  function kdsActualizarRed() {
+    const screen = document.getElementById('kdsScreen');
+    if (!screen) return;
+    screen.classList.toggle('kds-offline', !navigator.onLine);
+    screen.classList.toggle('kds-online',   navigator.onLine);
+    const dot = document.getElementById('fbStatusDotKds');
+    if (dot) dot.title = navigator.onLine ? '🟢 Conectado' : '🔴 Sin conexión';
+  }
+  window.addEventListener('online',  kdsActualizarRed);
+  window.addEventListener('offline', kdsActualizarRed);
+  kdsActualizarRed();
+
+  function kdsArrancar() {
+    if (!window._FB || !window._FB.db) {
+      window.addEventListener('firebase-ready', kdsArrancar, { once: true });
+      return;
+    }
+    const { db, ref, onValue, update } = window._FB;
+    kdsDb = db;
+    if (kdsUnsub) kdsUnsub();
+    const screen = document.getElementById('kdsScreen');
+    if (screen) { screen.classList.add('kds-online'); screen.classList.remove('kds-offline'); }
+    const ordenesRef = ref(db, 'helechos/ordenes');
+    kdsUnsub = onValue(ordenesRef, (snap) => {
+      if (screen) { screen.classList.add('kds-online'); screen.classList.remove('kds-offline'); }
+      const val = snap.val();
+      const nuevas = Array.isArray(val)
+        ? val.filter(Boolean).map((o, idx) => ({ ...o, _fbIndex: idx }))
+        : val && typeof val === 'object'
+          ? Object.entries(val).map(([k, o]) => ({ ...o, _fbIndex: k }))
+          : [];
+      const prevIds = new Set(kdsOrdenes.map(o => o.id));
+      nuevas.forEach(o => { if (!prevIds.has(o.id)) kdsNotificar('🔔 Nuevo pedido: ' + (o.mesa || o.cliente || 'Mesa')); });
+      const fbIds = new Set(nuevas.map(o => String(o.id)));
+      _kdsCerradas.forEach(id => { if (!fbIds.has(id)) _kdsCerradas.delete(id); });
+      kdsOrdenes = nuevas;
+      kdsRender();
+    }, (err) => {
+      console.error('KDS Firebase error:', err);
+      if (screen) { screen.classList.remove('kds-online'); screen.classList.add('kds-offline'); }
+    });
+    if (kdsTimerIv) clearInterval(kdsTimerIv);
+    kdsTimerIv = setInterval(kdsUpdateTimers, 1000);
+  }
+
+  function kdsRender() {
+    const grid  = document.getElementById('kdsGrid');
+    const empty = document.getElementById('kdsEmptyState');
+    if (!grid || !empty) return;
+    if (!kdsOrdenes.length) {
+      grid.innerHTML = ''; grid.style.display = 'none'; empty.style.display = 'flex';
+      kdsUpdateStats(); return;
+    }
+    grid.style.display = 'grid'; empty.style.display = 'none';
+    const existingIds = new Set([...grid.querySelectorAll('.kds-order-card')].map(c => c.dataset.id));
+    const newIds      = new Set(kdsOrdenes.map(o => String(o.id)));
+    existingIds.forEach(id => { if (!newIds.has(id)) { const el = grid.querySelector(`.kds-order-card[data-id="${id}"]`); if (el) el.remove(); } });
+    kdsOrdenes.forEach(orden => {
+      const id = String(orden.id);
+      if (_kdsCerradas.has(id)) return;
+      let card = grid.querySelector(`.kds-order-card[data-id="${id}"]`);
+      if (!card) { card = kdsBuildCard(orden); grid.appendChild(card); }
+      else if (!card.classList.contains('closing')) { kdsRefreshCard(card, orden); }
+    });
+    kdsUpdateStats();
+  }
+
+  function kdsBuildCard(orden) {
+    const id = String(orden.id);
+    const card = document.createElement('div');
+    card.className = 'kds-order-card';
+    card.dataset.id = id;
+    card.dataset.ts = orden.timestamp || Date.now();
+    card.innerHTML = kdsCardHTML(orden);
+    const status = kdsItemStatus[id] || {};
+    if (Object.keys(status).length > 0) {
+      card.querySelectorAll('.kds-item-row[data-key]').forEach(row => {
+        const key = row.dataset.key, done = !!status[key];
+        row.classList.toggle('done-item', done);
+        const chk = row.querySelector('.kds-item-check'); if (chk) chk.textContent = done ? '✓' : '';
+        row.style.borderLeft = `3px solid ${done ? '#4caf50' : 'rgba(255,255,255,0.2)'}`;
+      });
+    }
+    return card;
+  }
+
+  function kdsRefreshCard(card, orden) {
+    const newHtml = kdsCardHTML(orden), tmp = document.createElement('div');
+    tmp.innerHTML = newHtml;
+    const oldItems = card.querySelector('.kds-card-items'), newItems = tmp.querySelector('.kds-card-items');
+    if (oldItems && newItems && oldItems.innerHTML !== newItems.innerHTML) {
+      oldItems.replaceWith(newItems);
+      const id = card.dataset.id, status = kdsItemStatus[id] || {};
+      card.querySelectorAll('.kds-item-row[data-key]').forEach(row => {
+        const key = row.dataset.key, done = !!status[key];
+        row.classList.toggle('done-item', done);
+        const chk = row.querySelector('.kds-item-check'); if (chk) chk.textContent = done ? '✓' : '';
+        row.style.borderLeft = `3px solid ${done ? '#4caf50' : 'rgba(255,255,255,0.2)'}`;
+      });
+    }
+    card.dataset.ts = orden.timestamp || card.dataset.ts;
+  }
+
+  function kdsCardHTML(orden) {
+    const id = String(orden.id), status = kdsItemStatus[id] || {}, items = orden.items || [];
+    const label = kdsMesaLabel(orden);
+    const grupos = {};
+    items.forEach((item, i) => { if (!grupos[item.nombre]) grupos[item.nombre] = []; grupos[item.nombre].push({ item, i }); });
+    const itemsHtml = Object.entries(grupos).map(([nombre, lineas]) => {
+      const todasListas = lineas.every(({ item, i }) => {
+        const c = item.cantidad || 1;
+        return Array.from({length: c}, (_, u) => !!status[i+'_'+u]).every(Boolean);
+      });
+      const totalCant = lineas.reduce((s, { item }) => s + (item.cantidad || 1), 0);
+      const grupoHtml = lineas.map(({ item, i }) => {
+        const cant = item.cantidad || 1, tieneNota = item.nota && item.nota.trim();
+        return Array.from({length: cant}, (_, u) => {
+          const key = i+'_'+u, done = !!status[key], lbl = cant > 1 ? 'Unidad '+(u+1) : '';
+          return '<div class="kds-item-row '+(done?'done-item':'')+'" data-key="'+key+'"'
+            +' onclick="kdsToggleItem(\''+id+'\',\''+key+'\')"'
+            +' style="padding-left:28px;border-left:3px solid '+(done?'#4caf50':'rgba(255,255,255,0.2)')+';">'
+            +'<div class="kds-item-check">'+(done?'✓':'')+'</div>'
+            +'<div style="flex:1;">'
+            +(lbl?'<div class="kds-item-name" style="font-size:13px;'+(done?'opacity:0.5;':'')+'">'+lbl+'</div>':'')
+            +(tieneNota
+              ?'<div class="kds-item-nota" style="font-size:12px;color:'+(done?'#aaa':'#FFD54F')+';font-weight:700;">⚠️ '+kdsEsc(item.nota)+'</div>'
+              :'<div class="kds-item-nota" style="color:rgba(255,255,255,0.35);font-size:11px;">Sin nota</div>')
+            +'</div></div>';
+        }).join('');
+      }).join('');
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px 4px;background:rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.1);">'
+        +'<div style="font-size:15px;font-weight:900;color:'+(todasListas?'#4caf50':'#fff')+';flex:1;">'+kdsEsc(nombre)+'</div>'
+        +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);">'+totalCant+'×</div>'
+        +(todasListas?'<div style="font-size:11px;background:#4caf5033;color:#4caf50;border-radius:20px;padding:2px 8px;font-weight:700;">✓ Listo</div>':'')
+        +'</div>'+grupoHtml;
+    }).join('');
+    return '<div class="kds-card-header"><div>'
+      +'<div class="kds-card-mesa">'+kdsEsc(label)+'</div>'
+      +'<div class="kds-card-tipo">'+kdsTipoLabel(orden)+'</div>'
+      +'</div><div class="kds-card-timer kds-timer-ok" id="kdstimer-'+id+'">--:--</div></div>'
+      +'<div class="kds-card-items">'+itemsHtml+'</div>'
+      +'<div class="kds-card-footer">'
+      +'<button class="kds-btn-card kds-btn-listo" onclick="kdsMarcarListo(\''+id+'\')">✓ Listo</button>'
+      +'<button class="kds-btn-card kds-btn-reset" onclick="kdsResetCard(\''+id+'\')">↺</button>'
+      +'</div>'
+      +'<div class="kds-done-badge">✓ LISTO PARA SERVIR</div>';
+  }
+
+  function kdsMesaLabel(o) {
+    if (o.mesa) return o.mesa;
+    if (o.tipoOrden === 'domicilio') return o.clienteNombre || 'Domicilio';
+    if (o.tipoOrden === 'llevar')    return o.clienteNombre || 'Para llevar';
+    return o.cliente || 'Mesa';
+  }
+  function kdsTipoLabel(o) {
+    const t = o.tipoOrden;
+    if (t === 'mesa')      return '🪑 Mesa';
+    if (t === 'domicilio') return '🛵 Domicilio';
+    if (t === 'llevar')    return '🥡 Para llevar';
+    return '🍽️ Orden';
+  }
+
+  window.kdsToggleItem = function(id, key) {
+    if (!kdsItemStatus[id]) kdsItemStatus[id] = {};
+    kdsItemStatus[id][key] = !kdsItemStatus[id][key];
+    const orden = kdsOrdenes.find(o => String(o.id) === id);
+    if (!orden) return;
+    const grid = document.getElementById('kdsGrid');
+    const card = grid && grid.querySelector('.kds-order-card[data-id="'+id+'"]');
+    if (!card) return;
+    const row = card.querySelector('.kds-item-row[data-key="'+key+'"]');
+    if (row) {
+      row.classList.toggle('done-item', !!kdsItemStatus[id][key]);
+      const chk = row.querySelector('.kds-item-check'); if (chk) chk.textContent = kdsItemStatus[id][key] ? '✓' : '';
+      row.style.borderLeft = '3px solid '+(kdsItemStatus[id][key] ? '#4caf50' : 'rgba(255,255,255,0.2)');
+    }
+    kdsUpdateCardState(card, id, kdsItemsAllDone(orden.items || [], kdsItemStatus[id]));
+    kdsUpdateStats();
+    if (kdsDb && window._FB) {
+      try {
+        const { ref, update } = window._FB;
+        const fbKey = 'k' + key.replace(/[.#$\[\]]/g, '_');
+        update(ref(kdsDb, 'helechos/listoItems/'+id), { [fbKey]: !!kdsItemStatus[id][key] });
+      } catch(e) {}
+    }
+  };
+
+  window.kdsMarcarListo = function(id) {
+    const orden = kdsOrdenes.find(o => String(o.id) === id);
+    if (!orden) return;
+    const items = orden.items || [];
+    if (!kdsItemStatus[id]) kdsItemStatus[id] = {};
+    items.forEach((it, i) => { const c = it.cantidad || 1; for (let u = 0; u < c; u++) kdsItemStatus[id][i+'_'+u] = true; });
+    const grid = document.getElementById('kdsGrid');
+    const card = grid && grid.querySelector('.kds-order-card[data-id="'+id+'"]');
+    if (!card) return;
+    card.querySelectorAll('.kds-item-row').forEach(r => {
+      r.classList.add('done-item');
+      const c = r.querySelector('.kds-item-check'); if (c) c.textContent = '✓';
+    });
+    const elapsed = Date.now() - Number(card.dataset.ts);
+    card.dataset.tsListo = Date.now();
+    card.dataset.elapsedFinal = elapsed;
+    kdsUpdateCardState(card, id, true);
+    kdsNotificar('✅ Listo: ' + kdsMesaLabel(orden));
+    kdsUpdateStats();
+    if (kdsDb && window._FB) {
+      try {
+        const { ref, update } = window._FB;
+        const li = {};
+        items.forEach((it, i) => { const c = it.cantidad || 1; for (let u = 0; u < c; u++) li['k'+i+'_'+u] = true; });
+        update(ref(kdsDb, 'helechos/listoItems/'+id), li);
+        const om = kdsOrdenes.find(o => String(o.id) === id);
+        if (om) {
+          const fi = om._fbIndex != null ? om._fbIndex : kdsOrdenes.findIndex(x => String(x.id) === id);
+          update(ref(kdsDb, 'helechos/ordenes/'+fi), { listo: true, listoTs: Date.now(), tiempoPreparacion: elapsed });
+        }
+      } catch(e) {}
+    }
+  };
+
+  window.kdsResetCard = function(id) {
+    _kdsCerradas.delete(id);
+    delete kdsItemStatus[id];
+    const orden = kdsOrdenes.find(o => String(o.id) === id);
+    if (!orden) return;
+    const grid = document.getElementById('kdsGrid');
+    const card = grid && grid.querySelector('.kds-order-card[data-id="'+id+'"]');
+    if (!card) return;
+    card.querySelectorAll('.kds-item-row').forEach(r => {
+      r.classList.remove('done-item');
+      const c = r.querySelector('.kds-item-check'); if (c) c.textContent = '';
+    });
+    delete card.dataset.elapsedFinal;
+    kdsUpdateCardState(card, id, false);
+    kdsUpdateStats();
+    if (kdsDb && window._FB) {
+      try {
+        const { ref, update } = window._FB;
+        update(ref(kdsDb, 'helechos/listoItems/'+id), { _reset: Date.now() });
+        const om = kdsOrdenes.find(o => String(o.id) === id);
+        if (om) {
+          const fi = om._fbIndex != null ? om._fbIndex : kdsOrdenes.findIndex(x => String(x.id) === id);
+          update(ref(kdsDb, 'helechos/ordenes/'+fi), { listo: false, listoTs: null });
+        }
+      } catch(e) {}
+    }
+  };
+
+  function kdsCerrarCard(id) {
+    const grid = document.getElementById('kdsGrid');
+    const card = grid && grid.querySelector('.kds-order-card[data-id="'+id+'"]');
+    if (!card || card.classList.contains('closing')) return;
+    _kdsCerradas.add(id);
+    card.classList.add('closing');
+    setTimeout(() => {
+      card.remove();
+      const remaining = grid ? grid.querySelectorAll('.kds-order-card:not(.closing)').length : 0;
+      const empty = document.getElementById('kdsEmptyState');
+      if (empty) empty.style.display = remaining === 0 ? 'flex' : 'none';
+      kdsUpdateStats();
+    }, 560);
+  }
+
+  function kdsUpdateCardState(card, id, allDone) {
+    const elapsed = Date.now() - Number(card.dataset.ts);
+    card.classList.toggle('done',   allDone);
+    card.classList.toggle('warn',   !allDone && elapsed >= KDS_WARN_MS   && elapsed < KDS_DANGER_MS);
+    card.classList.toggle('danger', !allDone && elapsed >= KDS_DANGER_MS);
+    if (allDone) {
+      card.classList.remove('warn', 'danger');
+      const t = card.querySelector('#kdstimer-'+id);
+      if (t) t.className = 'kds-card-timer kds-timer-done';
+      if (!card.dataset.elapsedFinal) card.dataset.elapsedFinal = elapsed;
+      clearTimeout(_kdsAutoCierre[id]);
+      _kdsAutoCierre[id] = setTimeout(() => kdsCerrarCard(id), 4000);
+    } else {
+      clearTimeout(_kdsAutoCierre[id]);
+      delete _kdsAutoCierre[id];
+    }
+  }
+
+  function kdsItemsAllDone(items, status) {
+    if (!items || !items.length) return false;
+    return items.every((it, i) => {
+      const c = it.cantidad || 1;
+      return Array.from({length: c}, (_, u) => !!status[i+'_'+u]).every(Boolean);
+    });
+  }
+
+  function kdsUpdateTimers() {
+    const now = Date.now();
+    document.querySelectorAll('.kds-order-card').forEach(card => {
+      const id = card.dataset.id, ts = Number(card.dataset.ts);
+      const timerEl = card.querySelector('#kdstimer-'+id);
+      if (!timerEl) return;
+      const status  = kdsItemStatus[id] || {};
+      const orden   = kdsOrdenes.find(o => String(o.id) === id);
+      const items   = orden ? orden.items || [] : [];
+      const allDone = kdsItemsAllDone(items, status);
+      const elapsed = allDone && card.dataset.elapsedFinal ? Number(card.dataset.elapsedFinal) : now - ts;
+      const mm = String(Math.floor(elapsed / 60000)).padStart(2, '0');
+      const ss = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
+      timerEl.textContent = mm+':'+ss;
+      if (allDone) {
+        timerEl.className = 'kds-card-timer kds-timer-done';
+      } else if (elapsed >= KDS_DANGER_MS) {
+        timerEl.className = 'kds-card-timer kds-timer-danger';
+        if (!card.classList.contains('done')) { card.classList.remove('warn'); card.classList.add('danger'); }
+      } else if (elapsed >= KDS_WARN_MS) {
+        timerEl.className = 'kds-card-timer kds-timer-warn';
+        if (!card.classList.contains('done')) { card.classList.remove('danger'); card.classList.add('warn'); }
+      } else {
+        timerEl.className = 'kds-card-timer kds-timer-ok';
+      }
+    });
+  }
+
+  function kdsUpdateStats() {
+    let activas = 0, listas = 0;
+    const grid = document.getElementById('kdsGrid');
+    if (!grid) return;
+    grid.querySelectorAll('.kds-order-card:not(.closing)').forEach(card => {
+      const id = card.dataset.id, orden = kdsOrdenes.find(o => String(o.id) === id);
+      kdsItemsAllDone(orden ? orden.items || [] : [], kdsItemStatus[id] || {}) ? listas++ : activas++;
+    });
+    const sa = document.getElementById('kdsStatActivas'), sl = document.getElementById('kdsStatListas');
+    if (sa) sa.textContent = activas;
+    if (sl) sl.textContent = listas;
+  }
+
+  let kdsNotifTimer;
+  function kdsNotificar(msg) {
+    const el = document.getElementById('kdsNotif');
+    if (!el) return;
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(kdsNotifTimer);
+    kdsNotifTimer = setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  function kdsEsc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+})(); // fin initKDS
 
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     KDS — PANTALLA DE COCINA INLINE
+     Cubre toda la pantalla cuando el rol es "cocina"
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="kdsScreen">
+
+  <div id="kdsTopbar">
+    <div id="kdsTopbarRow1">
+      <div class="kds-brand">🍳 Cocina</div>
+      <div class="kds-top-stats">
+        <div id="fbStatusDotKds" title="Firebase desconectado"></div>
+        <div class="kds-stat-pill"><b id="kdsStatActivas">0</b>activas</div>
+        <div class="kds-stat-pill"><b id="kdsStatListas">0</b>listas</div>
+      </div>
+    </div>
+    <div id="kdsTopbarRow2">
+      <button id="kdsBtnVolver" onclick="cerrarKDSInline()">← Volver al sistema</button>
+      <div id="kdsClock">00:00:00</div>
+    </div>
+  </div>
+
+  <div id="kdsOfflineBar">⚡ SIN CONEXIÓN — Los pedidos pueden estar desactualizados</div>
+
+  <div id="kdsGrid"></div>
+  <div id="kdsEmptyState">
+    <div class="kds-empty-icon">🍽️</div>
+    <h3>Sin pedidos activos</h3>
+    <p>Los nuevos pedidos aparecerán aquí automáticamente</p>
+  </div>
+
+  <div id="kdsNotif"></div>
+
+</div>
+<!-- fin KDS inline -->
+
 </body>
 </html>
