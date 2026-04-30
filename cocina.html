@@ -631,9 +631,9 @@
   }
 
   window.volverAPedidos = function() {
-    // Si hay historial, regresar; si no, ir al index
-    if (document.referrer && document.referrer !== window.location.href) {
-      window.location.href = document.referrer;
+    // cocina.html se abre en pestaña nueva desde index — cerrarla regresa al index
+    if (window.opener) {
+      window.close();
     } else {
       window.location.href = 'index.html';
     }
