@@ -2690,13 +2690,12 @@
 <!-- ══ PANTALLA DE LOGIN ══════════════════════════════════════════════ -->
 <div id="loginScreen">
   <div id="loginBgOverlay"></div>
-  <div class="login-logo" id="loginLogoWrap" onclick="loginLogoTap()" style="cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;" title="Toca para cambiar el logo">
+  <div class="login-logo" id="loginLogoWrap" style="cursor:default;user-select:none;-webkit-tap-highlight-color:transparent;">
     <img id="loginLogoImg" src="" alt="" style="width:80px;height:80px;object-fit:cover;border-radius:20px;display:none;">
     <span id="loginLogoEmoji">🌿</span>
-    <input type="file" id="loginLogoFileInput" accept="image/*" style="display:none" onchange="loginLogoUpload(this)">
   </div>
-  <div class="login-brand" id="loginBrandText" ondblclick="editarLoginTexto('brand')" title="Doble tap para editar">Los Helechos</div>
-  <div class="login-sub" id="loginSubText" ondblclick="editarLoginTexto('sub')" title="Doble tap para editar">Restaurante Campestre</div>
+  <div class="login-brand" id="loginBrandText">Los Helechos</div>
+  <div class="login-sub" id="loginSubText">Restaurante Campestre</div>
   <div class="login-line"></div>
 
   <!-- Selector de ROL (nuevo diseño) -->
@@ -3442,7 +3441,31 @@
         </div>
 
         <div class="config-field">
-          <label>🖼️ Fondo pantalla de inicio</label>
+          <label>🏠 Nombre en pantalla de inicio</label>
+          <input class="config-input" id="cfgLoginBrand" placeholder="Ej: Los Helechos">
+        </div>
+        <div class="config-field">
+          <label>📝 Subtítulo en pantalla de inicio</label>
+          <input class="config-input" id="cfgLoginSub" placeholder="Ej: Restaurante Campestre">
+        </div>
+        <div class="config-field">
+          <label>🌿 Ícono / Logo pantalla de inicio</label>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            <div id="loginIconPreview" style="width:64px;height:64px;border-radius:16px;background:#FF4D1A;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;">🌿</div>
+            <div style="flex:1;">
+              <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">Puedes usar un emoji o subir una imagen.</div>
+              <input class="config-input" id="cfgLoginEmoji" placeholder="Emoji, ej: 🌿" maxlength="4" style="margin-bottom:6px;text-align:center;font-size:20px;">
+            </div>
+          </div>
+          <label class="logo-upload-btn" style="margin-bottom:6px;">
+            🖼️ <span id="loginIconUploadTxt">Subir imagen de ícono</span>
+            <input type="file" id="loginIconFileInput" accept="image/*" style="display:none" onchange="cargarLoginIcon(this)">
+          </label>
+          <button id="loginIconQuitarBtn" style="display:none;width:100%;padding:9px;background:white;border:1.5px solid rgba(192,57,43,0.35);color:var(--rojo);border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;" onclick="quitarLoginIcon()">🗑️ Quitar imagen, usar emoji</button>
+        </div>
+
+        <div class="config-field">
+          <label>🌄 Fondo pantalla de inicio</label>
           <div id="loginBgPreviewWrap" style="display:none;margin-bottom:8px;border-radius:10px;overflow:hidden;max-height:120px;">
             <img id="loginBgPreview" style="width:100%;object-fit:cover;border-radius:10px;border:1.5px solid #FFD5CC;">
           </div>
@@ -5583,6 +5606,22 @@ function saveConfig() {
   renderHorarios();
   renderFestivos();
   renderClosedHorarioOverlay();
+
+  // ── Pantalla de inicio: nombre, subtítulo, emoji ──
+  const loginBrand = (document.getElementById('cfgLoginBrand') || {}).value || '';
+  const loginSub   = (document.getElementById('cfgLoginSub')   || {}).value || '';
+  const loginEmoji = (document.getElementById('cfgLoginEmoji') || {}).value || '🌿';
+  if (loginBrand) {
+    localStorage.setItem('helechos_login_brand', loginBrand);
+    const el = document.getElementById('loginBrandText'); if (el) el.textContent = loginBrand;
+  }
+  if (loginSub) {
+    localStorage.setItem('helechos_login_sub', loginSub);
+    const el = document.getElementById('loginSubText'); if (el) el.textContent = loginSub;
+  }
+  localStorage.setItem('helechos_login_emoji', loginEmoji);
+  aplicarLoginIcon();
+
   showToast('✅ Configuración guardada');
 }
 
@@ -12265,49 +12304,52 @@ function fbSyncCobros() {
 
 // ── LOGIN SCREEN: Logo, texto editable y fondo ─────────────────────────
 
-function loginLogoTap() {
-  document.getElementById('loginLogoFileInput').click();
-}
-
-function loginLogoUpload(input) {
+function cargarLoginIcon(input) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    logoBase64 = e.target.result;
-    localStorage.setItem('helechos_logo', logoBase64);
-    mostrarLogoPreview();
-    showToast('✅ Logo actualizado');
+    localStorage.setItem('helechos_login_icon', e.target.result);
+    aplicarLoginIcon();
+    mostrarLoginIconPreview();
+    showToast('✅ Ícono guardado');
   };
   reader.readAsDataURL(file);
   input.value = '';
 }
 
-function editarLoginTexto(tipo) {
-  const el = document.getElementById(tipo === 'brand' ? 'loginBrandText' : 'loginSubText');
-  const key = tipo === 'brand' ? 'helechos_login_brand' : 'helechos_login_sub';
-  const valorActual = el.textContent;
-  const input = document.createElement('input');
-  input.value = valorActual;
-  input.style.cssText = `font-size:${tipo === 'brand' ? '22' : '13'}px;font-weight:${tipo === 'brand' ? '800' : '500'};
-    border:none;border-bottom:2px solid var(--rappi);background:transparent;text-align:center;
-    width:100%;max-width:260px;outline:none;color:inherit;font-family:inherit;padding:4px 0;`;
-  el.replaceWith(input);
-  input.focus(); input.select();
-  const guardar = () => {
-    const nuevoVal = input.value.trim() || valorActual;
-    localStorage.setItem(key, nuevoVal);
-    const div = document.createElement('div');
-    div.id = tipo === 'brand' ? 'loginBrandText' : 'loginSubText';
-    div.className = tipo === 'brand' ? 'login-brand' : 'login-sub';
-    div.textContent = nuevoVal;
-    div.ondblclick = () => editarLoginTexto(tipo);
-    div.title = 'Doble tap para editar';
-    input.replaceWith(div);
-    showToast('✅ Texto guardado');
-  };
-  input.addEventListener('blur', guardar);
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+function quitarLoginIcon() {
+  localStorage.removeItem('helechos_login_icon');
+  aplicarLoginIcon();
+  mostrarLoginIconPreview();
+  showToast('🗑️ Imagen quitada');
+}
+
+function aplicarLoginIcon() {
+  const iconData = localStorage.getItem('helechos_login_icon');
+  const cfgEmoji = (document.getElementById('cfgLoginEmoji') || {}).value || '';
+  const img  = document.getElementById('loginLogoImg');
+  const span = document.getElementById('loginLogoEmoji');
+  const prev = document.getElementById('loginIconPreview');
+  if (iconData) {
+    if (img)  { img.src = iconData; img.style.display = 'block'; }
+    if (span) span.style.display = 'none';
+    if (prev) prev.innerHTML = `<img src="${iconData}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`;
+  } else {
+    if (img)  { img.src = ''; img.style.display = 'none'; }
+    const emoji = cfgEmoji || localStorage.getItem('helechos_login_emoji') || '🌿';
+    if (span) { span.textContent = emoji; span.style.display = ''; }
+    if (prev) prev.textContent = emoji;
+  }
+}
+
+function mostrarLoginIconPreview() {
+  const iconData = localStorage.getItem('helechos_login_icon');
+  const btn = document.getElementById('loginIconQuitarBtn');
+  const txt = document.getElementById('loginIconUploadTxt');
+  if (!btn) return;
+  btn.style.display  = iconData ? 'block' : 'none';
+  txt.textContent    = iconData ? 'Cambiar imagen' : 'Subir imagen de ícono';
 }
 
 function cargarLoginBg(input) {
@@ -12335,6 +12377,7 @@ function quitarLoginBg() {
 
 function aplicarLoginBg() {
   const screen = document.getElementById('loginScreen');
+  if (!screen) return;
   if (loginBgBase64) {
     screen.style.backgroundImage = `url(${loginBgBase64})`;
     screen.classList.add('has-bg');
@@ -12362,15 +12405,42 @@ function mostrarLoginBgPreview() {
   }
 }
 
-// Cargar textos y fondo guardados al iniciar
+// Sincronizar input de emoji con preview en tiempo real
+document.addEventListener('DOMContentLoaded', () => {
+  const emojiInput = document.getElementById('cfgLoginEmoji');
+  if (emojiInput) {
+    emojiInput.addEventListener('input', () => {
+      const iconData = localStorage.getItem('helechos_login_icon');
+      if (!iconData) {
+        const prev = document.getElementById('loginIconPreview');
+        if (prev) prev.textContent = emojiInput.value || '🌿';
+      }
+    });
+  }
+});
+
+// Cargar textos, ícono y fondo al iniciar
 (function cargarLoginPersonalizacion() {
-  const brand = localStorage.getItem('helechos_login_brand');
-  const sub   = localStorage.getItem('helechos_login_sub');
-  const bg    = localStorage.getItem('helechos_login_bg');
+  const brand   = localStorage.getItem('helechos_login_brand');
+  const sub     = localStorage.getItem('helechos_login_sub');
+  const bg      = localStorage.getItem('helechos_login_bg');
+  const emoji   = localStorage.getItem('helechos_login_emoji');
   if (brand) { const el = document.getElementById('loginBrandText'); if (el) el.textContent = brand; }
   if (sub)   { const el = document.getElementById('loginSubText');   if (el) el.textContent = sub; }
   if (bg)    { loginBgBase64 = bg; aplicarLoginBg(); }
+  aplicarLoginIcon();
+  mostrarLoginIconPreview();
+  mostrarLoginBgPreview();
+  // Pre-llenar campos de config
+  const cfgBrand = document.getElementById('cfgLoginBrand');
+  const cfgSub   = document.getElementById('cfgLoginSub');
+  const cfgEmoji = document.getElementById('cfgLoginEmoji');
+  if (cfgBrand) cfgBrand.value = brand || 'Los Helechos';
+  if (cfgSub)   cfgSub.value   = sub   || 'Restaurante Campestre';
+  if (cfgEmoji) cfgEmoji.value = emoji || '🌿';
 })();
+
+
 
 
 
