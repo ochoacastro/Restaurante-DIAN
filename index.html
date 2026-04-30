@@ -6873,12 +6873,6 @@ function renderPago() {
       <div style="font-size:13px;color:var(--gris);margin-top:2px;">${carrito.length} producto${carrito.length!==1?'s':''} · ${esDom?'🛵 Domicilio':'🍽️ Mesa'}</div>
     </div>
 
-    <!-- Método de pago -->
-    <div class="card-section" style="border-left:3.5px solid ${uc};background:${ucSoft};margin-bottom:12px;">
-      <div class="card-section-title" style="color:${uc};">💳 Método de pago</div>
-      <div class="pago-btns">${pagoOpts.replace(/class="pago-btn active"/g, `class="pago-btn active" style="background:${uc}18;border-color:${uc};color:${uc};"`)}</div>
-    </div>
-
     <!-- Datos del cliente -->
     <div class="card-section" style="border-left:3.5px solid ${uc};background:${ucSoft};margin-bottom:12px;">
       <div class="card-section-title" style="color:${uc};">👤 Datos del Cliente${esDom ? ' <span style=\'color:var(--rojo);font-size:11px;\'>* requeridos</span>' : ' <span style=\'color:var(--gris);font-size:11px;\'>(opcional)</span>'}</div>
@@ -6907,30 +6901,6 @@ function renderPago() {
           min="0" max="${descuentoTipo==='pct'?100:''}">
       </div>
       ${descMonto > 0 ? `<div style="font-size:12px;color:${uc};font-weight:700;margin-top:6px;">Descuento aplicado: −${fmt(descMonto)}</div>` : ''}
-    </div>` : ''}
-
-    <!-- Factura electrónica -->
-    <div class="fe-toggle-wrap ${esFacturaElectronica?'active':''}" onclick="toggleFE();setTimeout(renderPago,50);" style="margin-bottom:12px;">
-      <div class="fe-toggle-label">
-        <span class="fe-toggle-icon">🧾</span>
-        <div>
-          <span class="fe-toggle-title">Factura Electrónica</span>
-          <span class="fe-toggle-sub">${esFacturaElectronica ? 'Activa — datos del receptor requeridos' : 'Toca para activar'}</span>
-        </div>
-      </div>
-      <div class="fe-switch" style="${esFacturaElectronica?`background:${uc};`:''}"></div>
-    </div>
-    ${esFacturaElectronica ? `
-    <div class="fe-fields" style="margin-bottom:12px;">
-      <label class="fe-field-label">Razón social / Nombre completo *</label>
-      <input class="fe-input" type="text" placeholder="Empresa S.A.S. o Nombre Apellido"
-        value="${esc(feNombre)}" oninput="feNombre=this.value" autocomplete="off">
-      <label class="fe-field-label">NIT o Cédula *</label>
-      <input class="fe-input" type="text" inputmode="numeric" placeholder="900123456-7"
-        value="${esc(feNit)}" oninput="feNit=this.value" autocomplete="off">
-      <label class="fe-field-label">Correo electrónico (opcional)</label>
-      <input class="fe-input" type="email" inputmode="email" placeholder="facturacion@empresa.com"
-        value="${esc(feCorreo)}" oninput="feCorreo=this.value" autocomplete="off">
     </div>` : ''}
 
     <!-- Totales -->
@@ -7466,6 +7436,11 @@ function toggleFE() {
   if (esFacturaElectronica) {
     setTimeout(() => { const el = document.querySelector('.fe-input'); if(el) el.focus(); }, 120);
   }
+}
+
+function toggleFECobro() {
+  esFacturaElectronica = !esFacturaElectronica;
+  if (!esFacturaElectronica) { feNombre = ''; feNit = ''; feCorreo = ''; }
 }
 
 // ── NOTA POR ÍTEM ─────────────────────────────────────────────────────
@@ -11703,6 +11678,11 @@ function abrirModalCobro() {
 function abrirModalCobroConRecibo(recibo) {
   _cobroActual = recibo;
   _pagosSeleccionados = {};
+  // Precargar datos de Factura Electrónica si el mesero los envió
+  esFacturaElectronica = recibo.esFacturaElectronica || false;
+  feNombre = recibo.feNombre || '';
+  feNit    = recibo.feNit    || '';
+  feCorreo = recibo.feCorreo || '';
   // No preseleccionar monto — el cajero lo ingresa (permite calcular cambio)
   renderModalCobro(recibo.total, recibo.subtotal, recibo.descMonto || 0);
   document.getElementById('modalCobro').classList.add('show');
@@ -11860,10 +11840,32 @@ function renderModalCobro(total, subtotal, descMonto) {
       </div>
     </div>
 
-    <!-- Factura electrónica toggle (solo cajero/admin) -->
-    ${_cobroActual && _cobroActual.esFacturaElectronica ? `
+    <!-- Factura electrónica toggle (cajero/admin) -->
+    <div class="fe-toggle-wrap ${esFacturaElectronica?'active':''}" id="cobFeToggle" onclick="toggleFECobro();renderModalCobro(${total},${subtotal},${descMonto});" style="margin-bottom:10px;">
+      <div class="fe-toggle-label">
+        <span class="fe-toggle-icon">🧾</span>
+        <div>
+          <span class="fe-toggle-title">Factura Electrónica</span>
+          <span class="fe-toggle-sub">${esFacturaElectronica ? 'Activa — datos del receptor requeridos' : 'Toca para activar'}</span>
+        </div>
+      </div>
+      <div class="fe-switch" style="${esFacturaElectronica?'background:#1565C0;':''}"></div>
+    </div>
+    ${esFacturaElectronica ? `
+    <div class="fe-fields" style="margin-bottom:12px;">
+      <label class="fe-field-label">Razón social / Nombre completo *</label>
+      <input class="fe-input" type="text" placeholder="Empresa S.A.S. o Nombre Apellido"
+        value="${esc(feNombre)}" oninput="feNombre=this.value" autocomplete="off">
+      <label class="fe-field-label">NIT o Cédula *</label>
+      <input class="fe-input" type="text" inputmode="numeric" placeholder="900123456-7"
+        value="${esc(feNit)}" oninput="feNit=this.value" autocomplete="off">
+      <label class="fe-field-label">Correo electrónico (opcional)</label>
+      <input class="fe-input" type="email" inputmode="email" placeholder="facturacion@empresa.com"
+        value="${esc(feCorreo)}" oninput="feCorreo=this.value" autocomplete="off">
+    </div>` : ''}
+    ${_cobroActual && _cobroActual.esFacturaElectronica && !esFacturaElectronica ? `
     <div style="background:rgba(21,101,192,0.08);border:1.5px solid rgba(21,101,192,0.3);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:#1565C0;margin-bottom:4px;">🧾 Factura Electrónica solicitada</div>
+      <div style="font-size:11px;font-weight:700;color:#1565C0;margin-bottom:4px;">🧾 El mesero solicitó Factura Electrónica</div>
       ${_cobroActual.feNombre ? `<div style="font-size:13px;font-weight:700;color:var(--negro);">${esc(_cobroActual.feNombre)}</div>` : ''}
       ${_cobroActual.feNit ? `<div style="font-size:12px;color:var(--gris);">NIT: ${esc(_cobroActual.feNit)}</div>` : ''}
       ${_cobroActual.feCorreo ? `<div style="font-size:12px;color:var(--gris);">✉️ ${esc(_cobroActual.feCorreo)}</div>` : ''}
