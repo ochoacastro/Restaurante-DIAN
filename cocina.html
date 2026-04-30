@@ -631,8 +631,12 @@
   }
 
   window.volverAPedidos = function() {
-    document.getElementById('setupScreen').style.display = 'none';
-    document.getElementById('kdsArea').style.display     = 'block';
+    // Si hay historial, regresar; si no, ir al index
+    if (document.referrer && document.referrer !== window.location.href) {
+      window.location.href = document.referrer;
+    } else {
+      window.location.href = 'index.html';
+    }
   };
 
   window.showSetup = function() {
