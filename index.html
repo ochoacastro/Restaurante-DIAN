@@ -8269,6 +8269,7 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
     t += linea + '\n';
   } else {
     t += 'Pago: ' + proc(f.pago) + '\n';
+    if (f.totalRecibido !== undefined && f.totalRecibido > f.total) t += fila('Recibido:', p(f.totalRecibido)) + '\n';
     if (f.cambio > 0) t += fila('Cambio:', p(f.cambio)) + '\n';
   }
   if (f.tipoOrden === 'mesa' && f.mesaNumero) t += proc('Mesa: ' + f.mesaNumero) + '\n';
@@ -11553,9 +11554,15 @@ function enviarAlCajero() {
 
   showToast('✅ Pedido enviado a caja — ' + fmt(total), 3000);
 
-  // Redirigir al menú para seguir atendiendo
+  // Redirigir: si quedan más órdenes activas, ir al menú; si no, ir al home para crear nueva orden
   cerrarDrawer();
-  setTimeout(() => { showTab('menu', true); }, 200);
+  setTimeout(() => {
+    if (ordenActivaId) {
+      showTab('menu', true);
+    } else {
+      showTab('home', true);
+    }
+  }, 200);
 }
 
 // Badge del cajero en tab o header
