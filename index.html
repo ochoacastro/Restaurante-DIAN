@@ -9080,7 +9080,7 @@ async function finalizarFactura() {
   };
   historial.push(factura);
   localStorage.setItem('helechos_historial', JSON.stringify(historial));
-  fbSyncFactura(factura); // fix #13: subir solo la factura nueva, no el array completo
+  // fbSyncFactura se llama después de añadir totalRecibido/cambio/pagos al cobrar
   actualizarBadgeHistorial();
 
   // ── FACTURA ELECTRÓNICA: enviar al backend → DIAN ─────────────────────
@@ -12024,6 +12024,7 @@ async function ejecutarCobro(total) {
       const idx = historial.findIndex(x => x.numero === factura.numero);
       if (idx >= 0) historial[idx] = factura;
       localStorage.setItem('helechos_historial', JSON.stringify(historial));
+      fbSyncFactura(factura); // sincronizar con pago completo
     }
 
     // Marcar recibo como cobrado
@@ -12067,6 +12068,7 @@ async function ejecutarCobro(total) {
       const idx = historial.findIndex(x => x.numero === factura.numero);
       if (idx >= 0) historial[idx] = factura;
       localStorage.setItem('helechos_historial', JSON.stringify(historial));
+      fbSyncFactura(factura); // sincronizar con pago completo
     }
     mostrarResumenCobro(factura, pagosEntries, totalPagado, cambio);
   }
@@ -12092,9 +12094,9 @@ function mostrarResumenCobro(factura, pagosEntries, totalRecibido, cambio) {
 
     ${cambio > 0 ? `<div class="cambio-box" style="margin-bottom:12px;"><span class="cambio-label">💵 Cambio para el cliente</span><span class="cambio-monto">${fmt(cambio)}</span></div>` : `<div class="cambio-box" style="background:linear-gradient(135deg,#1565C0,#1976D2);margin-bottom:12px;"><span class="cambio-label">✅ Pago exacto</span><span class="cambio-monto" style="font-size:16px;">Sin vuelto</span></div>`}
 
-    <button onclick="cerrarModal('modalCobro');abrirModalImprimirPorNumero('${numFact}');" style="width:100%;padding:14px;background:var(--rappi);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;">
+    ${factura ? `<button onclick="cerrarModal('modalCobro');abrirModalImprimirPorNumero('${numFact}');" style="width:100%;padding:14px;background:var(--rappi);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;">
       🖨️ Imprimir factura
-    </button>
+    </button>` : ''}
     <button onclick="cerrarModal('modalCobro');" style="width:100%;padding:12px;background:var(--fondo);color:var(--negro);border:1.5px solid var(--borde);border-radius:var(--r);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;">
       Cerrar
     </button>
