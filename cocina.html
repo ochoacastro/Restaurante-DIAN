@@ -39,52 +39,53 @@
   #topbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
+    padding: 8px 10px;
     background: var(--surface);
     border-bottom: 2px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 100;
-    gap: 10px;
+    gap: 5px;
+    overflow: hidden;
   }
 
   #topbar .brand {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 900;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--yellow);
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
-  #topbar .brand span {
-    display: none;
-  }
+  #topbar .brand span { display: none; }
 
   #clock {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--text);
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .top-stats {
     display: flex;
-    gap: 6px;
+    gap: 5px;
     align-items: center;
+    margin-left: auto;
     flex-shrink: 0;
   }
 
   .stat-pill {
     background: var(--border);
     border-radius: 8px;
-    padding: 5px 10px;
+    padding: 4px 7px;
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--muted);
     letter-spacing: 1px;
@@ -92,6 +93,21 @@
   }
 
   .stat-pill b { color: var(--yellow); margin-right: 3px; }
+
+  #btnVolver {
+    background: var(--yellow) !important;
+    border: none !important;
+    color: #111 !important;
+    border-radius: 8px !important;
+    padding: 5px 10px !important;
+    cursor: pointer;
+    font-size: 12px !important;
+    font-family: 'Barlow Condensed', sans-serif !important;
+    font-weight: 800 !important;
+    white-space: nowrap;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
 
   /* ── OFFLINE / DESCONEXIÓN ──────────────── */
   #offlineBar {
@@ -487,14 +503,14 @@
 <body>
 
   <div id="topbar">
+    <button id="btnVolver" onclick="volverAPedidos()" title="Volver">← Volver</button>
     <div class="brand">🍳 Cocina</div>
     <div id="clock">00:00:00</div>
     <div class="top-stats">
       <div id="fbStatusDotKds" title="Firebase desconectado"></div>
       <div class="stat-pill"><b id="statActivas">0</b>activas</div>
       <div class="stat-pill"><b id="statListas">0</b>listas</div>
-      <button id="btnVolver" onclick="volverAPedidos()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:'Barlow',sans-serif;white-space:nowrap;">← Volver</button>
-      <button onclick="showSetup()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:11px;font-family:'Barlow',sans-serif;white-space:nowrap;">⚙️</button>
+      <button onclick="showSetup()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:14px;font-family:'Barlow',sans-serif;white-space:nowrap;flex-shrink:0;">⚙️</button>
     </div>
   </div>
 
@@ -601,14 +617,11 @@
   window.volverAPedidos = function() {
     document.getElementById('setupScreen').style.display = 'none';
     document.getElementById('kdsArea').style.display     = 'block';
-    document.getElementById('btnVolver').style.display   = 'none';
   };
 
   window.showSetup = function() {
     document.getElementById('setupScreen').style.display = 'flex';
     document.getElementById('kdsArea').style.display     = 'none';
-    // Mostrar botón volver solo si ya hay conexión activa
-    document.getElementById('btnVolver').style.display   = db ? 'inline-block' : 'none';
     // Pre-llenar campos con config guardada
     try {
       const cfg = JSON.parse(localStorage.getItem(FB_CFG_KEY) || '{}');
