@@ -38,20 +38,32 @@
   /* ── TOP BAR ────────────────────────── */
   #topbar {
     display: flex;
-    align-items: center;
-    padding: 8px 10px;
+    flex-direction: column;
+    padding: 0;
     background: var(--surface);
     border-bottom: 2px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 100;
-    gap: 5px;
-    overflow: hidden;
+  }
+
+  #topbar-row1 {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  #topbar-row2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px 8px;
   }
 
   #topbar .brand {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 900;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -64,9 +76,9 @@
 
   #clock {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
-    color: var(--text);
+    color: var(--muted);
     letter-spacing: 1px;
     white-space: nowrap;
     flex-shrink: 0;
@@ -83,7 +95,7 @@
   .stat-pill {
     background: var(--border);
     border-radius: 8px;
-    padding: 4px 7px;
+    padding: 4px 8px;
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 13px;
     font-weight: 700;
@@ -95,18 +107,18 @@
   .stat-pill b { color: var(--yellow); margin-right: 3px; }
 
   #btnVolver {
-    background: var(--yellow) !important;
-    border: none !important;
-    color: #111 !important;
-    border-radius: 8px !important;
-    padding: 5px 10px !important;
+    flex: 1;
+    background: var(--yellow);
+    border: none;
+    color: #111;
+    border-radius: 8px;
+    padding: 7px 0;
     cursor: pointer;
-    font-size: 12px !important;
-    font-family: 'Barlow Condensed', sans-serif !important;
-    font-weight: 800 !important;
-    white-space: nowrap;
+    font-size: 13px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
     letter-spacing: 1px;
-    flex-shrink: 0;
+    text-align: center;
   }
 
   /* ── OFFLINE / DESCONEXIÓN ──────────────── */
@@ -503,14 +515,18 @@
 <body>
 
   <div id="topbar">
-    <button id="btnVolver" onclick="volverAPedidos()" title="Volver">← Volver</button>
-    <div class="brand">🍳 Cocina</div>
-    <div id="clock">00:00:00</div>
-    <div class="top-stats">
-      <div id="fbStatusDotKds" title="Firebase desconectado"></div>
-      <div class="stat-pill"><b id="statActivas">0</b>activas</div>
-      <div class="stat-pill"><b id="statListas">0</b>listas</div>
-      <button onclick="showSetup()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:14px;font-family:'Barlow',sans-serif;white-space:nowrap;flex-shrink:0;">⚙️</button>
+    <div id="topbar-row1">
+      <div class="brand">🍳 Cocina</div>
+      <div class="top-stats">
+        <div id="fbStatusDotKds" title="Firebase desconectado"></div>
+        <div class="stat-pill"><b id="statActivas">0</b>activas</div>
+        <div class="stat-pill"><b id="statListas">0</b>listas</div>
+        <button onclick="showSetup()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:14px;flex-shrink:0;">⚙️</button>
+      </div>
+    </div>
+    <div id="topbar-row2">
+      <button id="btnVolver" onclick="volverAPedidos()">← Volver al sistema</button>
+      <div id="clock" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:1px;white-space:nowrap;flex-shrink:0;">00:00:00</div>
     </div>
   </div>
 
