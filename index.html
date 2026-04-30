@@ -8149,11 +8149,11 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
   // ── Datos factura ─────────────────────────────────────────────────
   t += C(proc(f.esFacturaElectronica ? 'FACTURA ELECTRONICA' : 'DOCUMENTO EQUIVALENTE POS')) + '\n';
   t += C(proc('No. ' + f.numero)) + '\n';
-  t += fila('Fecha: ' + f.fecha, 'Hora: ' + f.hora) + '\n';
-  if (f.pedidoId) t += fila('N\u00b0 Pedido:', '#' + f.pedidoId.replace(/^r_/,'').split('_')[0]) + '\n';
+  if (f.pedidoId) t += 'N\u00b0 Pedido: #' + f.pedidoId.replace(/^r_/,'').split('_')[0] + '\n';
   if (f.tipoOrden === 'mesa' && f.mesaNumero) t += proc('Mesa: ' + f.mesaNumero) + '\n';
   if (f.clienteNombre)   t += proc('Cliente: '  + f.clienteNombre)   + '\n';
   if (f.clienteTelefono) t += proc('Tel: '       + f.clienteTelefono) + '\n';
+  t += 'Fecha: ' + f.fecha + '  Hora: ' + f.hora + '\n';
   if (f.esFacturaElectronica && (f.feNombre || f.feNit)) {
     t += linea + '\n';
     t += proc('RECEPTOR:') + '\n';
