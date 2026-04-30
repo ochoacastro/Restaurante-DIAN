@@ -6799,29 +6799,9 @@ function renderCarrito() {
           <div style="font-size:11px;color:var(--gris);text-align:center;">Marca el ✓ de cada plato al entregarlo · el botón de pago aparecerá al completar todos</div>
         </div>`;
       }
-      // Admin/master también deben esperar que todos los ítems estén entregados
-      const totalUnidadesA = carrito.reduce((s, i) => s + i.cantidad, 0);
-      const totalServidosA = carrito.reduce((s, i) => {
-        if (!Array.isArray(i.servido)) return s;
-        return s + i.servido.filter(Boolean).length;
-      }, 0);
-      const todosServidos = totalUnidadesA > 0 && totalServidosA >= totalUnidadesA;
-      if (todosServidos) {
-        return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
-            💳 Pagar Cuenta
-          </button>`;
-      }
-      const pctA = totalUnidadesA > 0 ? Math.round(totalServidosA / totalUnidadesA * 100) : 0;
-      return `<div style="width:100%;padding:14px 16px;margin-top:8px;background:var(--fondo);border:2px dashed var(--borde);border-radius:var(--r);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:13px;font-weight:700;color:var(--gris);">${totalServidosA===0?'⏳ En preparación':'🍽️ Entregando…'}</span>
-          <span style="font-size:13px;font-weight:800;color:var(--rappi);font-family:var(--font-num);">${totalServidosA}/${totalUnidadesA}</span>
-        </div>
-        <div style="width:100%;height:7px;background:var(--borde);border-radius:999px;overflow:hidden;margin-bottom:8px;">
-          <div style="height:100%;width:${pctA}%;background:linear-gradient(90deg,var(--rappi),#FF7A5C);border-radius:999px;transition:width 0.4s ease;"></div>
-        </div>
-        <div style="font-size:11px;color:var(--gris);text-align:center;">Marca el ✓ de cada plato al entregarlo · el botón de pago aparecerá al completar todos</div>
-      </div>`;
+      return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
+          💳 Pagar Cuenta
+        </button>`;
     })()}
     <div style="height:24px"></div>`;
 }
@@ -6904,25 +6884,6 @@ function renderPago() {
         oninput="clienteDireccion=this.value;guardarOrdenActiva()" autocomplete="off">` : ''}
     </div>
 
-    <!-- Descuento (solo admin) -->
-    ${esAdmin ? `
-    <div class="card-section" style="border-left:3.5px solid ${uc};background:${ucSoft};margin-bottom:12px;">
-      <div class="card-section-title" style="color:${uc};">🏷️ Descuento</div>
-      <div class="descuento-row">
-        <button class="descuento-tipo-btn ${descuentoTipo==='pct'?'active':''}" onclick="setDescuentoTipo('pct');renderPago();"
-          style="${descuentoTipo==='pct'?`background:${uc}18;border-color:${uc};color:${uc};`:''}">%</button>
-        <button class="descuento-tipo-btn ${descuentoTipo==='fijo'?'active':''}" onclick="setDescuentoTipo('fijo');renderPago();"
-          style="${descuentoTipo==='fijo'?`background:${uc}18;border-color:${uc};color:${uc};`:''}">$</button>
-        <input class="obs-input" id="descuentoInputPago" type="number" inputmode="numeric"
-          placeholder="${descuentoTipo==='pct'?'0 – 100':'Monto fijo'}"
-          value="${descuentoValor > 0 ? descuentoValor : ''}"
-          style="flex:1;margin:0;padding:9px 10px;"
-          oninput="descuentoValor=Math.min(descuentoTipo==='pct'?100:(carrito.reduce((s,i)=>s+i.precio*i.cantidad,0)||Infinity),Math.max(0,parseFloat(this.value)||0));this.value=descuentoValor||'';renderPago();"
-          min="0" max="${descuentoTipo==='pct'?100:''}">
-      </div>
-      ${descMonto > 0 ? `<div style="font-size:12px;color:${uc};font-weight:700;margin-top:6px;">Descuento aplicado: −${fmt(descMonto)}</div>` : ''}
-    </div>` : ''}
-
     <!-- Totales -->
     <div class="totales" style="border-top:2px solid ${uc}22;margin-bottom:8px;">
       <div class="total-row"><span>Subtotal</span><span class="val" style="color:${uc}99;">${fmt(subtotal)}</span></div>
@@ -6936,26 +6897,6 @@ function renderPago() {
       const rolActual = usuarioActivo ? usuarioActivo.rol : 'admin';
       if (rolActual === 'mesero') {
         return '<button onclick="enviarAlCajero()" style="width:100%;padding:18px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(21,101,192,0.4);margin-bottom:10px;">&#128176; Enviar a Caja</button><div style="font-size:12px;color:var(--gris);text-align:center;padding-bottom:8px;">El cajero recibirá este recibo para procesarlo</div>';
-      }
-      // Admin/master: verificar que todos los ítems estén entregados
-      const totalU = carrito.reduce((s, i) => s + i.cantidad, 0);
-      const totalS = carrito.reduce((s, i) => {
-        if (!Array.isArray(i.servido)) return s;
-        return s + i.servido.filter(Boolean).length;
-      }, 0);
-      const todosOk = totalU > 0 && totalS >= totalU;
-      if (!todosOk) {
-        const pctP = totalU > 0 ? Math.round(totalS / totalU * 100) : 0;
-        return `<div style="width:100%;padding:14px 16px;margin-bottom:10px;background:var(--fondo);border:2px dashed var(--borde);border-radius:var(--r);">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <span style="font-size:13px;font-weight:700;color:var(--gris);">${totalS===0?'⏳ En preparación':'🍽️ Entregando…'}</span>
-            <span style="font-size:13px;font-weight:800;color:var(--rappi);font-family:var(--font-num);">${totalS}/${totalU}</span>
-          </div>
-          <div style="width:100%;height:7px;background:var(--borde);border-radius:999px;overflow:hidden;margin-bottom:8px;">
-            <div style="height:100%;width:${pctP}%;background:linear-gradient(90deg,var(--rappi),#FF7A5C);border-radius:999px;transition:width 0.4s ease;"></div>
-          </div>
-          <div style="font-size:11px;color:var(--gris);text-align:center;">Marca el ✓ de cada plato al entregarlo · el botón de cobro aparecerá al completar todos</div>
-        </div>`;
       }
       return '<button onclick="abrirModalCobro()" style="width:100%;padding:18px;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.4);margin-bottom:10px;">&#128176; Cobrar</button><button onclick="abrirModalImprimir()" style="width:100%;padding:14px;background:var(--fondo);color:var(--negro);border:1.5px solid var(--borde);border-radius:var(--r);font-size:15px;font-weight:700;font-family:Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">&#128424;&#65039; Solo imprimir</button>';
     })()}
@@ -8206,9 +8147,10 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
   t += doble + '\n';
 
   // ── Datos factura ─────────────────────────────────────────────────
-  t += fila('Factura: ' + f.numero, f.fecha) + '\n';
-  if (f.esFacturaElectronica) t += C(proc('*** FACTURA ELECTRONICA ***')) + '\n';
-  t += 'Hora: ' + f.hora + '\n';
+  t += C(proc(f.esFacturaElectronica ? 'FACTURA ELECTRONICA' : 'DOCUMENTO EQUIVALENTE POS')) + '\n';
+  t += C(proc('No. ' + f.numero)) + '\n';
+  t += fila('Fecha: ' + f.fecha, 'Hora: ' + f.hora) + '\n';
+  if (f.pedidoId) t += fila('N\u00b0 Pedido:', '#' + f.pedidoId.replace(/^r_/,'').split('_')[0]) + '\n';
   if (f.esFacturaElectronica && (f.feNombre || f.feNit)) {
     t += linea + '\n';
     t += proc('RECEPTOR:') + '\n';
@@ -8232,6 +8174,7 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
 
     if (nombre.length <= PROD_W) {
       t += cant + ' ' + nombre.padEnd(PROD_W) + precioS + '\n';
+      if (item.nota) t += '   > ' + proc(item.nota).substring(0, A-5) + '\n';
     } else {
       const palabrasN = nombre.split(' ');
       let lineaActual = '';
@@ -8256,6 +8199,7 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
           t += ' '.repeat(CANT_W + 1) + lineaActual + '\n';
         }
       }
+      if (item.nota) t += '   > ' + proc(item.nota).substring(0, A-5) + '\n';
     }
   });
 
@@ -8301,6 +8245,8 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
   if (f.clienteTelefono)  t += proc('Tel: '        + f.clienteTelefono)  + '\n';
   if (f.tipoOrden === 'domicilio' && f.clienteDireccion) t += proc('Domicilio: ' + f.clienteDireccion) + '\n';
   if (f.observaciones)    t += proc('Obs: '       + f.observaciones)    + '\n';
+  if (f.mesero)           t += proc('Mesero: '    + f.mesero)           + '\n';
+  if (f.cajero)           t += proc('Cajero: '    + f.cajero)           + '\n';
   // ── CUFE (solo si la DIAN ya aceptó) ──────────────────────────────────
   if (f.feCufe) {
     t += linea + '\n';
@@ -11860,6 +11806,23 @@ function renderModalCobro(total, subtotal, descMonto) {
       ${itemsHTML}
     </div>
 
+    <!-- Descuento en orden de cobro (solo admin/cajero) -->
+    ${!_cobroActual ? `
+    <div style="background:var(--fondo);border:1.5px solid var(--borde);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:10px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">🏷️ Descuento</div>
+      <div class="descuento-row">
+        <button class="descuento-tipo-btn ${descuentoTipo==='pct'?'active':''}" onclick="setDescuentoTipo('pct');abrirModalCobro();" style="${descuentoTipo==='pct'?'background:rgba(255,68,26,0.12);border-color:var(--rappi);color:var(--rappi);':''}">%</button>
+        <button class="descuento-tipo-btn ${descuentoTipo==='fijo'?'active':''}" onclick="setDescuentoTipo('fijo');abrirModalCobro();" style="${descuentoTipo==='fijo'?'background:rgba(255,68,26,0.12);border-color:var(--rappi);color:var(--rappi);':''}">$</button>
+        <input class="obs-input" type="number" inputmode="numeric"
+          placeholder="${descuentoTipo==='pct'?'0 – 100':'Monto fijo'}"
+          value="${descuentoValor > 0 ? descuentoValor : ''}"
+          style="flex:1;margin:0;padding:9px 10px;"
+          oninput="descuentoValor=Math.min(descuentoTipo==='pct'?100:(carrito.reduce((s,i)=>s+i.precio*i.cantidad,0)||Infinity),Math.max(0,parseFloat(this.value)||0));this.value=descuentoValor||'';abrirModalCobro();"
+          min="0" max="${descuentoTipo==='pct'?100:''}">
+      </div>
+      ${descMonto > 0 ? `<div style="font-size:12px;color:var(--rappi);font-weight:700;margin-top:6px;">Descuento aplicado: −${fmt(descMonto)}</div>` : ''}
+    </div>` : ''}
+
     <!-- Totales + IVA -->
     <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.2);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;">
       ${descMonto > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--gris-osc);margin-bottom:3px;"><span>Subtotal</span><span style="font-family:var(--font-num);">${fmt(subtotal)}</span></div>
@@ -12137,6 +12100,8 @@ async function ejecutarCobro(total) {
       factura.pago = pagoLabel;
       // Guardar el mesero que tomó la orden para que aparezca en su historial
       if (recibo.meseroCajero) factura.mesero = recibo.meseroCajero;
+      // Guardar el ID del pedido original
+      if (recibo.id) factura.pedidoId = recibo.id;
       // Actualizar en historial
       const idx = historial.findIndex(x => x.numero === factura.numero);
       if (idx >= 0) historial[idx] = factura;
