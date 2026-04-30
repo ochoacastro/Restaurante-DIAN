@@ -2501,12 +2501,21 @@
 
   /* ── PAGO COMBINADO ── */
   .pago-combinado-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-  .pago-combinado-item { display: flex; align-items: center; gap: 8px; background: var(--fondo); border: 1.5px solid var(--borde); border-radius: 12px; padding: 10px 12px; }
+  .pago-combinado-item { background: var(--fondo); border: 1.5px solid var(--borde); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 0; }
   .pago-combinado-item.activo { border-color: var(--rappi); background: var(--rappi-soft); }
   body.dark .pago-combinado-item { background: #252525; border-color: #333; }
   body.dark .pago-combinado-item.activo { border-color: var(--rappi); background: rgba(255,68,26,0.1); }
-  .pago-comb-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--negro); }
-  .pago-comb-input { width: 130px; padding: 8px 10px; border: 1.5px solid var(--borde); border-radius: 10px; font-size: 14px; font-family: var(--font-num); font-weight: 700; text-align: right; background: var(--blanco); color: var(--negro); outline: none; }
+  .cob-exacto-btn { border: 1.5px solid var(--rappi); background: transparent; color: var(--rappi); border-radius: 8px; padding: 5px 9px; font-size: 11px; font-weight: 800; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; }
+  .cob-exacto-btn:active { background: var(--rappi); color: #fff; }
+  body.dark .cob-exacto-btn { border-color: var(--rappi); color: var(--rappi); }
+  .cob-chips-row { display: none; flex-wrap: wrap; gap: 6px; padding-top: 8px; margin-top: 4px; border-top: 1px solid rgba(0,0,0,0.06); }
+  body.dark .cob-chips-row { border-top-color: rgba(255,255,255,0.06); }
+  .cob-chip { border: 1.5px solid var(--borde); background: var(--blanco); color: var(--negro); border-radius: 20px; padding: 5px 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font-num); transition: all 0.15s; }
+  .cob-chip:active { background: var(--rappi); color: #fff; border-color: var(--rappi); transform: scale(0.96); }
+  .cob-chip-exacto { background: rgba(255,68,26,0.08); border-color: rgba(255,68,26,0.3); color: var(--rappi); }
+  body.dark .cob-chip { background: #1A1A1A; border-color: #444; color: #EEE; }
+  .pago-comb-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--negro); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pago-comb-input { width: 110px; padding: 8px 10px; border: 1.5px solid var(--borde); border-radius: 10px; font-size: 14px; font-family: var(--font-num); font-weight: 700; text-align: right; background: var(--blanco); color: var(--negro); outline: none; flex-shrink: 0; }
   .pago-comb-input:focus { border-color: var(--rappi); }
   body.dark .pago-comb-input { background: #1A1A1A; border-color: #444; color: #F0F0F0; }
   .cambio-box { background: linear-gradient(135deg, #1b5e20, #2e7d32); border-radius: var(--r); padding: 16px 18px; margin-top: 10px; color: #fff; display: flex; align-items: center; justify-content: space-between; }
@@ -11686,8 +11695,7 @@ function abrirModalCobro() {
   const total = subtotal - descMonto;
   _cobroActual = null;
   _pagosSeleccionados = {};
-  // Preseleccionar método si ya había uno
-  if (pagoMetodo) _pagosSeleccionados[pagoMetodo] = total;
+  // No preseleccionar monto — el cajero lo ingresa manualmente para poder calcular cambio
   renderModalCobro(total, subtotal, descMonto);
   document.getElementById('modalCobro').classList.add('show');
 }
@@ -11695,7 +11703,7 @@ function abrirModalCobro() {
 function abrirModalCobroConRecibo(recibo) {
   _cobroActual = recibo;
   _pagosSeleccionados = {};
-  if (recibo.pagoMetodoSugerido) _pagosSeleccionados[recibo.pagoMetodoSugerido] = recibo.total;
+  // No preseleccionar monto — el cajero lo ingresa (permite calcular cambio)
   renderModalCobro(recibo.total, recibo.subtotal, recibo.descMonto || 0);
   document.getElementById('modalCobro').classList.add('show');
 }
@@ -11752,17 +11760,34 @@ function renderModalCobro(total, subtotal, descMonto) {
   }).join('');
 
   // HTML inputs de pago
+  const BILLETES_ES = [1000,2000,5000,10000,20000,50000,100000];
+  const BILLETES_CO = [1000,2000,5000,10000,20000,50000,100000];
+  const BILLETES = BILLETES_CO;
+  const esEfectivo = (label) => /efect|cash|pesos|billete/i.test(label);
   const pagosHTML = metodos.map(m => {
     const numVal = _pagosSeleccionados[m.label] || 0;
     const displayVal = numVal > 0 ? numVal.toLocaleString('es-CO') : '';
     const activo = numVal > 0;
+    // Chips de billetes comunes — solo para efectivo
+    const chipsHTML = esEfectivo(m.label) ? `
+      <div class="cob-chips-row" id="chips_${m.label.replace(/\s/g,'_')}">
+        ${BILLETES.map(b => `<button class="cob-chip" type="button" onclick="addCobChip('${esc(m.label)}',${b},${total})">${b>=1000?(b/1000)+'k':b}</button>`).join('')}
+        <button class="cob-chip cob-chip-exacto" type="button" onclick="setCobExacto('${esc(m.label)}',${total})">Exacto</button>
+      </div>` : '';
     return `<div class="pago-combinado-item ${activo ? 'activo' : ''}">
-      <span style="font-size:20px;">${m.emoji}</span>
-      <span class="pago-comb-label">${esc(m.label)}</span>
-      <input class="pago-comb-input" type="text" inputmode="numeric"
-        placeholder="0" value="${displayVal}"
-        oninput="formatCobInput(this, '${esc(m.label)}', ${total})"
-        onfocus="this.select()">
+      <div style="display:flex;align-items:center;gap:8px;width:100%;">
+        <span style="font-size:20px;">${m.emoji}</span>
+        <span class="pago-comb-label">${esc(m.label)}</span>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+          <button class="cob-exacto-btn" type="button" title="Poner faltante" onclick="setCobExacto('${esc(m.label)}',${total})">Exacto</button>
+          <input class="pago-comb-input" type="text" inputmode="numeric"
+            placeholder="0" value="${displayVal}"
+            oninput="formatCobInput(this, '${esc(m.label)}', ${total})"
+            onfocus="this.select();mostrarChips('${esc(m.label)}')"
+            onblur="ocultarChipsDelay('${esc(m.label)}')">
+        </div>
+      </div>
+      ${chipsHTML}
     </div>`;
   }).join('');
 
@@ -11924,6 +11949,58 @@ function setCobPago(metodo, valor, total) {
     btnFinal.disabled = !pagoOk;
   }
 }
+
+// Poner el faltante en un método (botón "Exacto")
+function setCobExacto(metodo, total) {
+  const pagado = Object.values(_pagosSeleccionados).reduce((s,v) => s+Number(v||0), 0);
+  const actual = Number(_pagosSeleccionados[metodo]||0);
+  // Faltante sin contar el valor actual de este método
+  const otrosPagados = pagado - actual;
+  const faltante = Math.max(0, total - otrosPagados);
+  _pagosSeleccionados[metodo] = faltante;
+  // Actualizar input visual
+  const items = document.querySelectorAll('.pago-combinado-item');
+  items.forEach(el => {
+    const lbl = el.querySelector('.pago-comb-label');
+    const inp = el.querySelector('.pago-comb-input');
+    if (lbl && lbl.textContent.trim() === metodo && inp) {
+      inp.value = faltante > 0 ? faltante.toLocaleString('es-CO') : '';
+    }
+  });
+  setCobPago(metodo, faltante, total);
+}
+
+// Sumar un billete al monto de efectivo
+function addCobChip(metodo, billete, total) {
+  const actual = Number(_pagosSeleccionados[metodo]||0);
+  const nuevo = actual + billete;
+  _pagosSeleccionados[metodo] = nuevo;
+  const items = document.querySelectorAll('.pago-combinado-item');
+  items.forEach(el => {
+    const lbl = el.querySelector('.pago-comb-label');
+    const inp = el.querySelector('.pago-comb-input');
+    if (lbl && lbl.textContent.trim() === metodo && inp) {
+      inp.value = nuevo > 0 ? nuevo.toLocaleString('es-CO') : '';
+    }
+  });
+  setCobPago(metodo, nuevo, total);
+}
+
+let _chipsOcultarTimer = {};
+function mostrarChips(metodo) {
+  clearTimeout(_chipsOcultarTimer[metodo]);
+  const key = metodo.replace(/\s/g,'_');
+  const el = document.getElementById('chips_' + key);
+  if (el) el.style.display = 'flex';
+}
+function ocultarChipsDelay(metodo) {
+  const key = metodo.replace(/\s/g,'_');
+  _chipsOcultarTimer[metodo] = setTimeout(() => {
+    const el = document.getElementById('chips_' + key);
+    if (el) el.style.display = 'none';
+  }, 300);
+}
+
 
 async function ejecutarCobro(total) {
   const totalPagado = Object.values(_pagosSeleccionados).reduce((s,v) => s + (Number(v)||0), 0);
