@@ -1925,10 +1925,22 @@
   #loginScreen {
     position: fixed; inset: 0;
     background: var(--blanco);
+    background-size: cover; background-position: center; background-repeat: no-repeat;
     z-index: 2000; display: flex;
     flex-direction: column; align-items: center;
     justify-content: center; padding: 30px 24px; overflow: hidden;
   }
+  #loginScreen.has-bg::before { display:none; }
+  #loginScreen.has-bg::after  { display:none; }
+  #loginScreen.has-bg {
+    background-color: transparent;
+  }
+  #loginBgOverlay {
+    display: none; position: absolute; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 0; pointer-events: none;
+  }
+  #loginScreen.has-bg #loginBgOverlay { display: block; }
+  #loginScreen > *:not(#loginBgOverlay) { position: relative; z-index: 1; }
   #loginScreen::before {
     content: ''; position: absolute;
     width: 400px; height: 400px; border-radius: 50%;
@@ -1951,12 +1963,15 @@
     font-family: 'Inter', sans-serif; font-size: 28px;
     font-weight: 800; color: var(--negro); text-align: center;
     line-height: 1.1; margin-bottom: 4px; letter-spacing: -0.5px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.12);
   }
+  #loginScreen.has-bg .login-brand { color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
   .login-sub {
     font-size: 13px; color: var(--gris); font-weight: 500;
     text-align: center; margin-bottom: 36px;
     letter-spacing: 0; text-transform: none;
   }
+  #loginScreen.has-bg .login-sub { color: rgba(255,255,255,0.85); }
   .login-line {
     width: 100%; max-width: 340px; height: 1.5px;
     background: linear-gradient(90deg, transparent, #E8E8E8, transparent);
@@ -2674,12 +2689,14 @@
 
 <!-- ══ PANTALLA DE LOGIN ══════════════════════════════════════════════ -->
 <div id="loginScreen">
-  <div class="login-logo" id="loginLogoWrap" onclick="logoTap()" style="cursor:default;user-select:none;-webkit-tap-highlight-color:transparent;">
+  <div id="loginBgOverlay"></div>
+  <div class="login-logo" id="loginLogoWrap" onclick="loginLogoTap()" style="cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;" title="Toca para cambiar el logo">
     <img id="loginLogoImg" src="" alt="" style="width:80px;height:80px;object-fit:cover;border-radius:20px;display:none;">
     <span id="loginLogoEmoji">🌿</span>
+    <input type="file" id="loginLogoFileInput" accept="image/*" style="display:none" onchange="loginLogoUpload(this)">
   </div>
-  <div class="login-brand">Los Helechos</div>
-  <div class="login-sub">Restaurante Campestre</div>
+  <div class="login-brand" id="loginBrandText" ondblclick="editarLoginTexto('brand')" title="Doble tap para editar">Los Helechos</div>
+  <div class="login-sub" id="loginSubText" ondblclick="editarLoginTexto('sub')" title="Doble tap para editar">Restaurante Campestre</div>
   <div class="login-line"></div>
 
   <!-- Selector de ROL (nuevo diseño) -->
@@ -3423,6 +3440,18 @@
           </label>
           <button id="logoQuitarBtn" style="display:none;width:100%;margin-top:6px;padding:9px;background:white;border:1.5px solid rgba(192,57,43,0.35);color:var(--rojo);border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;" onclick="quitarLogo()">🗑️ Quitar logo</button>
         </div>
+
+        <div class="config-field">
+          <label>🖼️ Fondo pantalla de inicio</label>
+          <div id="loginBgPreviewWrap" style="display:none;margin-bottom:8px;border-radius:10px;overflow:hidden;max-height:120px;">
+            <img id="loginBgPreview" style="width:100%;object-fit:cover;border-radius:10px;border:1.5px solid #FFD5CC;">
+          </div>
+          <label class="logo-upload-btn" style="margin-bottom:6px;">
+            🌄 <span id="loginBgUploadTxt">Subir imagen de fondo</span>
+            <input type="file" id="loginBgFileInput" accept="image/*" style="display:none" onchange="cargarLoginBg(this)">
+          </label>
+          <button id="loginBgQuitarBtn" style="display:none;width:100%;padding:9px;background:white;border:1.5px solid rgba(192,57,43,0.35);color:var(--rojo);border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;" onclick="quitarLoginBg()">🗑️ Quitar fondo</button>
+        </div>
         <button class="btn-save-config" onclick="saveConfig()">💾 Guardar</button>
       </div>
     </div>
@@ -4143,6 +4172,7 @@ let sesionFacturas = 0;
 let sesionTotal = 0;
 
 let logoBase64 = null;
+let loginBgBase64 = null;
 let catActiva = "Todos";
 let btDevice = null;
 let btChar = null;
@@ -5057,6 +5087,10 @@ function cargarConfig() {
         } else { actualizarManifestConLogo(null); }
       } catch(_) { actualizarManifestConLogo(null); }
     }
+    // Cargar fondo y preview del login
+    const savedBg = localStorage.getItem('helechos_login_bg');
+    if (savedBg) { loginBgBase64 = savedBg; aplicarLoginBg(); }
+    mostrarLoginBgPreview();
   } catch(e) { actualizarManifestConLogo(null); }
 }
 
@@ -8149,11 +8183,11 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
   // ── Datos factura ─────────────────────────────────────────────────
   t += C(proc(f.esFacturaElectronica ? 'FACTURA ELECTRONICA' : 'DOCUMENTO EQUIVALENTE POS')) + '\n';
   t += C(proc('No. ' + f.numero)) + '\n';
-  if (f.pedidoId) t += 'N\u00b0 Pedido: #' + f.pedidoId.replace(/^r_/,'').split('_')[0] + '\n';
+  t += fila('Fecha: ' + f.fecha, 'Hora: ' + f.hora) + '\n';
+  if (f.pedidoId) t += fila('N\u00b0 Pedido:', '#' + f.pedidoId.replace(/^r_/,'').split('_')[0]) + '\n';
   if (f.tipoOrden === 'mesa' && f.mesaNumero) t += proc('Mesa: ' + f.mesaNumero) + '\n';
   if (f.clienteNombre)   t += proc('Cliente: '  + f.clienteNombre)   + '\n';
   if (f.clienteTelefono) t += proc('Tel: '       + f.clienteTelefono) + '\n';
-  t += 'Fecha: ' + f.fecha + '  Hora: ' + f.hora + '\n';
   if (f.esFacturaElectronica && (f.feNombre || f.feNit)) {
     t += linea + '\n';
     t += proc('RECEPTOR:') + '\n';
@@ -12229,12 +12263,116 @@ function fbSyncCobros() {
   });
 }
 
-// Llamar sync en init
-if (typeof fbSyncCobros !== 'undefined') {
-  window.addEventListener('firebase-ready', () => {
-    setTimeout(fbSyncCobros, 1000);
-  });
+// ── LOGIN SCREEN: Logo, texto editable y fondo ─────────────────────────
+
+function loginLogoTap() {
+  document.getElementById('loginLogoFileInput').click();
 }
+
+function loginLogoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    logoBase64 = e.target.result;
+    localStorage.setItem('helechos_logo', logoBase64);
+    mostrarLogoPreview();
+    showToast('✅ Logo actualizado');
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function editarLoginTexto(tipo) {
+  const el = document.getElementById(tipo === 'brand' ? 'loginBrandText' : 'loginSubText');
+  const key = tipo === 'brand' ? 'helechos_login_brand' : 'helechos_login_sub';
+  const valorActual = el.textContent;
+  const input = document.createElement('input');
+  input.value = valorActual;
+  input.style.cssText = `font-size:${tipo === 'brand' ? '22' : '13'}px;font-weight:${tipo === 'brand' ? '800' : '500'};
+    border:none;border-bottom:2px solid var(--rappi);background:transparent;text-align:center;
+    width:100%;max-width:260px;outline:none;color:inherit;font-family:inherit;padding:4px 0;`;
+  el.replaceWith(input);
+  input.focus(); input.select();
+  const guardar = () => {
+    const nuevoVal = input.value.trim() || valorActual;
+    localStorage.setItem(key, nuevoVal);
+    const div = document.createElement('div');
+    div.id = tipo === 'brand' ? 'loginBrandText' : 'loginSubText';
+    div.className = tipo === 'brand' ? 'login-brand' : 'login-sub';
+    div.textContent = nuevoVal;
+    div.ondblclick = () => editarLoginTexto(tipo);
+    div.title = 'Doble tap para editar';
+    input.replaceWith(div);
+    showToast('✅ Texto guardado');
+  };
+  input.addEventListener('blur', guardar);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+}
+
+function cargarLoginBg(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    loginBgBase64 = e.target.result;
+    localStorage.setItem('helechos_login_bg', loginBgBase64);
+    aplicarLoginBg();
+    mostrarLoginBgPreview();
+    showToast('✅ Fondo de inicio guardado');
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function quitarLoginBg() {
+  loginBgBase64 = null;
+  localStorage.removeItem('helechos_login_bg');
+  aplicarLoginBg();
+  mostrarLoginBgPreview();
+  showToast('🗑️ Fondo quitado');
+}
+
+function aplicarLoginBg() {
+  const screen = document.getElementById('loginScreen');
+  if (loginBgBase64) {
+    screen.style.backgroundImage = `url(${loginBgBase64})`;
+    screen.classList.add('has-bg');
+  } else {
+    screen.style.backgroundImage = '';
+    screen.classList.remove('has-bg');
+  }
+}
+
+function mostrarLoginBgPreview() {
+  const wrap = document.getElementById('loginBgPreviewWrap');
+  const img  = document.getElementById('loginBgPreview');
+  const btn  = document.getElementById('loginBgQuitarBtn');
+  const txt  = document.getElementById('loginBgUploadTxt');
+  if (!wrap) return;
+  if (loginBgBase64) {
+    img.src = loginBgBase64;
+    wrap.style.display = 'block';
+    btn.style.display  = 'block';
+    txt.textContent    = 'Cambiar fondo';
+  } else {
+    wrap.style.display = 'none';
+    btn.style.display  = 'none';
+    txt.textContent    = 'Subir imagen de fondo';
+  }
+}
+
+// Cargar textos y fondo guardados al iniciar
+(function cargarLoginPersonalizacion() {
+  const brand = localStorage.getItem('helechos_login_brand');
+  const sub   = localStorage.getItem('helechos_login_sub');
+  const bg    = localStorage.getItem('helechos_login_bg');
+  if (brand) { const el = document.getElementById('loginBrandText'); if (el) el.textContent = brand; }
+  if (sub)   { const el = document.getElementById('loginSubText');   if (el) el.textContent = sub; }
+  if (bg)    { loginBgBase64 = bg; aplicarLoginBg(); }
+})();
+
+
 
 </script>
 </body>
