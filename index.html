@@ -2744,6 +2744,10 @@
   0%,100% { transform: translateY(0); }
   50%      { transform: translateY(-8px); }
 }
+@keyframes pulseBtn {
+  0%,100% { box-shadow: 0 6px 20px rgba(21,101,192,0.40); }
+  50%      { box-shadow: 0 6px 28px rgba(21,101,192,0.70), 0 0 0 4px rgba(21,101,192,0.15); }
+}
 @keyframes listoPulse {
   0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); }
   50%      { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
@@ -6762,9 +6766,29 @@ function renderCarrito() {
     ${(()=>{
       const rolBtn = usuarioActivo ? usuarioActivo.rol : 'admin';
       if (rolBtn === 'mesero') {
-        return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(21,101,192,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
-          📤 Enviar cuenta al cajero
-        </button>`;
+        // Solo mostrar botón de pago cuando TODOS los ítems han sido chuleados/entregados
+        const totalUnidades = carrito.reduce((s, i) => s + i.cantidad, 0);
+        const totalServidos = carrito.reduce((s, i) => {
+          if (!Array.isArray(i.servido)) return s;
+          return s + i.servido.filter(Boolean).length;
+        }, 0);
+        const todosServidos = totalUnidades > 0 && totalServidos >= totalUnidades;
+        if (todosServidos) {
+          return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(21,101,192,0.40);animation:pulseBtn 1.8s ease-in-out infinite;">
+            💳 Proceder a pagar
+          </button>`;
+        }
+        const pct = totalUnidades > 0 ? Math.round(totalServidos / totalUnidades * 100) : 0;
+        return `<div style="width:100%;padding:14px 16px;margin-top:8px;background:var(--fondo);border:2px dashed var(--borde);border-radius:var(--r);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:13px;font-weight:700;color:var(--gris);">${totalServidos===0?'⏳ En preparación':'🍽️ Entregando…'}</span>
+            <span style="font-size:13px;font-weight:800;color:var(--rappi);font-family:var(--font-num);">${totalServidos}/${totalUnidades}</span>
+          </div>
+          <div style="width:100%;height:7px;background:var(--borde);border-radius:999px;overflow:hidden;margin-bottom:8px;">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--rappi),#FF7A5C);border-radius:999px;transition:width 0.4s ease;"></div>
+          </div>
+          <div style="font-size:11px;color:var(--gris);text-align:center;">Marca el ✓ de cada plato al entregarlo · el botón de pago aparecerá al completar todos</div>
+        </div>`;
       }
       return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
           💳 Pagar Cuenta
@@ -7584,13 +7608,24 @@ function renderHistorial() {
     ? `<div style="text-align:center;padding:32px 0;color:var(--gris);font-size:14px;">Sin facturas con estos filtros</div>`
     : sorted.map((f) => {
         const resumen = f.items.map(it => `${it.cantidad}x ${esc(it.nombre)}`).join(', ');
+        // Determinar si esta factura fue atendida por este mesero (para meseros que ven su historial)
+        const esMiOrden = esMeseroHist && (f.cajero === nombreCajero || f.mesero === nombreCajero);
+        const fueCobradasPorOtro = esMiOrden && f.cajero && f.cajero !== nombreCajero;
+        // Para cajero/admin: mostrar mesero que atendió si está disponible
+        const meseroQueTomo = f.mesero || (f.cajero && !esCajero ? f.cajero : '');
         return `
-        <div class="hist-item" onclick="verDetalleFactura('${f.numero}')">
+        <div class="hist-item" onclick="verDetalleFactura('${f.numero}')" style="${esMiOrden ? 'border-left:3.5px solid var(--verde-ok);' : ''}">
           <div class="hist-header">
             <div class="hist-num">Factura #${f.numero}</div>
-            <div class="hist-fecha">${f.fecha} ${f.hora}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:10px;font-weight:800;background:rgba(46,125,50,0.12);color:var(--verde-ok);border:1px solid rgba(46,125,50,0.3);border-radius:20px;padding:2px 8px;letter-spacing:0.3px;">✅ PAGADO</span>
+              <div class="hist-fecha">${f.fecha} ${f.hora}</div>
+            </div>
           </div>
-          ${!esCajero && f.cajero ? `<div style="font-size:11px;color:var(--gris);margin-bottom:3px;">👤 ${esc(f.cajero)}${esMeseroHist && f.cajero !== nombreCajero ? ' <span style="color:#1976D2;font-weight:700;">(cobró)</span>' : ''}</div>` : ''}
+          ${fueCobradasPorOtro ? `<div style="font-size:11px;color:#1565C0;font-weight:700;margin-bottom:3px;">🏦 Cobrado por: ${esc(f.cajero)}</div>` : ''}
+          ${(esCajero || (!esMeseroHist)) && meseroQueTomo ? `<div style="font-size:11px;color:var(--gris);font-weight:600;margin-bottom:3px;">🧑 Mesero: ${esc(meseroQueTomo)}${f.cajero && f.cajero !== meseroQueTomo ? ' · Cajero: ' + esc(f.cajero) : ''}</div>` : ''}
+          ${f.tipoOrden === 'mesa' && f.mesaNumero ? `<div style="font-size:12px;color:var(--gris);margin-bottom:3px;">🍽️ ${esc(f.mesaNumero)}</div>` : ''}
+          ${f.tipoOrden === 'domicilio' ? `<div style="font-size:12px;color:var(--rappi);font-weight:600;margin-bottom:3px;">🛵 Domicilio</div>` : ''}
           <div class="hist-items-list">${resumen.length > 60 ? resumen.substring(0, 60) + '…' : resumen}</div>
           <div class="hist-footer">
             <div class="hist-total">${fmt(f.total)}</div>
@@ -7606,12 +7641,20 @@ function renderHistorial() {
     <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
       <button onclick="showTab('home')" title="Cerrar" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--gris-cl);border:none;border-radius:50%;font-size:18px;font-weight:700;color:var(--gris-osc);cursor:pointer;font-family:inherit;touch-action:manipulation;line-height:1;">✕</button>
     </div>
-    ${!esCajero && historialVisible.length > 0 ? `
+    ${!esCajero && !esMeseroHist && historialVisible.length > 0 ? `
     <button onclick="abrirCierreDia()" style="width:100%;padding:14px;margin-bottom:14px;background:linear-gradient(135deg,#cc3300,var(--rappi));color:white;border:none;border-radius:var(--r);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(255,68,26,0.3);display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.3px;">
       📊 Cierre del Día · ${hoyCount > 0 ? hoyCount + ' factura' + (hoyCount>1?'s':'') + ' hoy' : 'ver por fecha'}
     </button>` : esCajero && historialVisible.length > 0 ? `
     <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.2);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--rappi);font-weight:600;">
       🧾 Mostrando tus ${historialVisible.length} factura${historialVisible.length>1?'s':''} · ${hoyCount > 0 ? hoyCount + ' hoy' : 'ninguna hoy'}
+    </div>` : esMeseroHist && historialVisible.length > 0 ? `
+    <div style="background:rgba(46,125,50,0.08);border:1.5px solid rgba(46,125,50,0.25);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:800;color:var(--verde-ok);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">✅ Mis órdenes pagadas</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:13px;color:var(--negro);font-weight:600;">${historialVisible.length} orden${historialVisible.length>1?'es':''} cobrada${historialVisible.length>1?'s':''}</div>
+        <div style="font-size:14px;font-weight:900;color:var(--verde-ok);font-family:var(--font-num);">${fmt(historialVisible.reduce((s,f)=>s+f.total,0))}</div>
+      </div>
+      ${hoyCount > 0 ? `<div style="font-size:11px;color:var(--gris);margin-top:3px;">${hoyCount} hoy</div>` : ''}
     </div>` : ''}
 
     <!-- ── ACORDEÓN DE FILTROS ───────────────────────────────────── -->
@@ -11493,8 +11536,26 @@ function enviarAlCajero() {
   }
 
   actualizarBadgeCajero();
-  showToast('✅ Recibo enviado a caja — ' + fmt(total), 3500);
+
+  // Cerrar la orden activa (ya fue enviada a caja)
+  const idOrdenEnviada = ordenActiva ? ordenActiva.id : null;
+  if (idOrdenEnviada) {
+    ordenes = ordenes.filter(o => o.id !== idOrdenEnviada);
+    ordenActivaId = ordenes.length > 0 ? ordenes[ordenes.length - 1].id : null;
+    if (ordenActivaId) {
+      sincronizarCarritoDesdeOrden();
+    } else {
+      carrito = []; mesaNumero = ''; tipoOrden = null;
+    }
+    actualizarBadge();
+    guardarOrdenes();
+  }
+
+  showToast('✅ Pedido enviado a caja — ' + fmt(total), 3000);
+
+  // Redirigir al menú para seguir atendiendo
   cerrarDrawer();
+  setTimeout(() => { showTab('menu', true); }, 200);
 }
 
 // Badge del cajero en tab o header
@@ -11587,7 +11648,7 @@ function abrirModalCobroConRecibo(recibo) {
 }
 
 function renderModalCobro(total, subtotal, descMonto) {
-  // Fix 1: usar cfgGetPayments() — misma fuente que configura el admin
+  // Métodos de pago disponibles
   let metodos = [];
   try {
     const all = cfgGetPayments ? cfgGetPayments() : [];
@@ -11600,11 +11661,44 @@ function renderModalCobro(total, subtotal, descMonto) {
   const cambio = totalPagado - total;
   const faltante = total - totalPagado;
 
-  const mesaLabel = _cobroActual ? _cobroActual.mesa : mesaNumero || '—';
-  const meseroLabel = _cobroActual ? (_cobroActual.meseroCajero || '—') : (usuarioActivo?.nombre || '—');
+  const mesaLabel    = _cobroActual ? _cobroActual.mesa : mesaNumero || '—';
+  const meseroLabel  = _cobroActual ? (_cobroActual.meseroCajero || '—') : (usuarioActivo?.nombre || '—');
   const reciboIdLabel = _cobroActual ? _cobroActual.id : '';
+  const itemsRecibo  = _cobroActual ? _cobroActual.items : carrito;
+  const clienteLabel = _cobroActual ? (_cobroActual.clienteNombre || '') : clienteNombre;
+  const telLabel     = _cobroActual ? (_cobroActual.clienteTelefono || '') : clienteTelefono;
+  const tipoLabel    = _cobroActual ? (_cobroActual.tipoOrden || 'mesa') : (tipoOrden || 'mesa');
 
-  // Fix 2 & 3: input tipo text con formato de miles, valor empieza vacío
+  // Calcular desglose IVA/Impoconsumo desde los ítems del recibo
+  const ivaResumen = {};
+  itemsRecibo.forEach(item => {
+    const tasa = (item.iva !== undefined && item.iva !== null) ? Number(item.iva) : 8;
+    if (tasa === 0) return;
+    const precioTotal = item.precio * item.cantidad;
+    const base = Math.round(precioTotal / (1 + tasa / 100));
+    const imp  = precioTotal - base;
+    if (!ivaResumen[tasa]) ivaResumen[tasa] = { base: 0, imp: 0 };
+    ivaResumen[tasa].base += base;
+    ivaResumen[tasa].imp  += imp;
+  });
+  const ivaEntradas = Object.entries(ivaResumen).filter(([,v]) => v.imp > 0);
+
+  // HTML de ítems del pedido
+  const itemsHTML = itemsRecibo.map(i => {
+    const subt = i.precio * i.cantidad;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--gris-cl);">
+      <div style="flex:1;min-width:0;">
+        <span style="font-size:13px;font-weight:600;color:var(--negro);">${esc(i.nombre)}</span>
+        ${i.nota ? `<span style="font-size:11px;color:var(--gris);margin-left:4px;">· ${esc(i.nota)}</span>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <span style="font-size:12px;color:var(--gris);">×${i.cantidad}</span>
+        <span style="font-size:13px;font-weight:700;font-family:var(--font-num);color:var(--negro);">${fmt(subt)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // HTML inputs de pago
   const pagosHTML = metodos.map(m => {
     const numVal = _pagosSeleccionados[m.label] || 0;
     const displayVal = numVal > 0 ? numVal.toLocaleString('es-CO') : '';
@@ -11613,11 +11707,9 @@ function renderModalCobro(total, subtotal, descMonto) {
       <span style="font-size:20px;">${m.emoji}</span>
       <span class="pago-comb-label">${esc(m.label)}</span>
       <input class="pago-comb-input" type="text" inputmode="numeric"
-        placeholder="0"
-        value="${displayVal}"
+        placeholder="0" value="${displayVal}"
         oninput="formatCobInput(this, '${esc(m.label)}', ${total})"
-        onfocus="this.select()"
-      >
+        onfocus="this.select()">
     </div>`;
   }).join('');
 
@@ -11632,51 +11724,82 @@ function renderModalCobro(total, subtotal, descMonto) {
     }
   }
 
-  const pagoOk = totalPagado >= total;
+  const pagoOk   = totalPagado >= total;
   const btnLabel = _cobroActual ? '✅ Cobrar y finalizar' : '✅ Cobrar y generar factura';
+  const tipoIcon = tipoLabel === 'domicilio' ? '🛵' : '🍽️';
 
   document.getElementById('modalCobroContenido').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-      <h3 style="font-size:18px;font-weight:900;color:var(--negro);margin:0;">💰 Cobro — ${esc(mesaLabel)}</h3>
-      <button onclick="cerrarModal('modalCobro')" style="border:none;background:var(--gris-cl);color:var(--gris-osc);border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
-    </div>
-
-    <!-- Mesero e ID de pedido -->
-    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--fondo);border:1.5px solid var(--borde);border-radius:var(--r-sm);padding:8px 12px;margin-bottom:12px;gap:8px;">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:15px;">👤</span>
+    <!-- Encabezado con número de orden prominente -->
+    <div style="background:linear-gradient(135deg,#1b3a4b,#1565C0);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;position:relative;">
+      <button onclick="cerrarModal('modalCobro')" style="position:absolute;top:10px;right:10px;border:none;background:rgba(255,255,255,0.15);color:#fff;border-radius:50%;width:28px;height:28px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Orden de cobro</div>
+      <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;">
         <div>
-          <div style="font-size:10px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;">Atendido por</div>
-          <div style="font-size:13px;font-weight:800;color:var(--negro);">${esc(meseroLabel)}</div>
+          <div style="font-size:22px;font-weight:900;color:#fff;line-height:1;">${tipoIcon} ${esc(mesaLabel)}</div>
+          ${tipoLabel === 'domicilio' ? `<div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:2px;">🛵 Domicilio</div>` : `<div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:2px;">🍽️ Restaurante</div>`}
         </div>
+        ${reciboIdLabel ? `<div style="margin-left:auto;text-align:right;">
+          <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.5px;">N° Pedido</div>
+          <div style="font-size:13px;font-weight:800;color:#fff;font-family:var(--font-num);background:rgba(255,255,255,0.15);border-radius:6px;padding:2px 8px;margin-top:2px;">#${esc(reciboIdLabel.replace('r_','').substring(0,10))}</div>
+        </div>` : ''}
       </div>
-      ${reciboIdLabel ? `<div style="text-align:right;">
-        <div style="font-size:10px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;">ID Pedido</div>
-        <div style="font-size:10px;font-weight:700;color:var(--gris-osc);font-family:var(--font-num);">${esc(reciboIdLabel.replace('r_','').substring(0,12))}</div>
-      </div>` : ''}
     </div>
 
-    <!-- Resumen total -->
-    <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.2);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;">
-      ${descMonto > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--gris-osc);margin-bottom:4px;"><span>Subtotal</span><span>${fmt(subtotal)}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--rappi);margin-bottom:6px;"><span>Descuento</span><span>-${fmt(descMonto)}</span></div>` : ''}
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:14px;font-weight:700;color:var(--gris-osc);">TOTAL A COBRAR</span>
-        <span style="font-size:28px;font-weight:900;color:var(--rappi);font-family:var(--font-num);">${fmt(total)}</span>
+    <!-- Mesero + datos del cliente en fila -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="background:var(--fondo);border:1.5px solid var(--borde);border-radius:var(--r-sm);padding:9px 12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;">👤 Mesero</div>
+        <div style="font-size:13px;font-weight:800;color:var(--negro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(meseroLabel)}</div>
+      </div>
+      <div style="background:var(--fondo);border:1.5px solid var(--borde);border-radius:var(--r-sm);padding:9px 12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;">🧑 Cliente</div>
+        <div style="font-size:13px;font-weight:800;color:var(--negro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${clienteLabel ? esc(clienteLabel) : '<span style="color:var(--gris);font-weight:500;">—</span>'}</div>
+        ${telLabel ? `<div style="font-size:11px;color:var(--gris);margin-top:1px;">📞 ${esc(telLabel)}</div>` : ''}
       </div>
     </div>
+
+    <!-- Orden: ítems -->
+    <div style="background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:10px;">
+      <div style="font-size:10px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📋 Productos del pedido</div>
+      ${itemsHTML}
+    </div>
+
+    <!-- Totales + IVA -->
+    <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.2);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;">
+      ${descMonto > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--gris-osc);margin-bottom:3px;"><span>Subtotal</span><span style="font-family:var(--font-num);">${fmt(subtotal)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--rappi);margin-bottom:6px;"><span>Descuento</span><span style="font-family:var(--font-num);">-${fmt(descMonto)}</span></div>` : ''}
+      ${ivaEntradas.map(([tasa, v]) => `
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--gris-osc);margin-bottom:2px;">
+        <span>Base ${tasa}%</span><span style="font-family:var(--font-num);">${fmt(v.base)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--rappi);margin-bottom:4px;">
+        <span>${Number(tasa)===8?'Impoconsumo 8% (incl.)':'IVA '+tasa+'% (incl.)'}</span>
+        <span style="font-family:var(--font-num);font-weight:700;">${fmt(v.imp)}</span>
+      </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid rgba(255,68,26,0.2);padding-top:8px;margin-top:4px;">
+        <span style="font-size:14px;font-weight:800;color:var(--gris-osc);">TOTAL A PAGAR</span>
+        <span style="font-size:30px;font-weight:900;color:var(--rappi);font-family:var(--font-num);">${fmt(total)}</span>
+      </div>
+    </div>
+
+    <!-- Factura electrónica toggle (solo cajero/admin) -->
+    ${_cobroActual && _cobroActual.esFacturaElectronica ? `
+    <div style="background:rgba(21,101,192,0.08);border:1.5px solid rgba(21,101,192,0.3);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:#1565C0;margin-bottom:4px;">🧾 Factura Electrónica solicitada</div>
+      ${_cobroActual.feNombre ? `<div style="font-size:13px;font-weight:700;color:var(--negro);">${esc(_cobroActual.feNombre)}</div>` : ''}
+      ${_cobroActual.feNit ? `<div style="font-size:12px;color:var(--gris);">NIT: ${esc(_cobroActual.feNit)}</div>` : ''}
+      ${_cobroActual.feCorreo ? `<div style="font-size:12px;color:var(--gris);">✉️ ${esc(_cobroActual.feCorreo)}</div>` : ''}
+    </div>` : ''}
 
     <!-- Formas de pago -->
-    <div style="font-size:12px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
-      Ingresa el monto por cada forma de pago
-    </div>
+    <div style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">💳 Forma de pago</div>
     <div class="pago-combinado-list" id="cobPagosList">${pagosHTML}</div>
 
-    <!-- Resumen del pago -->
+    <!-- Total recibido + cambio -->
     <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--negro);margin-top:10px;padding:10px 0;border-top:1.5px solid var(--borde);">
       <span>Total recibido</span>
       <span id="cobTotalRecibido" style="font-family:var(--font-num);color:${pagoOk ? 'var(--verde-ok)' : 'var(--gris)'};">${fmt(totalPagado)}</span>
     </div>
-
     <div id="cobCambioBox">${cambioHTML}</div>
 
     <!-- Botón cobrar -->
