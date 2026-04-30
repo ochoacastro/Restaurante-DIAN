@@ -8344,8 +8344,9 @@ function abrirWaDesdeHistorial(numeroFactura) {
   _waTextoFactura = generarTextoDesdeFactura(f, false);
   _waDesdeHistorial = true;
 
-  // Resetear al paso 1
-  document.getElementById('waPhone').value = '';
+  // Prellenar teléfono si la factura lo tiene guardado
+  const telGuardado = (f.clienteTelefono || '').replace(/\D/g, '');
+  document.getElementById('waPhone').value = telGuardado;
   document.getElementById('waPaso1').style.display = '';
   document.getElementById('waPaso2').style.display = 'none';
   document.getElementById('waPaso3').style.display = 'none';
