@@ -8151,6 +8151,9 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
   t += C(proc('No. ' + f.numero)) + '\n';
   t += fila('Fecha: ' + f.fecha, 'Hora: ' + f.hora) + '\n';
   if (f.pedidoId) t += fila('N\u00b0 Pedido:', '#' + f.pedidoId.replace(/^r_/,'').split('_')[0]) + '\n';
+  if (f.tipoOrden === 'mesa' && f.mesaNumero) t += proc('Mesa: ' + f.mesaNumero) + '\n';
+  if (f.clienteNombre)   t += proc('Cliente: '  + f.clienteNombre)   + '\n';
+  if (f.clienteTelefono) t += proc('Tel: '       + f.clienteTelefono) + '\n';
   if (f.esFacturaElectronica && (f.feNombre || f.feNit)) {
     t += linea + '\n';
     t += proc('RECEPTOR:') + '\n';
@@ -8240,9 +8243,6 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
     if (f.totalRecibido !== undefined && f.totalRecibido > f.total) t += fila('Recibido:', p(f.totalRecibido)) + '\n';
     if (f.cambio > 0) t += fila('Cambio:', p(f.cambio)) + '\n';
   }
-  if (f.tipoOrden === 'mesa' && f.mesaNumero) t += proc('Mesa: ' + f.mesaNumero) + '\n';
-  if (f.clienteNombre)    t += proc('Cliente: '   + f.clienteNombre)    + '\n';
-  if (f.clienteTelefono)  t += proc('Tel: '        + f.clienteTelefono)  + '\n';
   if (f.tipoOrden === 'domicilio' && f.clienteDireccion) t += proc('Domicilio: ' + f.clienteDireccion) + '\n';
   if (f.observaciones)    t += proc('Obs: '       + f.observaciones)    + '\n';
   if (f.mesero)           t += proc('Mesero: '    + f.mesero)           + '\n';
