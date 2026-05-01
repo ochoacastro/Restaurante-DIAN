@@ -8614,47 +8614,91 @@ function generarTextoDesdeFactura(f, paraBluetooth = false) {
     }
   });
 
+  // ── DETALLE DE IMPUESTOS (formato tirilla colombiana) ────────────────
   t += doble + '\n';
   if (f.descuentoMonto > 0) {
     t += fila('Subtotal:', p(f.subtotal || (f.total + f.descuentoMonto))) + '\n';
     t += fila('Descuento:', '-' + p(f.descuentoMonto)) + '\n';
   }
-  // ── Desglose IVA / Impoconsumo (visible siempre que haya impuestos) ──
-  if (f.ivaResumen && Object.keys(f.ivaResumen).length > 0) {
-    const tieneImpuesto = Object.values(f.ivaResumen).some(v => v.impuesto > 0);
-    if (tieneImpuesto) {
-      t += linea + '\n';
-      Object.entries(f.ivaResumen).forEach(([tasa, v]) => {
-        if (v.impuesto > 0) {
-          const label = Number(tasa) === 8 ? `Impoconsumo 8%:` : `IVA ${tasa}%:`;
-          t += fila(proc(label), p(v.impuesto)) + '\n';
-        }
+
+  // Construir tabla de impuestos como la tirilla
+  const ivaResumenTicket = f.ivaResumen || {};
+  const ivaEntradas = Object.entries(ivaResumenTicket).filter(([,v]) => v && v.impuesto > 0);
+  const hayImpuestos = ivaEntradas.length > 0;
+
+  // Si hay impuestos: mostrar sección "DETALLE DE IMPUESTOS"
+  if (hayImpuestos) {
+    t += linea + '\n';
+    t += C(proc('DETALLE DE IMPUESTOS')) + '\n';
+    t += linea + '\n';
+    ivaEntradas.forEach(([tasa, v]) => {
+      const tasaN = Number(tasa);
+      const labelTasa = tasaN === 8 ? 'IMPC 8%' : tasaN === 0 ? 'IMPC 0%' : 'IVA ' + tasa + '%';
+      // Fila: BASE  {base}  {labelTasa}
+      t += fila('BASE', p(v.base) + '  ' + labelTasa) + '\n';
+    });
+    t += linea + '\n';
+    const totalBase = f.totalBaseIva !== undefined
+      ? f.totalBaseIva
+      : Object.values(ivaResumenTicket).reduce((s, v) => s + (v.base || 0), 0);
+    const totalImp  = Object.values(ivaResumenTicket).reduce((s, v) => s + (v.impuesto || 0), 0);
+    t += fila('SUBTOTAL', p(f.total - (f.descuentoMonto || 0))) + '\n';
+    if (totalImp > 0) {
+      ivaEntradas.forEach(([tasa, v]) => {
+        const tasaN = Number(tasa);
+        const label = tasaN === 8 ? 'IMPOCONSUMO:' : 'IVA ' + tasa + '%:';
+        t += fila(label, p(v.impuesto)) + '\n';
       });
-      if (f.totalBaseIva !== undefined) {
-        t += fila('Base gravable:', p(f.totalBaseIva)) + '\n';
-      }
-      t += linea + '\n';
     }
+    t += linea + '\n';
   }
+
   t += fila('TOTAL:', p(f.total)) + '\n';
   t += doble + '\n';
-  // ── Pago / pagos combinados ─────────────────────────────────────────
-  if (f.pagos && f.pagos.length > 1) {
-    t += linea + '\n';
-    t += proc('FORMAS DE PAGO:') + '\n';
-    f.pagos.forEach(pg => { t += fila(proc(pg.label) + ':', p(pg.monto)) + '\n'; });
-    if (f.totalRecibido !== undefined) t += fila('Total recibido:', p(f.totalRecibido)) + '\n';
-    if (f.cambio > 0) t += fila('CAMBIO:', p(f.cambio)) + '\n';
-    t += linea + '\n';
+
+  // ── Formas de pago + ENTREGADO / CAMBIO (formato tirilla) ────────────
+  if (f.pagos && f.pagos.length > 0) {
+    // Pago mixto: una fila ENTREGADO + CAMBIO por cada método
+    f.pagos.forEach(pg => {
+      const esEf = /efect|cash|pesos/i.test(pg.label);
+      const cancelada = pg.label.toUpperCase();
+      t += fila('ENTREGADO', cancelada + '  ' + p(pg.monto)) + '\n';
+      // Cambio por este método: solo si es efectivo y hay cambio global
+      const cambioMet = esEf && f.cambio > 0 ? f.cambio : 0;
+      t += fila('CAMBIO', cambioMet > 0 ? p(cambioMet) : '$0') + '\n';
+    });
+    if (f.totalRecibido !== undefined) {
+      t += linea + '\n';
+      t += fila('Total recibido:', p(f.totalRecibido)) + '\n';
+    }
   } else {
-    t += 'Pago: ' + proc(f.pago) + '\n';
-    if (f.totalRecibido !== undefined && f.totalRecibido > f.total) t += fila('Recibido:', p(f.totalRecibido)) + '\n';
-    if (f.cambio > 0) t += fila('Cambio:', p(f.cambio)) + '\n';
+    // Un solo método
+    const metodoLabel = (f.pago || 'Efectivo').toUpperCase();
+    t += fila('ENTREGADO', metodoLabel + (f.totalRecibido && f.totalRecibido !== f.total ? '  ' + p(f.totalRecibido) : '')) + '\n';
+    t += fila('CAMBIO', f.cambio > 0 ? p(f.cambio) : '$0') + '\n';
   }
+
+  t += linea + '\n';
+  if (f.tipoOrden === 'mesa' && f.mesaNumero) t += proc('Mesa: ' + f.mesaNumero) + '\n';
+  if (f.clienteNombre)    t += proc('Cliente: '   + f.clienteNombre)    + '\n';
+  if (f.clienteTelefono)  t += proc('Tel: '        + f.clienteTelefono)  + '\n';
   if (f.tipoOrden === 'domicilio' && f.clienteDireccion) t += proc('Domicilio: ' + f.clienteDireccion) + '\n';
   if (f.observaciones)    t += proc('Obs: '       + f.observaciones)    + '\n';
   if (f.mesero)           t += proc('Mesero: '    + f.mesero)           + '\n';
   if (f.cajero)           t += proc('Cajero: '    + f.cajero)           + '\n';
+
+  // ── Resolución DIAN (siempre al pie, como la tirilla) ─────────────────
+  const feCfg = (typeof feGetConfig === 'function') ? feGetConfig() : {};
+  if (feCfg.resolucion) {
+    t += linea + '\n';
+    t += C(proc('Resolucion No: ' + feCfg.resolucion)) + '\n';
+    if (feCfg.fechaResolucion) t += C(proc('Del ' + feCfg.fechaResolucion)) + '\n';
+    if (feCfg.rangoDesde && feCfg.rangoHasta) {
+      t += C(proc('RANGO: ' + (feCfg.prefijo||'FE') + '-' + feCfg.rangoDesde + ' al ' + (feCfg.prefijo||'FE') + '-' + feCfg.rangoHasta)) + '\n';
+    }
+    t += C(proc('Estado: AUTORIZADO')) + '\n';
+  }
+
   // ── CUFE (solo si la DIAN ya aceptó) ──────────────────────────────────
   if (f.feCufe) {
     t += linea + '\n';
@@ -12506,8 +12550,10 @@ async function ejecutarCobro(total) {
       factura.totalRecibido = totalPagado;
       factura.cambio = cambio;
       factura.pago = pagoLabel;
-      // Guardar el mesero que tomó la orden para que aparezca en su historial
+      // Guardar el mesero que tomó la orden
       if (recibo.meseroCajero) factura.mesero = recibo.meseroCajero;
+      // Guardar el cajero que cobró
+      factura.cajero = usuarioActivo?.nombre || factura.cajero || '';
       // Guardar el ID del pedido original
       if (recibo.id) factura.pedidoId = recibo.id;
       // Actualizar en historial
