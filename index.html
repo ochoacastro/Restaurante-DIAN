@@ -3846,17 +3846,15 @@
           <button onclick="resetConsec()" style="background:white;border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Reiniciar</button>
         </div>
         <div class="consecutivo-display" style="margin-top:10px;">
-          <div style="flex:1;">
-            <div style="font-size:11px;color:var(--gris);margin-bottom:2px;">Próxima F.E. 🧾</div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span id="cfgConsecFE" style="color:var(--rappi);">FE-000001</span>
-              <input id="cfgConsecFEInput" type="number" min="1" style="display:none;width:90px;padding:4px 8px;font-size:15px;font-weight:700;color:var(--rappi);font-family:var(--font-num);border:1.5px solid var(--rappi);border-radius:8px;background:var(--blanco);text-align:center;" />
-            </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:11px;color:var(--gris);margin-bottom:4px;">Próxima F.E. 🧾</div>
+            <span id="cfgConsecFE" style="color:var(--rappi);">FE-000001</span>
+            <input id="cfgConsecFEInput" type="number" min="1" style="display:none;width:110px;padding:5px 10px;font-size:20px;font-weight:800;color:var(--rappi);font-family:var(--font-num);border:2px solid var(--rappi);border-radius:8px;background:var(--blanco);text-align:center;" />
           </div>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <button id="btnEditConsecFE" onclick="editarConsecFE()" style="background:white;border:1.5px solid #1976D2;color:#1976D2;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">✏️ Editar</button>
-            <button id="btnGuardarConsecFE" onclick="guardarConsecFE()" style="display:none;background:var(--rappi);border:none;color:white;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Guardar</button>
-            <button onclick="resetConsecFE()" style="background:white;border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Reiniciar</button>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;flex-shrink:0;">
+            <button id="btnEditConsecFE" onclick="editarConsecFE()" style="background:var(--blanco);border:1.5px solid #1976D2;color:#1976D2;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ Editar</button>
+            <button id="btnGuardarConsecFE" onclick="guardarConsecFE()" style="display:none;background:var(--rappi);border:none;color:white;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✅ Guardar</button>
+            <button onclick="resetConsecFE()" style="background:var(--blanco);border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">Reiniciar</button>
           </div>
         </div>
       </div>
