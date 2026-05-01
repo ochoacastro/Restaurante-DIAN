@@ -3831,7 +3831,7 @@
         <span class="cfg-acc-icon">🔢</span>
         <div>
           <div class="cfg-acc-title">Consecutivo de facturas</div>
-          <div class="cfg-acc-sub">Número de la próxima factura</div>
+          <div class="cfg-acc-sub">Numeración POS y Factura Electrónica</div>
         </div>
       </div>
       <span class="cfg-acc-arrow">▼</span>
@@ -3840,10 +3840,17 @@
       <div class="cfg-acc-inner">
         <div class="consecutivo-display">
           <div>
-            <div style="font-size:11px;color:var(--gris);margin-bottom:2px;">Próxima factura</div>
+            <div style="font-size:11px;color:var(--gris);margin-bottom:2px;">Próximo recibo POS</div>
             <span id="cfgConsec">000001</span>
           </div>
           <button onclick="resetConsec()" style="background:white;border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Reiniciar</button>
+        </div>
+        <div class="consecutivo-display" style="margin-top:10px;">
+          <div>
+            <div style="font-size:11px;color:var(--gris);margin-bottom:2px;">Próxima F.E. 🧾</div>
+            <span id="cfgConsecFE" style="color:var(--rappi);">FE-000001</span>
+          </div>
+          <button onclick="resetConsecFE()" style="background:white;border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Reiniciar</button>
         </div>
       </div>
     </div>
@@ -4477,7 +4484,8 @@ let config = {
   direccion: "Corregimiento La Tupia Km 5 vía Candelaria/Pradera",
   telefono: "3147999429 / 3168515727",
   mensaje: "¡Gracias por tu visita!",
-  consecutivo: 1,
+  consecutivo:   1,
+  consecutivoFE: 1,
   waTelDomicilio: ""
 };
 
@@ -5978,9 +5986,27 @@ function resetConsec() {
   }});
 }
 
+function resetConsecFE() {
+  confirmar({ icono:'🧾', titulo:'Reiniciar consecutivo F.E.', mensaje:'¿Reiniciar la numeración de Facturas Electrónicas a FE-000001?', textoOk:'Reiniciar', callback() {
+    config.consecutivoFE = 1;
+    localStorage.setItem('helechos_config', JSON.stringify(config));
+    // También resetear el contador atómico FE en Firebase
+    if (window._FB) {
+      const { db, ref, set } = window._FB;
+      set(ref(db, 'helechos/consecutivoFE'), 1).catch(() => {});
+    }
+    actualizarConsecDisplay();
+    showToast('✅ Consecutivo F.E. reiniciado');
+  }});
+}
+
 function actualizarConsecDisplay() {
+  const feCfg = (typeof feGetConfig === 'function') ? feGetConfig() : {};
+  const prefijo = feCfg.prefijo || 'FE';
   document.getElementById('cfgConsec').textContent = String(config.consecutivo).padStart(6, '0');
   document.getElementById('numFactura').textContent = String(config.consecutivo).padStart(6, '0');
+  const cfgConsecFE = document.getElementById('cfgConsecFE');
+  if (cfgConsecFE) cfgConsecFE.textContent = prefijo + '-' + String(config.consecutivoFE || 1).padStart(6, '0');
 }
 
 function renderHeader() {
@@ -9425,40 +9451,70 @@ async function finalizarFactura() {
   try {
 
   // ── Obtener número de factura atómico desde Firebase ─────────────────
-  // Si Firebase está disponible: usa transacción para garantizar número único
-  // Si no: usa el consecutivo local como fallback
+  // Si es F.E. usa un contador separado (consecutivoFE) para respetar la
+  // resolución DIAN independiente del consecutivo POS normal.
   let numeroFactura;
-  if (window._FB && window._FB.db) {
-    try {
-      const { db, ref, runTransaction } = window._FB;
-      const consecRef = ref(db, 'helechos/consecutivo');
-      const result = await runTransaction(consecRef, (valorActual) => {
-        // Si no existe en Firebase, inicializar con el valor local
-        const actual = (valorActual && valorActual > 0) ? valorActual : config.consecutivo;
-        return actual + 1;
-      });
-      if (result.committed) {
-        // La transacción reservó el número: actual + 1
-        // El valor en Firebase ya es el nuevo número, lo asignamos
-        numeroFactura = result.snapshot.val();
-        config.consecutivo = numeroFactura;
+
+  if (esFacturaElectronica) {
+    // ── Consecutivo exclusivo para Facturas Electrónicas ─────────────
+    if (window._FB && window._FB.db) {
+      try {
+        const { db, ref, runTransaction } = window._FB;
+        const consecRef = ref(db, 'helechos/consecutivoFE');
+        const result = await runTransaction(consecRef, (valorActual) => {
+          const actual = (valorActual && valorActual > 0) ? valorActual : (config.consecutivoFE || 1);
+          return actual + 1;
+        });
+        if (result.committed) {
+          numeroFactura = result.snapshot.val();
+          config.consecutivoFE = numeroFactura;
+          localStorage.setItem('helechos_config', JSON.stringify(config));
+          actualizarConsecDisplay();
+        } else {
+          throw new Error('Transacción FE no confirmada');
+        }
+      } catch(e) {
+        console.warn('fbTransaction FE error, usando local:', e.message);
+        numeroFactura = config.consecutivoFE || 1;
+        config.consecutivoFE = (config.consecutivoFE || 1) + 1;
         localStorage.setItem('helechos_config', JSON.stringify(config));
-        actualizarConsecDisplay();
-      } else {
-        throw new Error('Transacción no confirmada');
       }
-    } catch(e) {
-      // Fallback: usar consecutivo local
-      console.warn('fbTransaction error, usando local:', e.message);
+    } else {
+      // Sin Firebase: consecutivo FE local
+      numeroFactura = config.consecutivoFE || 1;
+      config.consecutivoFE = (config.consecutivoFE || 1) + 1;
+      localStorage.setItem('helechos_config', JSON.stringify(config));
+    }
+  } else {
+    // ── Consecutivo normal POS ────────────────────────────────────────
+    if (window._FB && window._FB.db) {
+      try {
+        const { db, ref, runTransaction } = window._FB;
+        const consecRef = ref(db, 'helechos/consecutivo');
+        const result = await runTransaction(consecRef, (valorActual) => {
+          const actual = (valorActual && valorActual > 0) ? valorActual : config.consecutivo;
+          return actual + 1;
+        });
+        if (result.committed) {
+          numeroFactura = result.snapshot.val();
+          config.consecutivo = numeroFactura;
+          localStorage.setItem('helechos_config', JSON.stringify(config));
+          actualizarConsecDisplay();
+        } else {
+          throw new Error('Transacción no confirmada');
+        }
+      } catch(e) {
+        console.warn('fbTransaction error, usando local:', e.message);
+        numeroFactura = config.consecutivo;
+        config.consecutivo++;
+        localStorage.setItem('helechos_config', JSON.stringify(config));
+      }
+    } else {
+      // Sin Firebase: consecutivo local
       numeroFactura = config.consecutivo;
       config.consecutivo++;
       localStorage.setItem('helechos_config', JSON.stringify(config));
     }
-  } else {
-    // Sin Firebase: consecutivo local
-    numeroFactura = config.consecutivo;
-    config.consecutivo++;
-    localStorage.setItem('helechos_config', JSON.stringify(config));
   }
 
   const ahora = new Date();
@@ -9493,7 +9549,9 @@ async function finalizarFactura() {
   const totalBaseIva    = Object.values(ivaResumen).reduce((s, v) => s + v.base, 0);
   const totalImpuestos  = Object.values(ivaResumen).reduce((s, v) => s + v.impuesto, 0);
   const factura = {
-    numero: String(numeroFactura).padStart(6, '0'),
+    numero: esFacturaElectronica
+      ? ((feGetConfig && feGetConfig().prefijo) || 'FE') + '-' + String(numeroFactura).padStart(6, '0')
+      : String(numeroFactura).padStart(6, '0'),
     fecha: ahora.toLocaleDateString('es-CO'),
     hora: ahora.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' }),
     items: carrito.map(i => ({ ...i })),
@@ -10603,6 +10661,14 @@ function fbEscucharCambios() {
         localStorage.setItem('helechos_config', JSON.stringify(config));
         actualizarConsecDisplay();
         renderHeader();
+      }
+    },
+    { path: 'helechos/consecutivoFE', handler: (val) => {
+        if (!val || val <= (config.consecutivoFE || 1)) return;
+        // Otro dispositivo avanzó el consecutivo FE — actualizar localmente
+        config.consecutivoFE = val;
+        localStorage.setItem('helechos_config', JSON.stringify(config));
+        actualizarConsecDisplay();
       }
     },
     // Órdenes activas en tiempo real — compartidas entre todos los dispositivos
