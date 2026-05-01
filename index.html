@@ -4534,6 +4534,9 @@ let esFacturaElectronica = false;
 let feNombre = "";
 let feNit = "";
 let feCorreo = "";
+let feTipoDoc = "CC";
+let feDireccion = "";
+let feTelefono = "";
 // Contador de sesión del cajero activo
 let sesionFacturas = 0;
 let sesionTotal = 0;
@@ -5036,7 +5039,7 @@ async function cerrarSesion() {
   descuentoValor = 0;
   descuentoTipo = 'pct';
   esFacturaElectronica = false;
-  feNombre = ''; feNit = ''; feCorreo = '';
+  feNombre = ''; feNit = ''; feCorreo = ''; feTipoDoc = 'CC'; feDireccion = ''; feTelefono = '';
   document.getElementById('loginForm').classList.remove('visible');
   document.getElementById('userSelector').style.display = 'block';
   document.getElementById('cocinaPanel').style.display = 'none';
@@ -7570,6 +7573,9 @@ function sincronizarCarritoDesdeOrden() {
     feNombre = o.feNombre || '';
     feNit = o.feNit || '';
     feCorreo = o.feCorreo || '';
+    feTipoDoc = o.feTipoDoc || 'CC';
+    feDireccion = o.feDireccion || '';
+    feTelefono = o.feTelefono || '';
   }
 }
 
@@ -7590,6 +7596,9 @@ function guardarOrdenActiva() {
     o.feNombre = feNombre;
     o.feNit = feNit;
     o.feCorreo = feCorreo;
+    o.feTipoDoc = feTipoDoc;
+    o.feDireccion = feDireccion;
+    o.feTelefono = feTelefono;
   }
   // FIX: solo persistir si hay usuario activo para evitar que un
   // autoguardado/beforeunload con ordenes=[] borre los pedidos en Firebase
@@ -8323,7 +8332,9 @@ function verDetalleFactura(numeroFactura) {
     <div style="margin-top:12px;background:var(--fe-bg,#EDF7FF);border:1.5px solid #1565C0;border-radius:var(--r-sm);padding:12px;">
       <div style="font-size:11px;font-weight:700;color:#4A9EE0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🧾 Datos Receptor — Factura Electrónica</div>
       ${f.feNombre ? `<div style="font-size:14px;font-weight:700;color:var(--fe-text,#0D1F3C);">${esc(f.feNombre)}</div>` : ''}
-      ${f.feNit    ? `<div style="font-size:13px;color:var(--fe-sub,#2C4A6E);margin-top:4px;">NIT/CC: ${esc(f.feNit)}</div>` : ''}
+      ${f.feNit    ? `<div style="font-size:13px;color:var(--fe-sub,#2C4A6E);margin-top:4px;">${esc(f.feTipoDoc||'CC')}: ${esc(f.feNit)}</div>` : ''}
+      ${f.feDireccion ? `<div style="font-size:13px;color:var(--fe-sub,#2C4A6E);margin-top:4px;">📍 ${esc(f.feDireccion)}</div>` : ''}
+      ${f.feTelefono ? `<div style="font-size:13px;color:var(--fe-sub,#2C4A6E);margin-top:4px;">📞 ${esc(f.feTelefono)}</div>` : ''}
       ${f.feCorreo ? `<div style="font-size:13px;color:var(--fe-sub,#2C4A6E);margin-top:4px;">✉️ ${esc(f.feCorreo)}</div>` : ''}
       ${f.feCufe ? `
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(21,101,192,0.2);">
@@ -8360,7 +8371,16 @@ function verDetalleFactura(numeroFactura) {
       <button onclick="abrirWaDesdeHistorial('${f.numero}')" style="flex:1;padding:13px 8px;background:linear-gradient(135deg,#128C7E,#25D366);color:white;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 3px 12px rgba(37,211,102,0.3);">
         💬 WhatsApp
       </button>
+    </div>
+    ${f.esFacturaElectronica && f.feEstado === 'ACEPTADA' && !f.feNotaCredito ? `
+    <button onclick="emitirNotaCredito('${f.numero}')" style="width:100%;margin-top:8px;padding:12px;background:linear-gradient(135deg,#B71C1C,#E53935);color:white;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 3px 12px rgba(229,57,53,0.3);">
+      ❌ Anular — Emitir Nota Crédito
+    </button>` : ''}
+    ${f.esFacturaElectronica && f.feNotaCredito ? `
+    <div style="margin-top:8px;background:rgba(183,28,28,0.08);border:1.5px solid rgba(183,28,28,0.3);border-radius:var(--r-sm);padding:10px 12px;font-size:12px;color:#B71C1C;font-weight:700;text-align:center;">
+      ✅ Nota Crédito emitida · ${esc(f.feNotaCredito)}
     </div>` : ''}
+    ` : ''}
     `;
   document.getElementById('modalDetalle').classList.add('show');
 }
@@ -8747,7 +8767,10 @@ function generarTextoTicket() {
     esFacturaElectronica,
     feNombre: esFacturaElectronica ? feNombre : '',
     feNit:    esFacturaElectronica ? feNit    : '',
-    feCorreo: esFacturaElectronica ? feCorreo : ''
+    feCorreo: esFacturaElectronica ? feCorreo : '',
+    feTipoDoc: esFacturaElectronica ? feTipoDoc : 'CC',
+    feDireccion: esFacturaElectronica ? feDireccion : '',
+    feTelefono: esFacturaElectronica ? feTelefono : ''
   };
   return generarTextoDesdeFactura(f, false);
 }
@@ -9491,6 +9514,9 @@ async function finalizarFactura() {
     feNombre: esFacturaElectronica ? feNombre : '',
     feNit:    esFacturaElectronica ? feNit    : '',
     feCorreo: esFacturaElectronica ? feCorreo : '',
+    feTipoDoc: esFacturaElectronica ? feTipoDoc : 'CC',
+    feDireccion: esFacturaElectronica ? feDireccion : '',
+    feTelefono: esFacturaElectronica ? feTelefono : '',
     // Datos IVA para factura electrónica DIAN
     ivaResumen,         // { '8': { base, impuesto, tasa }, ... }
     totalBaseIva,       // subtotal sin impuestos
@@ -11849,7 +11875,7 @@ function feConstruirPayload(factura) {
   const cfg = feGetConfig();
   return {
     emisor: { nit: config.nit||cfg.nit||'', nombre: config.nombre||'', direccion: config.direccion||'', ciudad: cfg.ciudad||'Bogotá', departamento: cfg.departamento||'Cundinamarca', codigoCiudad: cfg.codigoCiudad||'11001', prefijo: cfg.prefijo||'FE', resolucion: cfg.resolucion||'', fechaResolucion: cfg.fechaResolucion||'', rangoDesde: cfg.rangoDesde||'1', rangoHasta: cfg.rangoHasta||'5000' },
-    receptor: { tipoDocumento: factura.feTipoDoc||'CC', documento: factura.feNit||'222222222', nombre: factura.feNombre||'Consumidor Final', correo: factura.feCorreo||'' },
+    receptor: { tipoDocumento: factura.feTipoDoc||'CC', documento: factura.feNit||'222222222', nombre: factura.feNombre||'Consumidor Final', correo: factura.feCorreo||'', direccion: factura.feDireccion||'', telefono: factura.feTelefono||'' },
     factura: { numero: factura.numero, fecha: factura.fecha, hora: factura.hora, total: factura.total, totalBase: factura.totalBaseIva||factura.total, totalImpuestos: factura.totalImpuestos||0, metodoPago: factura.pago, items: factura.items.map(i => ({ nombre:i.nombre, cantidad:i.cantidad, precioUnitario:i.precio, total:i.precio*i.cantidad, iva:(i.iva!==undefined&&i.iva!==null)?Number(i.iva):8, base:i.iva>0?Math.round((i.precio*i.cantidad)/(1+Number(i.iva)/100)):(i.precio*i.cantidad) })), ivaResumen: factura.ivaResumen||{} }
   };
 }
@@ -11862,6 +11888,77 @@ async function feEnviarUna(factura) {
   const data = await resp.json();
   if (!data.cufe) throw new Error('Sin CUFE: '+JSON.stringify(data));
   return data;
+}
+
+async function emitirNotaCredito(numeroFactura) {
+  const f = historial.find(x => x.numero === numeroFactura);
+  if (!f) { showToast('⚠️ Factura no encontrada'); return; }
+  if (!f.feCufe) { showToast('⚠️ Esta factura no tiene CUFE — no fue aceptada por la DIAN'); return; }
+  if (f.feNotaCredito) { showToast('⚠️ Ya se emitió una Nota Crédito para esta factura'); return; }
+
+  confirmar({
+    icono: '❌',
+    titulo: 'Emitir Nota Crédito',
+    mensaje: `¿Anular la factura #${f.numero} por ${fmt(f.total)}?\n\nEsta acción notifica a la DIAN y no se puede deshacer.`,
+    textoOk: 'Sí, anular',
+    callback: async () => {
+      const url = feGetBackendUrl();
+      if (!url) { showToast('⚠️ Configura el backend en Ajustes → Factura Electrónica'); return; }
+      showToast('⏳ Enviando Nota Crédito a la DIAN…', 4000);
+      try {
+        const cfg = feGetConfig();
+        const payload = {
+          facturaReferencia: {
+            numero: f.numero,
+            cufe: f.feCufe,
+            fecha: f.fecha
+          },
+          motivo: 'Anulación de factura',
+          emisor: {
+            nit: cfg.nit || '',
+            prefijo: cfg.prefijo || 'FE',
+            resolucion: cfg.resolucion || '',
+            ciudad: cfg.ciudad || '',
+            codigoCiudad: cfg.codigoCiudad || ''
+          },
+          receptor: {
+            tipoDocumento: f.feTipoDoc || 'CC',
+            documento: f.feNit || '222222222',
+            nombre: f.feNombre || 'Consumidor Final',
+            correo: f.feCorreo || '',
+            direccion: f.feDireccion || '',
+            telefono: f.feTelefono || ''
+          },
+          total: f.total,
+          items: f.items
+        };
+        const resp = await fetch(url + '/nota-credito', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.cufe) throw new Error(data.error || 'Sin CUFE en respuesta');
+
+        // Marcar la factura original como anulada
+        const idx = historial.findIndex(x => x.numero === numeroFactura);
+        if (idx >= 0) {
+          historial[idx].feNotaCredito = data.cufe;
+          historial[idx].feEstado = 'ANULADA';
+          localStorage.setItem('helechos_historial', JSON.stringify(historial));
+          try { if (window.fbSync) {
+            window.fbSync('facturas/' + numeroFactura + '/feNotaCredito', data.cufe);
+            window.fbSync('facturas/' + numeroFactura + '/feEstado', 'ANULADA');
+          }} catch(_) {}
+        }
+        cerrarModal('modalDetalle');
+        showToast('✅ Nota Crédito aceptada por la DIAN', 5000);
+        renderHistorial();
+      } catch(e) {
+        showToast('❌ Error: ' + (e.message || 'No se pudo conectar con el backend'), 6000);
+      }
+    }
+  });
 }
 
 function feActualizarFactura(numero, cufe, estado) {
@@ -12119,6 +12216,9 @@ function abrirModalCobroConRecibo(recibo) {
   feNombre = recibo.feNombre || '';
   feNit    = recibo.feNit    || '';
   feCorreo = recibo.feCorreo || '';
+  feTipoDoc  = recibo.feTipoDoc  || 'CC';
+  feDireccion = recibo.feDireccion || '';
+  feTelefono  = recibo.feTelefono  || '';
   // No preseleccionar monto — el cajero lo ingresa (permite calcular cambio)
   renderModalCobro(recibo.total, recibo.subtotal, recibo.descMonto || 0);
   document.getElementById('modalCobro').classList.add('show');
@@ -12306,12 +12406,26 @@ function renderModalCobro(total, subtotal, descMonto) {
     </div>
     ${esFacturaElectronica ? `
     <div class="fe-fields" style="margin-bottom:12px;">
+      <label class="fe-field-label">Tipo de documento *</label>
+      <select class="fe-input" style="appearance:auto;" onchange="feTipoDoc=this.value">
+        <option value="CC" ${feTipoDoc==='CC'?'selected':''}>CC — Cédula de Ciudadanía</option>
+        <option value="NIT" ${feTipoDoc==='NIT'?'selected':''}>NIT — Empresa / Persona Jurídica</option>
+        <option value="CE" ${feTipoDoc==='CE'?'selected':''}>CE — Cédula de Extranjería</option>
+        <option value="PA" ${feTipoDoc==='PA'?'selected':''}>PA — Pasaporte</option>
+        <option value="TI" ${feTipoDoc==='TI'?'selected':''}>TI — Tarjeta de Identidad</option>
+      </select>
       <label class="fe-field-label">Razón social / Nombre completo *</label>
       <input class="fe-input" type="text" placeholder="Empresa S.A.S. o Nombre Apellido"
         value="${esc(feNombre)}" oninput="feNombre=this.value" autocomplete="off">
-      <label class="fe-field-label">NIT o Cédula *</label>
+      <label class="fe-field-label">NIT o Número de documento *</label>
       <input class="fe-input" type="text" inputmode="numeric" placeholder="900123456-7"
         value="${esc(feNit)}" oninput="feNit=this.value" autocomplete="off">
+      <label class="fe-field-label">Dirección</label>
+      <input class="fe-input" type="text" placeholder="Calle 123 # 45-67"
+        value="${esc(feDireccion)}" oninput="feDireccion=this.value" autocomplete="off">
+      <label class="fe-field-label">Teléfono</label>
+      <input class="fe-input" type="text" inputmode="numeric" placeholder="3001234567"
+        value="${esc(feTelefono)}" oninput="feTelefono=this.value" autocomplete="off">
       <label class="fe-field-label">Correo electrónico (opcional)</label>
       <input class="fe-input" type="email" inputmode="email" placeholder="facturacion@empresa.com"
         value="${esc(feCorreo)}" oninput="feCorreo=this.value" autocomplete="off">
@@ -12540,6 +12654,9 @@ async function ejecutarCobro(total) {
     feNombre = recibo.feNombre || '';
     feNit = recibo.feNit || '';
     feCorreo = recibo.feCorreo || '';
+    feTipoDoc  = recibo.feTipoDoc  || 'CC';
+    feDireccion = recibo.feDireccion || '';
+    feTelefono  = recibo.feTelefono  || '';
 
     // Generar factura
     const factura = await finalizarFactura();
