@@ -3846,11 +3846,18 @@
           <button onclick="resetConsec()" style="background:white;border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Reiniciar</button>
         </div>
         <div class="consecutivo-display" style="margin-top:10px;">
-          <div>
+          <div style="flex:1;">
             <div style="font-size:11px;color:var(--gris);margin-bottom:2px;">Próxima F.E. 🧾</div>
-            <span id="cfgConsecFE" style="color:var(--rappi);">FE-000001</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span id="cfgConsecFE" style="color:var(--rappi);">FE-000001</span>
+              <input id="cfgConsecFEInput" type="number" min="1" style="display:none;width:90px;padding:4px 8px;font-size:15px;font-weight:700;color:var(--rappi);font-family:var(--font-num);border:1.5px solid var(--rappi);border-radius:8px;background:var(--blanco);text-align:center;" />
+            </div>
           </div>
-          <button onclick="resetConsecFE()" style="background:white;border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Reiniciar</button>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button id="btnEditConsecFE" onclick="editarConsecFE()" style="background:white;border:1.5px solid #1976D2;color:#1976D2;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">✏️ Editar</button>
+            <button id="btnGuardarConsecFE" onclick="guardarConsecFE()" style="display:none;background:var(--rappi);border:none;color:white;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Guardar</button>
+            <button onclick="resetConsecFE()" style="background:white;border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Reiniciar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -6000,6 +6007,48 @@ function resetConsecFE() {
   }});
 }
 
+function editarConsecFE() {
+  const span  = document.getElementById('cfgConsecFE');
+  const input = document.getElementById('cfgConsecFEInput');
+  const btnEditar  = document.getElementById('btnEditConsecFE');
+  const btnGuardar = document.getElementById('btnGuardarConsecFE');
+  if (!span || !input) return;
+  input.value = config.consecutivoFE || 1;
+  span.style.display  = 'none';
+  input.style.display = 'inline-block';
+  btnEditar.style.display  = 'none';
+  btnGuardar.style.display = 'inline-block';
+  input.focus(); input.select();
+}
+
+function guardarConsecFE() {
+  const feCfg = (typeof feGetConfig === 'function') ? feGetConfig() : {};
+  const prefijo = feCfg.prefijo || 'FE';
+  const span  = document.getElementById('cfgConsecFE');
+  const input = document.getElementById('cfgConsecFEInput');
+  const btnEditar  = document.getElementById('btnEditConsecFE');
+  const btnGuardar = document.getElementById('btnGuardarConsecFE');
+  if (!input) return;
+  const nuevoVal = parseInt(input.value, 10);
+  if (!nuevoVal || nuevoVal < 1) { showToast('⚠️ Ingresa un número válido mayor a 0'); return; }
+  function volverDisplay() {
+    if (span)  { span.style.display = 'inline'; span.textContent = prefijo + '-' + String(config.consecutivoFE||1).padStart(6,'0'); }
+    if (input) input.style.display = 'none';
+    if (btnEditar)  btnEditar.style.display  = 'inline-block';
+    if (btnGuardar) btnGuardar.style.display = 'none';
+  }
+  confirmar({ icono:'🧾', titulo:'Cambiar consecutivo F.E.', mensaje:`¿Establecer el próximo consecutivo F.E. en ${prefijo}-${String(nuevoVal).padStart(6,'0')}?`, textoOk:'Guardar', callback() {
+    config.consecutivoFE = nuevoVal;
+    localStorage.setItem('helechos_config', JSON.stringify(config));
+    if (window._FB) {
+      const { db, ref, set } = window._FB;
+      set(ref(db, 'helechos/consecutivoFE'), nuevoVal).catch(() => {});
+    }
+    volverDisplay();
+    showToast('✅ Consecutivo F.E. actualizado');
+  }, callbackCancelar() { volverDisplay(); }});
+}
+
 function actualizarConsecDisplay() {
   const feCfg = (typeof feGetConfig === 'function') ? feGetConfig() : {};
   const prefijo = feCfg.prefijo || 'FE';
@@ -7985,9 +8034,12 @@ function renderHistorial() {
   const hoyCount = historialVisible.filter(f => f.fecha === hoy).length;
 
   // ── Aplicar filtros ───────────────────────────────────────────────────
+  function pagoBaseName(p) {
+    return (p||'').replace(/\$[\s]?[\d.,]+/g,'').replace(/\s{2,}/g,' ').replace(/\+\s*\+/g,'+').trim().replace(/\+\s*$/,'').trim();
+  }
   let filtradas = [...historialVisible];
   if (_histFiltros.pago !== 'todos') {
-    filtradas = filtradas.filter(f => f.pago === _histFiltros.pago);
+    filtradas = filtradas.filter(f => pagoBaseName(f.pago) === _histFiltros.pago);
   }
   if (_histFiltros.tipo === 'fe') {
     filtradas = filtradas.filter(f => f.esFacturaElectronica);
@@ -8002,8 +8054,16 @@ function renderHistorial() {
     filtradas = filtradas.filter(f => f.fecha === _histFiltros.fecha);
   }
 
-  // ── Opciones de pago disponibles ─────────────────────────────────────
-  const pagosDisponibles = [...new Set(historialVisible.map(f => f.pago).filter(Boolean))].sort();
+  // ── Opciones de pago disponibles (solo nombres base, sin montos) ─────
+  const pagosDisponibles = [...new Set(
+    historialVisible
+      .map(f => f.pago)
+      .filter(Boolean)
+      .map(p => {
+        // Extraer solo los nombres de los métodos (ej: "Efectivo + Nequi" de "Efectivo $10.000 + Nequi $28.000")
+        return p.replace(/\$[\s]?[\d.,]+/g, '').replace(/\s{2,}/g, ' ').replace(/\+\s*\+/g, '+').trim().replace(/\+\s*$/,'').trim();
+      })
+  )].sort();
   // ── Fechas disponibles ────────────────────────────────────────────────
   const fechasDisponibles = [...new Set(historialVisible.map(f => f.fecha))].sort().reverse();
 
@@ -8149,7 +8209,7 @@ function generarTextoResumenFiltrado(paraBluetooth) {
   var nombreCajero = (usuarioActivo && usuarioActivo.nombre) || '';
   var base = esMeseroResumen ? historial.filter(function(f){ return f.cajero === nombreCajero || f.mesero === nombreCajero; }) : historial.slice();
 
-  if (_histFiltros.pago !== 'todos') base = base.filter(function(f){ return f.pago === _histFiltros.pago; });
+  if (_histFiltros.pago !== 'todos') base = base.filter(function(f){ return (f.pago||'').replace(/\$[\s]?[\d.,]+/g,'').replace(/\s{2,}/g,' ').replace(/\+\s*\+/g,'+').trim().replace(/\+\s*$/,'').trim() === _histFiltros.pago; });
   if (_histFiltros.tipo === 'fe')             base = base.filter(function(f){ return f.esFacturaElectronica; });
   else if (_histFiltros.tipo === 'normal')    base = base.filter(function(f){ return !f.esFacturaElectronica; });
   else if (_histFiltros.tipo === 'domicilio') base = base.filter(function(f){ return f.tipoOrden === 'domicilio'; });
@@ -10238,7 +10298,7 @@ window.addEventListener('offline', actualizarOffline);
 actualizarOffline();
 
 // ── MODAL CONFIRMAR ───────────────────────────────────────────────────
-function confirmar({ icono = '⚠️', titulo = 'Confirmar', mensaje, textoOk = 'Confirmar', colorOk = 'var(--rojo)', callback }) {
+function confirmar({ icono = '⚠️', titulo = 'Confirmar', mensaje, textoOk = 'Confirmar', colorOk = 'var(--rojo)', callback, callbackCancelar }) {
   const overlay = document.getElementById('modalConfirm');
   document.getElementById('modalConfirmIcon').textContent  = icono;
   document.getElementById('modalConfirmTitle').textContent = titulo;
@@ -10251,8 +10311,8 @@ function confirmar({ icono = '⚠️', titulo = 'Confirmar', mensaje, textoOk = 
   overlay.classList.add('show');
   const close = () => overlay.classList.remove('show');
   btnOk.onclick     = () => { close(); callback(); };
-  btnCancel.onclick = () => close();
-  overlay.onclick   = (e) => { if (e.target === overlay) close(); };
+  btnCancel.onclick = () => { close(); if (callbackCancelar) callbackCancelar(); };
+  overlay.onclick   = (e) => { if (e.target === overlay) { close(); if (callbackCancelar) callbackCancelar(); } };
 }
 
 
