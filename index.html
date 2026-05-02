@@ -8078,7 +8078,7 @@ function renderHistorial() {
   // ── Render de tarjetas agrupadas por día ─────────────────────────────
   const sorted = [...filtradas].reverse();
 
-  // Estado de colapso por día (persiste en window)
+  // Estado de colapso por día — hoy expandido, los demás colapsados
   if (!window._histDiasColapsados) window._histDiasColapsados = new Set();
 
   // Agrupar por fecha
@@ -8093,6 +8093,16 @@ function renderHistorial() {
     mapGrupos[key].facturas.push(f);
     mapGrupos[key].total += f.total;
     mapGrupos[key].count++;
+  });
+
+  // Primera vez que se ve cada grupo: colapsar todos excepto hoy
+  const _hoyStr = new Date().toLocaleDateString('es-CO');
+  grupos.forEach(g => {
+    const visto = '__visto_' + g.fecha;
+    if (!window._histDiasColapsados.has(visto)) {
+      if (g.fecha !== _hoyStr) window._histDiasColapsados.add(g.fecha);
+      window._histDiasColapsados.add(visto);
+    }
   });
 
   // Nombre amigable para la fecha del encabezado
@@ -9178,11 +9188,6 @@ function abrirModalImprimirPorNumero(numeroFactura) {
 
   const html = `
     ${opcionBT}
-    <div class="device-item" onclick="cerrarModal('modalBt');reimprimirDirecto(historial.find(x=>x.numero==='${numeroFactura}'));" style="margin-top:0;">
-      <span class="device-icon">🖨️</span>
-      <div><div class="device-name">Imprimir desde el navegador</div>
-      <div class="device-mac">Usa el diálogo de impresión del sistema</div></div>
-    </div>
     <div class="device-item" onclick="cerrarModal('modalBt');abrirWaDesdeHistorial('${numeroFactura}');" style="border-color:rgba(37,211,102,0.4);margin-top:0;">
       <span class="device-icon">💬</span>
       <div><div class="device-name">Enviar por WhatsApp</div>
@@ -9520,11 +9525,6 @@ function abrirModalImprimir() {
 
   const html = `
     ${opcionBT}
-    <div class="device-item" onclick="cerrarModal('modalBt');imprimirDirecto();" style="margin-top:0;">
-      <span class="device-icon">🖨️</span>
-      <div><div class="device-name">Imprimir desde el navegador</div>
-      <div class="device-mac">Usa el diálogo de impresión del sistema</div></div>
-    </div>
     <div class="device-item" onclick="cerrarModal('modalBt');abrirModalWhatsapp();" style="border-color:rgba(37,211,102,0.4);margin-top:0;">
       <span class="device-icon">💬</span>
       <div><div class="device-name">Enviar por WhatsApp</div>
@@ -9958,13 +9958,19 @@ function generarTextoCierre(paraBluetooth = false) {
 }
 
 async function imprimirCierreDia() {
+  // Solo Bluetooth — no abre ventana emergente como fallback
   const ok = await _btConectarParaImprimir();
-  if (!ok) { imprimirCierreDiaDirecto(); return; }
+  if (!ok) {
+    showToast('⚠️ No se pudo conectar con la impresora Bluetooth', 4000);
+    return;
+  }
   const combined = _btArmarBytes(generarTextoCierre(true));
   const enviado = await _btEnviarBytes(combined);
   if (enviado) {
-    showToast('🖨️ Cierre del día enviado · impresora liberada');
+    showToast('🖨️ Cierre del día enviado a la impresora');
     cerrarModal('modalDetalle');
+  } else {
+    showToast('❌ Error al enviar a la impresora', 4000);
   }
 }
 
