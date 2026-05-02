@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Los Helechos · POS</title>
+<title>Mi Restaurante · POS</title>
 <meta name="theme-color" content="#FF441A">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Los Helechos">
+<meta name="apple-mobile-web-app-title" content="Mi Restaurante">
 <link rel="manifest" id="pwaManifest">
   <link rel="icon" id="faviconDinamico" type="image/png" href="">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
@@ -2695,10 +2695,15 @@
   <div id="loginBgOverlay"></div>
   <div class="login-logo" id="loginLogoWrap" onclick="logoTap()" style="cursor:default;user-select:none;-webkit-tap-highlight-color:transparent;">
     <img id="loginLogoImg" src="" alt="" style="width:80px;height:80px;object-fit:cover;border-radius:20px;display:none;">
-    <span id="loginLogoEmoji">🌿</span>
+    <span id="loginLogoEmoji">🍽️</span>
   </div>
-  <div class="login-brand" id="loginBrandText">Los Helechos</div>
-  <div class="login-sub" id="loginSubText">Restaurante Campestre</div>
+  <div class="login-brand" id="loginBrandText">Mi Restaurante</div>
+  <div class="login-sub" id="loginSubText">Sistema POS</div>
+  <!-- Banner de primer uso -->
+  <div id="firstRunBanner" style="display:none;margin:10px 20px 0;padding:10px 14px;background:rgba(255,68,26,0.1);border:1.5px solid rgba(255,68,26,0.3);border-radius:12px;text-align:center;font-size:12px;color:var(--rappi);font-weight:600;line-height:1.5;">
+    ⚙️ Personaliza el nombre y logo del restaurante<br>
+    <span style="font-weight:400;color:var(--gris);font-size:11px;">Inicia sesión como <b>Master</b> → Configuración → Datos del restaurante</span>
+  </div>
   <div class="login-line"></div>
 
   <!-- Selector de ROL (nuevo diseño) -->
@@ -3146,7 +3151,7 @@
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:7px;">
-          <div class="header-title">Los Helechos</div>
+          <div class="header-title" id="headerTitle">POS</div>
           <div id="fbStatusDot" onclick="if(usuarioActivo?.rol==='master'){abrirConfigFirebase();}else{showToast('⛔ Solo el Master puede configurar Firebase');} event.stopPropagation();" style="width:10px;height:10px;border-radius:50%;background:#888;flex-shrink:0;cursor:pointer;transition:background 0.3s,box-shadow 0.3s;" title="Firebase desconectado"></div>
         </div>
         <div id="headerUserName" style="font-size:10px;color:var(--gris);letter-spacing:0.5px;font-weight:500;margin-top:1px;">—</div>
@@ -3716,19 +3721,19 @@
       <div class="cfg-acc-inner">
         <div class="config-field">
           <label>Nombre</label>
-          <input class="config-input" id="cfgNombre" value="Restaurante Campestre Los Helechos">
+          <input class="config-input" id="cfgNombre" value="" placeholder="Ej: Restaurante El Sabor">
         </div>
         <div class="config-field">
           <label>NIT</label>
-          <input class="config-input" id="cfgNit" value="66772226-1">
+          <input class="config-input" id="cfgNit" value="" placeholder="Ej: 900123456-7">
         </div>
         <div class="config-field">
           <label>Dirección</label>
-          <input class="config-input" id="cfgDir" value="Corregimiento La Tupia Km 5 vía Candelaria/Pradera">
+          <input class="config-input" id="cfgDir" value="" placeholder="Ej: Calle 10 # 5-23, Bogotá">
         </div>
         <div class="config-field">
           <label>Teléfono</label>
-          <input class="config-input" id="cfgTel" value="3147999429 / 3168515727">
+          <input class="config-input" id="cfgTel" value="" placeholder="Ej: 3001234567">
         </div>
         <div class="config-field">
           <label>Mensaje de despedida</label>
@@ -3953,19 +3958,26 @@
   <span id="seccionFirebase" style="display:none;"></span>
   <span id="seccionBackup" style="display:none;"></span>
 
-  <!-- FACTURA ELECTRÓNICA -->
-  <div class="cfg-acc" id="cfgAccFE">
-    <div class="cfg-acc-header" data-cfgacc="cfgAccFE">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div class="cfg-acc-icon">🧾</div>
-        <div>
-          <div class="cfg-acc-title">Factura Electrónica DIAN</div>
-          <div class="cfg-acc-sub">Configurar backend y resolución</div>
-        </div>
+  <!-- FACTURA ELECTRÓNICA — solo master -->
+  <div class="cfg-acc" id="cfgAccFE" data-master-only="1">
+    <!-- Fila superior: ícono + título + toggle maestro (siempre visible) -->
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;" onclick="toggleCfgAccFE(event)">
+      <div class="cfg-acc-icon" id="feIcono">🧾</div>
+      <div style="flex:1;min-width:0;">
+        <div class="cfg-acc-title">Factura Electrónica DIAN</div>
+        <div class="cfg-acc-sub" id="feStatusSub">Deshabilitada — toca el botón para activar</div>
       </div>
-      <span class="cfg-acc-arrow">▼</span>
+      <!-- Toggle maestro -->
+      <div id="feMainToggleWrap" onclick="event.stopPropagation();feToggleHabilitado();"
+           style="display:flex;align-items:center;gap:6px;background:var(--gris-cl);border:1.5px solid var(--borde);
+                  border-radius:999px;padding:5px 10px 5px 6px;cursor:pointer;transition:all .2s;flex-shrink:0;">
+        <div id="feMainToggleDot" style="width:22px;height:22px;border-radius:50%;background:#ccc;transition:all .2s;flex-shrink:0;"></div>
+        <span id="feMainToggleLabel" style="font-size:11px;font-weight:700;color:var(--gris);white-space:nowrap;transition:color .2s;">INACTIVO</span>
+      </div>
+      <span class="cfg-acc-arrow" id="feAccArrow" style="margin-left:4px;">▼</span>
     </div>
-    <div class="cfg-acc-body">
+    <!-- Cuerpo — solo visible si FE está habilitada -->
+    <div class="cfg-acc-body" id="feAccBody" style="display:none;">
       <div class="cfg-acc-inner" id="feConfigInner"></div>
     </div>
   </div>
@@ -4487,10 +4499,10 @@ const MENU_DEFAULT = [
 let MENU = JSON.parse(JSON.stringify(MENU_DEFAULT));
 
 let config = {
-  nombre: "Restaurante Campestre Los Helechos",
-  nit: "66772226-1",
-  direccion: "Corregimiento La Tupia Km 5 vía Candelaria/Pradera",
-  telefono: "3147999429 / 3168515727",
+  nombre: "Mi Restaurante",
+  nit: "",
+  direccion: "",
+  telefono: "",
   mensaje: "¡Gracias por tu visita!",
   consecutivo:   1,
   consecutivoFE: 1,
@@ -5416,6 +5428,7 @@ function init() {
   renderPreciosConfig();
   renderProductosConfig();
   showTab('home');
+  if (typeof feApplyHabilitado === 'function') feApplyHabilitado();
 }
 
 
@@ -5449,6 +5462,14 @@ function cargarConfig() {
   document.getElementById('cfgMsg').value    = config.mensaje;
   document.getElementById('cfgWaDomicilio').value = config.waTelDomicilio || '';
   document.getElementById('cfgWaMensaje').value = config.waMensaje || '';
+  // Actualizar título de pestaña con el nombre guardado
+  const storedBrand = localStorage.getItem('helechos_login_brand');
+  const titleBrand = storedBrand || config.nombre || 'POS';
+  document.title = titleBrand + ' · POS';
+  try {
+    const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (appleTitle) appleTitle.setAttribute('content', titleBrand);
+  } catch(_) {}
   renderHorarios();
   actualizarConsecDisplay();
   try {
@@ -5977,6 +5998,19 @@ function saveConfig() {
   localStorage.setItem('helechos_login_emoji', loginEmoji);
   aplicarLoginIcon();
 
+  // ── Actualizar título de la pestaña/PWA ──
+  const brand = loginBrand || config.nombre || 'POS';
+  document.title = brand + ' · POS';
+  try {
+    const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (appleTitle) appleTitle.setAttribute('content', brand);
+  } catch(_) {}
+  actualizarManifestConLogo(logoBase64);
+
+  // Ocultar banner de primer uso
+  const firstRunBanner = document.getElementById('firstRunBanner');
+  if (firstRunBanner) firstRunBanner.style.display = 'none';
+
   showToast('✅ Configuración guardada');
 }
 
@@ -6084,6 +6118,12 @@ function renderHeader() {
     </div>`;
   const nf = document.getElementById('numFactura');
   if (nf) nf.textContent = String(config.consecutivo).padStart(6,'0');
+  // Nombre del negocio en el header
+  const ht = document.getElementById('headerTitle');
+  if (ht) {
+    const brand = localStorage.getItem('helechos_login_brand') || config.nombre || 'POS';
+    ht.textContent = brand;
+  }
 }
 // fix #12: el intervalo de renderHeader se inicia en init(), no al parsear el script,
 // para evitar que corra durante el login. Ver init() más abajo.
@@ -6160,7 +6200,7 @@ function abrirDrawer(key) {
   if (key === 'pago')     renderPago();
   if (key === 'stats')    renderStats();
   if (key === 'editmenu') { renderProductosConfig(); renderPreciosConfig(); applyMasterPerms(); }
-  if (key === 'config')   { renderUsuariosConfig(); }
+  if (key === 'config')   { renderUsuariosConfig(); if (typeof feApplyHabilitado === 'function') feApplyHabilitado(); }
 
   // Permisos de rol
   document.querySelectorAll('[data-admin-only]').forEach(el => {
@@ -9893,7 +9933,7 @@ async function finalizarFactura() {
   actualizarBadgeHistorial();
 
   // ── FACTURA ELECTRÓNICA: enviar al backend → DIAN ─────────────────────
-  if (factura.esFacturaElectronica) {
+  if (factura.esFacturaElectronica && (typeof feEsHabilitada === 'function' ? feEsHabilitada() : false)) {
     _feEnviarConReintentos(factura);
   }
 
@@ -10097,18 +10137,19 @@ function actualizarIconosApp() {
 let _manifestBlobUrl = null;
 function actualizarManifestConLogo(logoSrc) {
   try {
+    const brand = localStorage.getItem('helechos_login_brand') || config.nombre || 'Mi Restaurante';
     const manifest = {
-      name: 'Los Helechos · POS',
-      short_name: 'Los Helechos',
-      description: 'Sistema POS para Restaurante Los Helechos',
+      name: brand + ' · POS',
+      short_name: brand,
+      description: 'Sistema POS para ' + brand,
       start_url: './',
       display: 'standalone',
       background_color: '#FFFFFF',
       theme_color: '#FF441A',
       orientation: 'portrait',
       icons: [
-        { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%231b3a1f'/%3E%3Ctext x='50%25' y='55%25' font-size='110' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E", sizes: '192x192', type: 'image/svg+xml' },
-        { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%231b3a1f'/%3E%3Ctext x='50%25' y='55%25' font-size='300' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E", sizes: '512x512', type: 'image/svg+xml' }
+        { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23FF441A'/%3E%3Ctext x='50%25' y='55%25' font-size='110' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E", sizes: '192x192', type: 'image/svg+xml' },
+        { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23FF441A'/%3E%3Ctext x='50%25' y='55%25' font-size='300' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E", sizes: '512x512', type: 'image/svg+xml' }
       ]
     };
     const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -11701,8 +11742,7 @@ function onCfgAccOpen(id) {
   if (id === 'cfgacc-diseno')   { cfgRenderDiseno(); renderClosedBgPreview(); renderClassicBgPreview(); }
   if (id === 'cfgacc-restaurante') { renderHorarios(); renderFestivos(); }
   if (id === 'cfgAccFE') {
-    const inner = document.getElementById('feConfigInner');
-    if (inner) inner.innerHTML = feRenderConfigPanel();
+    // Handled by toggleCfgAccFE()
   }
 }
 
@@ -12254,7 +12294,7 @@ function cfgQrDownload() {
 
 async function cfgQrShare() {
   if (navigator.share && _qrCurrentUrl) {
-    try { await navigator.share({ title: 'Menú Los Helechos', url: _qrCurrentUrl }); return; } catch(e) {}
+    try { await navigator.share({ title: 'Menú ' + (config.nombre || 'del restaurante'), url: _qrCurrentUrl }); return; } catch(e) {}
   }
   cfgQrCopy();
 }
@@ -12272,6 +12312,51 @@ const FE_COLA_KEY   = 'helechos_fe_cola';
 function feGetConfig() { try { const r = localStorage.getItem(FE_CONFIG_KEY); return r ? JSON.parse(r) : {}; } catch(e) { return {}; } }
 function feGuardarConfig(cfg) { localStorage.setItem(FE_CONFIG_KEY, JSON.stringify(cfg)); }
 function feGetBackendUrl() { return (feGetConfig().backendUrl || '').replace(/\/$/, ''); }
+
+// ── Habilitar / deshabilitar todo el módulo FE ────────────────────────
+function feEsHabilitada() { return !!feGetConfig().habilitado; }
+
+function feToggleHabilitado() {
+  if (usuarioActivo?.rol !== 'master') { showToast('⛔ Solo el Master puede cambiar esta opción'); return; }
+  const cfg = feGetConfig();
+  cfg.habilitado = !cfg.habilitado;
+  feGuardarConfig(cfg);
+  feApplyHabilitado();
+  showToast(cfg.habilitado ? '✅ Factura Electrónica DIAN activada' : '🔒 Factura Electrónica DIAN desactivada', 3000);
+  if (!cfg.habilitado) {
+    const body = document.getElementById('feAccBody');
+    if (body) body.style.display = 'none';
+    const arrow = document.getElementById('feAccArrow');
+    if (arrow) arrow.style.transform = '';
+  }
+}
+
+function feApplyHabilitado() {
+  const hab = feEsHabilitada();
+  const wrap  = document.getElementById('feMainToggleWrap');
+  const dot   = document.getElementById('feMainToggleDot');
+  const lbl   = document.getElementById('feMainToggleLabel');
+  const sub   = document.getElementById('feStatusSub');
+  const body  = document.getElementById('feAccBody');
+  if (dot)   { dot.style.background = hab ? '#2E7D32' : '#ccc'; dot.style.boxShadow = hab ? '0 0 0 3px rgba(46,125,50,0.2)' : 'none'; }
+  if (lbl)   { lbl.style.color = hab ? '#2E7D32' : 'var(--gris)'; lbl.textContent = hab ? 'ACTIVO' : 'INACTIVO'; }
+  if (wrap)  { wrap.style.background = hab ? 'rgba(46,125,50,0.1)' : 'var(--gris-cl)'; wrap.style.borderColor = hab ? 'rgba(46,125,50,0.4)' : 'var(--borde)'; }
+  if (sub)   sub.textContent = hab ? 'Habilitada — toca ▼ para configurar' : 'Deshabilitada — toca el botón para activar';
+  if (!hab && body) body.style.display = 'none';
+}
+
+// Abrir/cerrar el cuerpo del accordion FE (solo si está habilitado)
+function toggleCfgAccFE(e) {
+  if (!feEsHabilitada()) { showToast('⚠️ Activa primero la Factura Electrónica con el botón'); return; }
+  const body  = document.getElementById('feAccBody');
+  const arrow = document.getElementById('feAccArrow');
+  const inner = document.getElementById('feConfigInner');
+  if (!body) return;
+  const abierto = body.style.display !== 'none';
+  body.style.display  = abierto ? 'none' : '';
+  if (arrow) arrow.style.transform = abierto ? '' : 'rotate(180deg)';
+  if (!abierto && inner) inner.innerHTML = feRenderConfigPanel();
+}
 
 function feGetCola() { try { const r = localStorage.getItem(FE_COLA_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
 function feGuardarCola(cola) { try { localStorage.setItem(FE_COLA_KEY, JSON.stringify(cola)); } catch(e) {} }
@@ -13008,7 +13093,8 @@ function renderModalCobro(total, subtotal, descMonto) {
       </div>
     </div>
 
-    <!-- Factura electrónica toggle (cajero/admin) -->
+    <!-- Factura electrónica toggle (cajero/admin) — solo si FE está habilitada -->
+    ${(typeof feEsHabilitada === 'function' ? feEsHabilitada() : false) ? `
     <div class="fe-toggle-wrap ${esFacturaElectronica?'active':''}" id="cobFeToggle" onclick="toggleFECobro();renderModalCobro(${total},${subtotal},${descMonto});" style="margin-bottom:10px;">
       <div class="fe-toggle-label">
         <span class="fe-toggle-icon">🧾</span>
@@ -13052,6 +13138,7 @@ function renderModalCobro(total, subtotal, descMonto) {
       ${_cobroActual.feNit ? `<div style="font-size:12px;color:var(--gris);">NIT: ${esc(_cobroActual.feNit)}</div>` : ''}
       ${_cobroActual.feCorreo ? `<div style="font-size:12px;color:var(--gris);">✉️ ${esc(_cobroActual.feCorreo)}</div>` : ''}
     </div>` : ''}
+    ` : ''}
 
     <!-- Formas de pago -->
     <div style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">💳 Forma de pago</div>
@@ -13566,9 +13653,21 @@ function cargarLoginPersonalizacion() {
   const cfgBrand = document.getElementById('cfgLoginBrand');
   const cfgSub   = document.getElementById('cfgLoginSub');
   const cfgEmoji = document.getElementById('cfgLoginEmoji');
-  if (cfgBrand) cfgBrand.value = brand || 'Los Helechos';
-  if (cfgSub)   cfgSub.value   = sub   || 'Restaurante Campestre';
-  if (cfgEmoji) cfgEmoji.value = emoji || '🌿';
+  if (cfgBrand) cfgBrand.value = brand || config.nombre || '';
+  if (cfgSub)   cfgSub.value   = sub   || '';
+  if (cfgEmoji) cfgEmoji.value = emoji || '🍽️';
+  // Si no hay brand guardado, actualizar el texto del login con el nombre del negocio
+  if (!brand) {
+    const el = document.getElementById('loginBrandText');
+    if (el && config.nombre && config.nombre !== 'Mi Restaurante') el.textContent = config.nombre;
+  }
+  // Mostrar banner de primer uso si el nombre aún no fue personalizado
+  const firstRunBanner = document.getElementById('firstRunBanner');
+  if (firstRunBanner) {
+    const yaPersonalizado = !!localStorage.getItem('helechos_login_brand') ||
+      (config.nombre && config.nombre !== 'Mi Restaurante');
+    firstRunBanner.style.display = yaPersonalizado ? 'none' : 'block';
+  }
 }
 document.addEventListener('DOMContentLoaded', cargarLoginPersonalizacion);
 
