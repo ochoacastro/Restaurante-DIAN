@@ -19,6 +19,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, set, get, onValue, off, serverTimestamp, remove, runTransaction, update }
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  let _fbReadyDispatched = false;
   try {
 
   // ── CONFIGURACIÓN FIREBASE ────────────────────────────────────────────
@@ -31,6 +32,7 @@
 
   if (!firebaseConfig) {
     // Sin config: disparar evento para que la UI muestre el modal
+    _fbReadyDispatched = true;
     window.dispatchEvent(new Event('firebase-ready'));
     // No continuar inicializando
     throw new Error('Firebase no configurado aun');
@@ -49,15 +51,16 @@
   };
 
   // Señal de que Firebase está listo
+  _fbReadyDispatched = true;
   window.dispatchEvent(new Event('firebase-ready'));
   } catch(e) {
     if (!e.message.includes('no configurado')) {
       console.error('Firebase init error:', e);
-      // BUG 7 fix: solo disparar si no hay config Y el evento no fue ya disparado dentro del try
-      // (cuando sí hay config pero falla la init, el evento aún no se disparó)
+    }
+    // Disparar el evento solo si aún no fue disparado (init falló antes de llegar al dispatch)
+    if (!_fbReadyDispatched) {
       window.dispatchEvent(new Event('firebase-ready'));
     }
-    // Si no hay config, el evento ya fue disparado dentro del bloque try — no repetir
   }
 </script>
 <style>
@@ -3139,7 +3142,7 @@
         <img id="headerIconImg" src="" alt="🌿" style="width:100%;height:100%;object-fit:cover;border-radius:9px;display:none;">
         <span id="headerIconEmoji" style="font-size:16px;">🌿</span>
         <!-- Mini avatar superpuesto -->
-        <div id="headerLogoAvatar" style="position:absolute;bottom:-4px;right:-4px;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--negro);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:white;background:#888;" id="headerUserAvatarMini"></div>
+        <div id="headerUserAvatarMini" style="position:absolute;bottom:-4px;right:-4px;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--negro);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:white;background:#888;"></div>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:7px;">
@@ -4810,9 +4813,11 @@ function loginVolverDesdePin() {
   document.getElementById('loginForm').classList.remove('visible');
   document.getElementById('loginForm').style.display = '';
   document.getElementById('userSelector').style.display = 'block';
-  // Si era mesero, volver a la lista de meseros; si no, al grid de roles
+  // Si era mesero o cajero, volver a la lista correspondiente; si no, al grid de roles
   if (loginTargetUser?.rol === 'mesero') {
     renderLoginMeseroList();
+  } else if (loginTargetUser?.rol === 'cajero') {
+    renderLoginCajeroList();
   } else {
     loginVolverARoles();
   }
@@ -4958,7 +4963,7 @@ function aplicarRolUI() {
 
 function actualizarHeaderUsuario() {
   if (!usuarioActivo) return;
-  const mini = document.getElementById('headerLogoAvatar');
+  const mini = document.getElementById('headerUserAvatarMini');
   if (mini) {
     mini.textContent = usuarioActivo.nombre.charAt(0).toUpperCase();
     mini.style.background = usuarioActivo.color;
@@ -5602,6 +5607,7 @@ function actualizarIconoImpresora() {
 
 function renderSavedPrinter() {
   const block = document.getElementById('savedPrinterBlock');
+  if (!block) { actualizarIconoImpresora(); return; }
   if (!savedPrinterName) { block.style.display = 'none'; actualizarIconoImpresora(); return; }
   const conectado = btChar !== null;
   block.style.display = 'block';
@@ -5683,7 +5689,6 @@ function leerHorariosDelForm() {
 
 function guardarHorariosLocal(horarios) {
   try {
-    const MENU_SETTINGS_KEY = 'helechos_menu_settings_v1';
     const raw = localStorage.getItem(MENU_SETTINGS_KEY);
     const ms = raw ? JSON.parse(raw) : {};
     ms.horarios = horarios;
@@ -5933,7 +5938,6 @@ function saveConfig() {
 
   // ── Sincronizar con el menú digital ──
   try {
-    const MENU_SETTINGS_KEY = 'helechos_menu_settings_v1';
     const raw = localStorage.getItem(MENU_SETTINGS_KEY);
     const menuSettings = raw ? JSON.parse(raw) : {};
     // El menú digital espera el número CON prefijo 57
@@ -6864,7 +6868,15 @@ function cambiarQtyMenu(idx, delta) {
     carrito[existeIdx].precio = precio; // BUG 5 fix: recalcular precio si tipoOrden cambió
     if (carrito[existeIdx].cantidad <= 0) carrito.splice(existeIdx, 1);
   } else if (delta > 0) {
-    carrito.push({ nombre: item.nombre, precio, cantidad: 1, nota: '', servido: [false] });
+    carrito.push({
+      nombre: item.nombre,
+      categoria: item.categoria || '',
+      precio,
+      cantidad: 1,
+      nota: '',
+      servido: [false],
+      iva: (item.iva !== undefined && item.iva !== null) ? item.iva : 8
+    });
   }
   guardarOrdenActiva();
   renderMenu();
@@ -6979,8 +6991,13 @@ function abrirEditarPrecio(idx) {
 function confirmarEditarPrecio() {
   const val = parseInt(document.getElementById('modalPrecioInput').value);
   if (isNaN(val) || val <= 0) { showToast('⚠️ Ingresa un precio válido'); return; }
-  MENU[editPrecioIdx].precio = val;
-  const enCarrito = carrito.find(c => c.nombre === MENU[editPrecioIdx].nombre);
+  const item = MENU[editPrecioIdx];
+  if (!item) { showToast('⚠️ El producto ya no existe, recarga la lista'); cerrarModal('modalPrecio'); return; }
+  // Re-buscar por nombre en caso de que Firebase haya re-ordenado el array
+  const itemActual = MENU.find(m => m.nombre === item.nombre);
+  if (!itemActual) { showToast('⚠️ El producto ya no existe, recarga la lista'); cerrarModal('modalPrecio'); return; }
+  itemActual.precio = val;
+  const enCarrito = carrito.find(c => c.nombre === itemActual.nombre);
   if (enCarrito) enCarrito.precio = val;
   guardarMenuLocalStorage();
   renderMenu();
@@ -8414,11 +8431,24 @@ function generarTextoResumenFiltrado(paraBluetooth) {
   var nombreCajero = (usuarioActivo && usuarioActivo.nombre) || '';
   var base = esMeseroResumen ? historial.filter(function(f){ return f.cajero === nombreCajero || f.mesero === nombreCajero; }) : historial.slice();
 
-  if (_histFiltros.pago !== 'todos') base = base.filter(function(f){ return (f.pago||'').replace(/\$[\s]?[\d.,]+/g,'').replace(/\s{2,}/g,' ').replace(/\+\s*\+/g,'+').trim().replace(/\+\s*$/,'').trim() === _histFiltros.pago; });
-  if (_histFiltros.tipo === 'fe')             base = base.filter(function(f){ return f.esFacturaElectronica; });
-  else if (_histFiltros.tipo === 'normal')    base = base.filter(function(f){ return !f.esFacturaElectronica; });
-  else if (_histFiltros.tipo === 'domicilio') base = base.filter(function(f){ return f.tipoOrden === 'domicilio'; });
-  else if (_histFiltros.tipo === 'mesa')      base = base.filter(function(f){ return f.tipoOrden === 'mesa'; });
+  // Aplicar filtros usando la estructura actual de Sets
+  if (_histFiltros.tipos && _histFiltros.tipos.size > 0) {
+    base = base.filter(function(f) {
+      for (var t of _histFiltros.tipos) {
+        if (t === 'fe'        && f.esFacturaElectronica)     return true;
+        if (t === 'normal'    && !f.esFacturaElectronica)    return true;
+        if (t === 'domicilio' && f.tipoOrden === 'domicilio') return true;
+        if (t === 'mesa'      && f.tipoOrden === 'mesa')      return true;
+      }
+      return false;
+    });
+  }
+  if (_histFiltros.pagos && _histFiltros.pagos.size > 0) {
+    base = base.filter(function(f){
+      var pagoBase = (f.pago||'').replace(/\$[\s]?[\d.,]+/g,'').replace(/\s{2,}/g,' ').replace(/\+\s*\+/g,'+').trim().replace(/\+\s*$/,'').trim();
+      return _histFiltros.pagos.has(pagoBase);
+    });
+  }
   if (_histFiltros.fecha) base = base.filter(function(f){ return f.fecha === _histFiltros.fecha; });
 
   if (base.length === 0) return null;
@@ -8428,8 +8458,8 @@ function generarTextoResumenFiltrado(paraBluetooth) {
   var linea = '-'.repeat(ancho);
   var doble = '='.repeat(ancho);
 
-  var labelTipo = { todos:'Todas', fe:'Factura Electronica', normal:'Normal', domicilio:'Domicilio', mesa:'Mesa' }[_histFiltros.tipo] || 'Todas';
-  var labelPago = _histFiltros.pago === 'todos' ? 'Todos' : _histFiltros.pago;
+  var tiposArr = _histFiltros.tipos && _histFiltros.tipos.size > 0 ? Array.from(_histFiltros.tipos).join(', ') : 'Todos';
+  var pagosArr = _histFiltros.pagos && _histFiltros.pagos.size > 0 ? Array.from(_histFiltros.pagos).join(', ') : 'Todos';
   var labelFecha = _histFiltros.fecha || 'Todas las fechas';
 
   var totalGen = base.reduce(function(s,f){ return s+f.total; }, 0);
@@ -8451,8 +8481,8 @@ function generarTextoResumenFiltrado(paraBluetooth) {
   t += centrar(proc('*** RESUMEN FILTRADO ***')) + '\n';
   t += centrar(new Date().toLocaleDateString('es-CO') + ' ' + formatHora(new Date())) + '\n';
   t += doble + '\n';
-  t += proc('Tipo:').padEnd(14)  + labelTipo.substring(0,ancho-14) + '\n';
-  t += proc('Pago:').padEnd(14)  + labelPago.substring(0,ancho-14) + '\n';
+  t += proc('Tipo:').padEnd(14)  + tiposArr.substring(0,ancho-14) + '\n';
+  t += proc('Pago:').padEnd(14)  + pagosArr.substring(0,ancho-14) + '\n';
   t += proc('Fecha:').padEnd(14) + labelFecha.substring(0,ancho-14) + '\n';
   t += linea + '\n';
   t += proc('Facturas:').padEnd(20) + String(base.length).padStart(ancho-20) + '\n';
@@ -8512,10 +8542,14 @@ function abrirCierreDia(fechaFiltro) {
     const hayHistorial = historial.length > 0;
     if (!hayHistorial) { showToast('Sin ventas hoy'); return; }
     // Hay historial de otros días — abrir el modal apuntando al día más reciente con ventas
-    const fechasUnicas = [...new Set(historial.map(f => f.fecha))].sort().reverse();
-    if (fechasUnicas.length > 0) {
-      _cierreFechaActiva = fechasUnicas[0];
-      return abrirCierreDia(fechasUnicas[0]);
+    // Solo fechas que realmente tengan facturas para evitar recursión infinita
+    const fechasUnicas = [...new Set(historial.map(f => f.fecha))]
+      .filter(fd => historial.some(f => f.fecha === fd))
+      .sort().reverse();
+    const fechaValida = fechasUnicas.find(fd => fd !== fecha);
+    if (fechaValida) {
+      _cierreFechaActiva = fechaValida;
+      return abrirCierreDia(fechaValida);
     }
     showToast('Sin ventas hoy');
     return;
@@ -9401,9 +9435,11 @@ async function imprimirBluetooth() {
   const combined = new Uint8Array(totalLen);
   let offset = 0;
   for (const p of partes) { combined.set(p, offset); offset += p.length; }
+  // Finalizar factura ANTES de enviar bytes para evitar doble finalización
+  // si la impresión falla a mitad camino
+  await finalizarFactura();
   const enviado = await _btEnviarBytes(combined);
   if (enviado) {
-    await finalizarFactura();
     cerrarModal('modalBt');
     showToast('🖨️ Factura enviada · impresora liberada');
   }
@@ -10355,7 +10391,7 @@ function guardarProducto() {
       disponible: MENU[editProdIdx].disponible !== false }; // BUG 2 fix: preservar disponibilidad al editar
     showToast('✅ Producto actualizado');
   } else {
-    MENU.push({ nombre, categoria: cat, precio, precioDomicilio: precioDom, descripcion, foto, iva });
+    MENU.push({ nombre, categoria: cat, precio, precioDomicilio: precioDom, descripcion, foto, iva, disponible: true });
     showToast('✅ Producto agregado');
   }
 
@@ -10879,7 +10915,11 @@ function fbEscucharCambios() {
             merged.push(h);
           }
         });
-        merged.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
+        merged.sort((a, b) => {
+          const na = parseInt(String(a.numero).replace(/\D/g, '')) || 0;
+          const nb = parseInt(String(b.numero).replace(/\D/g, '')) || 0;
+          return na - nb;
+        });
         historial = merged;
         localStorage.setItem('helechos_historial', JSON.stringify(historial));
         actualizarBadgeHistorial(); renderHistorial();
@@ -10900,8 +10940,12 @@ function fbEscucharCambios() {
           }
         });
         if (cambio) {
-          // BUG 12 fix: ordenar numéricamente para evitar problemas con padding inconsistente
-          historial.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
+          // BUG 12 fix: ordenar numéricamente ignorando prefijos (FE-, etc.)
+          historial.sort((a, b) => {
+            const na = parseInt(String(a.numero).replace(/\D/g, '')) || 0;
+            const nb = parseInt(String(b.numero).replace(/\D/g, '')) || 0;
+            return na - nb;
+          });
           localStorage.setItem('helechos_historial', JSON.stringify(historial));
           actualizarBadgeHistorial(); renderHistorial();
         }
@@ -13187,7 +13231,7 @@ async function ejecutarCobro(total) {
     const savedDesc = { descuentoValor, descuentoTipo };
     const savedCliente = { clienteNombre, clienteTelefono, clienteDireccion, observaciones };
     const savedEsFE = esFacturaElectronica;
-    const savedFeData = { feNombre, feNit, feCorreo };
+    const savedFeData = { feNombre, feNit, feCorreo, feTipoDoc, feDireccion, feTelefono };
 
     // Cargar datos del recibo
     carrito = recibo.items.map(i => ({...i}));
@@ -13253,6 +13297,9 @@ async function ejecutarCobro(total) {
     feNombre = savedFeData.feNombre;
     feNit = savedFeData.feNit;
     feCorreo = savedFeData.feCorreo;
+    feTipoDoc = savedFeData.feTipoDoc;
+    feDireccion = savedFeData.feDireccion;
+    feTelefono = savedFeData.feTelefono;
 
     // Mostrar resumen de cobro con cambio
     mostrarResumenCobro(factura, pagosEntries, totalPagado, cambio);
