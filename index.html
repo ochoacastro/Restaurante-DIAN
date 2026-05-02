@@ -10034,6 +10034,8 @@ function cargarLogo(input) {
   reader.onload = (e) => {
     logoBase64 = e.target.result;
     localStorage.setItem('helechos_logo', logoBase64);
+    // FIX: sincronizar también en helechos_login_icon para que persista al recargar
+    localStorage.setItem('helechos_login_icon', logoBase64);
     // BUG 5 fix: sincronizar logo con el menú digital (helechos_menu_settings_v1)
     try {
       const raw = localStorage.getItem('helechos_menu_settings_v1');
@@ -10045,6 +10047,7 @@ function cargarLogo(input) {
     // BUG 1 fix: sincronizar logo también en la ruta que lee el menú digital
     fbSync('decorImages/businessLogo', logoBase64);
     mostrarLogoPreview();
+    aplicarLoginIcon();
     showToast('✅ Logo guardado');
   };
   reader.readAsDataURL(file);
@@ -10122,6 +10125,8 @@ function quitarLogo() {
   confirmar({ icono:'🖼️', titulo:'Quitar logo', mensaje:'¿Quitar el logo del recibo?', textoOk:'Quitar', callback() {
     logoBase64 = null;
     localStorage.removeItem('helechos_logo');
+    // FIX: limpiar también helechos_login_icon
+    localStorage.removeItem('helechos_login_icon');
     // BUG 5 fix: limpiar logo también en la clave del menú digital
     try {
       const raw = localStorage.getItem('helechos_menu_settings_v1');
@@ -10134,6 +10139,7 @@ function quitarLogo() {
     fbSync('decorImages/businessLogo', '');
     document.getElementById('logoFileInput').value = '';
     mostrarLogoPreview();
+    aplicarLoginIcon();
     showToast('🗑️ Logo eliminado');
   }});
 }
@@ -13522,6 +13528,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (brand) { const el = document.getElementById('loginBrandText'); if (el) el.textContent = brand; }
   if (sub)   { const el = document.getElementById('loginSubText');   if (el) el.textContent = sub; }
   if (bg)    { loginBgBase64 = bg; aplicarLoginBg(); }
+  // FIX: sincronizar helechos_logo → helechos_login_icon para que el logo persista al recargar
+  try {
+    const mainLogo = localStorage.getItem('helechos_logo');
+    const iconKey  = localStorage.getItem('helechos_login_icon');
+    if (mainLogo && !iconKey) {
+      localStorage.setItem('helechos_login_icon', mainLogo);
+    }
+  } catch(_) {}
   aplicarLoginIcon();
   mostrarLoginIconPreview();
   mostrarLoginBgPreview();
