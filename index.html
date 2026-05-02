@@ -8425,11 +8425,16 @@ function verDetalleFactura(numeroFactura) {
           <div style="font-size:11px;font-weight:700;color:#4A9EE0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">
             ${f.feEstado === 'ACEPTADA' ? '✅ Aceptada por la DIAN' : f.feEstado === 'RECHAZADA' ? '❌ Rechazada' : '⏳ Pendiente'}
           </div>
-          <div style="font-size:10px;color:var(--fe-sub,#2C4A6E);word-break:break-all;font-family:var(--font-num);">CUFE: ${esc(f.feCufe)}</div>
+          <div style="font-size:10px;color:var(--fe-sub,#2C4A6E);word-break:break-all;font-family:var(--font-num);margin-bottom:8px;">CUFE: ${esc(f.feCufe)}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${f.feCorreo ? `<button onclick="feReenviarEmail('${f.numero}')" style="flex:1;padding:8px;background:linear-gradient(135deg,#1565C0,#1976D2);color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;min-width:120px;">📧 Reenviar email</button>` : ''}
+            ${f.feEstado !== 'ACEPTADA' ? `<button onclick="feReintentarEnvio('${f.numero}')" style="flex:1;padding:8px;background:linear-gradient(135deg,#E65100,#F57C00);color:white;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;min-width:120px;">🔄 Reintentar</button>` : ''}
+          </div>
         </div>` : f.feEstado === 'PENDIENTE' ? `
         <div style="margin-top:8px;background:rgba(255,152,0,0.1);border-radius:6px;padding:6px 8px;font-size:11px;color:#E65100;font-weight:700;">
           ⏳ Pendiente de envío a la DIAN
-        </div>` : `
+        </div>
+        <button onclick="feReintentarEnvio('${f.numero}')" style="width:100%;margin-top:6px;padding:8px;background:linear-gradient(135deg,#E65100,#F57C00);color:white;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🔄 Reintentar ahora</button>` : `
         <div style="margin-top:8px;background:rgba(255,68,26,0.07);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--gris);font-style:italic;">
           Sin CUFE — backend no conectado aún
         </div>`}
@@ -8457,12 +8462,21 @@ function verDetalleFactura(numeroFactura) {
       </button>
     </div>
     ${f.esFacturaElectronica && f.feEstado === 'ACEPTADA' && !f.feNotaCredito ? `
-    <button onclick="emitirNotaCredito('${f.numero}')" style="width:100%;margin-top:8px;padding:12px;background:linear-gradient(135deg,#B71C1C,#E53935);color:white;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 3px 12px rgba(229,57,53,0.3);">
-      ❌ Anular — Emitir Nota Crédito
-    </button>` : ''}
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button onclick="emitirNotaCredito('${f.numero}')" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#B71C1C,#E53935);color:white;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 3px 12px rgba(229,57,53,0.3);">
+        ❌ Nota Crédito
+      </button>
+      <button onclick="emitirNotaDebito('${f.numero}')" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#E65100,#F57C00);color:white;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 3px 12px rgba(230,81,0,0.3);">
+        ➕ Nota Débito
+      </button>
+    </div>` : ''}
     ${f.esFacturaElectronica && f.feNotaCredito ? `
     <div style="margin-top:8px;background:rgba(183,28,28,0.08);border:1.5px solid rgba(183,28,28,0.3);border-radius:var(--r-sm);padding:10px 12px;font-size:12px;color:#B71C1C;font-weight:700;text-align:center;">
       ✅ Nota Crédito emitida · ${esc(f.feNotaCredito)}
+    </div>` : ''}
+    ${f.esFacturaElectronica && f.feNotaDebito ? `
+    <div style="margin-top:8px;background:rgba(230,81,0,0.08);border:1.5px solid rgba(230,81,0,0.3);border-radius:var(--r-sm);padding:10px 12px;font-size:12px;color:#E65100;font-weight:700;text-align:center;">
+      ✅ Nota Débito emitida · ${esc(f.feNotaDebito)}
     </div>` : ''}
     ` : ''}
     `;
@@ -12019,7 +12033,6 @@ async function emitirNotaCredito(numeroFactura) {
   if (!f) { showToast('⚠️ Factura no encontrada'); return; }
   if (!f.feCufe) { showToast('⚠️ Esta factura no tiene CUFE — no fue aceptada por la DIAN'); return; }
   if (f.feNotaCredito) { showToast('⚠️ Ya se emitió una Nota Crédito para esta factura'); return; }
-
   confirmar({
     icono: '❌',
     titulo: 'Emitir Nota Crédito',
@@ -12083,6 +12096,114 @@ async function emitirNotaCredito(numeroFactura) {
       }
     }
   });
+}
+
+// ── Nota Débito — cargo adicional sobre factura aceptada ──────────────
+function emitirNotaDebito(numeroFactura) {
+  const f = historial.find(x => x.numero === numeroFactura);
+  if (!f)             { showToast('⚠️ Factura no encontrada'); return; }
+  if (!f.feCufe)      { showToast('⚠️ Esta factura no tiene CUFE'); return; }
+  if (f.feNotaDebito) { showToast('⚠️ Ya se emitió una Nota Débito para esta factura'); return; }
+
+  document.getElementById('modalDetalleContenido').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:36px;margin-bottom:8px;">➕</div>
+      <div style="font-size:16px;font-weight:800;color:var(--negro);">Nota Débito — Factura #${f.numero}</div>
+      <div style="font-size:12px;color:var(--gris);margin-top:4px;">Cargo adicional sobre factura ya aceptada por la DIAN</div>
+    </div>
+    <div style="background:var(--fondo);border:1.5px solid var(--borde);border-radius:var(--r-sm);padding:12px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+        <span style="color:var(--gris);">Factura referenciada</span><span style="font-weight:700;">#${f.numero}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;">
+        <span style="color:var(--gris);">Total original</span>
+        <span style="font-weight:700;color:var(--rappi);">${fmt(f.total)}</span>
+      </div>
+    </div>
+    <label class="form-label" style="font-size:12px;display:block;margin-bottom:4px;">Código motivo *</label>
+    <select id="ndMotivoCodigo" class="config-input" style="appearance:auto;-webkit-appearance:auto;cursor:pointer;margin-bottom:10px;">
+      <option value="1">1 — Intereses</option>
+      <option value="2" selected>2 — Gastos por cobrar</option>
+      <option value="3">3 — Cambio en el valor</option>
+    </select>
+    <label class="form-label" style="font-size:12px;display:block;margin-bottom:4px;">Descripción del cargo *</label>
+    <input class="config-input" id="ndDescripcion" type="text"
+      placeholder="Ej: Cargo por servicio adicional, ajuste de precio..." style="margin-bottom:10px;">
+    <label class="form-label" style="font-size:12px;display:block;margin-bottom:4px;">Valor adicional a cobrar (COP) *</label>
+    <input class="config-input" id="ndValor" type="number" inputmode="numeric"
+      placeholder="Ej: 5000" min="1" style="margin-bottom:6px;">
+    <div style="font-size:11px;color:var(--gris);margin-bottom:14px;">
+      El Impoconsumo 8% se calcula automáticamente. La factura original NO se anula.
+    </div>
+    <button onclick="confirmarNotaDebito('${f.numero}')"
+      style="width:100%;padding:14px;background:linear-gradient(135deg,#E65100,#F57C00);color:white;border:none;border-radius:var(--r-sm);font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;">
+      ✅ Emitir Nota Débito
+    </button>
+    <button onclick="cerrarModal('modalDetalle')"
+      style="width:100%;padding:12px;background:var(--fondo);color:var(--negro);border:1.5px solid var(--borde);border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">
+      Cancelar
+    </button>`;
+}
+
+async function confirmarNotaDebito(numeroFactura) {
+  const f = historial.find(x => x.numero === numeroFactura);
+  if (!f) { showToast('⚠️ Factura no encontrada'); return; }
+
+  const motivoCodigo = document.getElementById('ndMotivoCodigo')?.value || '2';
+  const descripcion  = (document.getElementById('ndDescripcion')?.value || '').trim();
+  const valorRaw     = parseFloat(document.getElementById('ndValor')?.value || '0');
+
+  if (!descripcion)           { showToast('⚠️ Ingresa la descripción del cargo'); return; }
+  if (!valorRaw || valorRaw <= 0) { showToast('⚠️ Ingresa un valor mayor a cero'); return; }
+
+  const url = feGetBackendUrl();
+  if (!url) { showToast('⚠️ Configura el backend en Ajustes → Factura Electrónica'); return; }
+
+  const tasaIva  = 8;
+  const base     = Math.round(valorRaw / (1 + tasaIva / 100));
+  const impuesto = valorRaw - base;
+
+  showToast('⏳ Enviando Nota Débito a la DIAN…', 4000);
+  try {
+    const cfg = feGetConfig();
+    const resp = await fetch(url + '/nota-debito', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        facturaReferencia: { numero: f.numero, cufe: f.feCufe, fecha: f.fecha },
+        motivo: { codigo: motivoCodigo, descripcion },
+        emisor: {
+          nit: cfg.nit||'', nombre: config.nombre||'',
+          prefijo: (cfg.prefijo||'FE').replace(/FE/i, 'ND'),
+          resolucion: cfg.resolucion||'', ciudad: cfg.ciudad||'', codigoCiudad: cfg.codigoCiudad||''
+        },
+        receptor: {
+          tipoDocumento: f.feTipoDoc||'CC', documento: f.feNit||'222222222',
+          nombre: f.feNombre||'Consumidor Final', correo: f.feCorreo||''
+        },
+        valor: valorRaw, base, impuesto, tasaIva,
+        items: [{ nombre: descripcion, cantidad: 1, precioUnitario: valorRaw, total: valorRaw, iva: tasaIva, base }]
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.cufe) throw new Error(data.error || 'Sin CUFE en respuesta');
+
+    const idx = historial.findIndex(x => x.numero === numeroFactura);
+    if (idx >= 0) {
+      historial[idx].feNotaDebito      = data.cufe;
+      historial[idx].feNotaDebitoValor = valorRaw;
+      localStorage.setItem('helechos_historial', JSON.stringify(historial));
+      try { if (window.fbSync) {
+        window.fbSync('facturas/'+numeroFactura+'/feNotaDebito',      data.cufe);
+        window.fbSync('facturas/'+numeroFactura+'/feNotaDebitoValor', valorRaw);
+      }} catch(_) {}
+    }
+    cerrarModal('modalDetalle');
+    showToast('✅ Nota Débito aceptada por la DIAN · +' + fmt(valorRaw), 5000);
+    renderHistorial();
+  } catch(e) {
+    showToast('❌ Error: ' + (e.message || 'No se pudo conectar'), 6000);
+  }
 }
 
 function feActualizarFactura(numero, cufe, estado) {
@@ -12158,6 +12279,7 @@ function feRenderConfigPanel() {
       <div style="font-size:11px;color:var(--gris);margin-bottom:8px;">${cola.map(c=>'#'+c.numero).join(', ')}</div>
       <button onclick="feProcesarCola().then(()=>{const i=document.getElementById('feConfigInner');if(i)i.innerHTML=feRenderConfigPanel();});" style="width:100%;padding:9px;background:#E65100;color:white;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🔄 Reintentar ahora</button>
     </div>`:`<div style="background:rgba(46,125,50,0.1);border:1.5px solid rgba(46,125,50,0.3);border-radius:var(--r-sm);padding:8px 12px;font-size:12px;color:#2E7D32;font-weight:600;">✅ Sin facturas pendientes en cola</div>`}
+    ${feRenderSetPruebas()}
   </div>`;
 }
 
@@ -12174,6 +12296,106 @@ async function feTestConexion() {
   showToast('🔌 Probando conexión...');
   try { const r = await fetch(url+'/ping', {signal:AbortSignal.timeout(8000)}); const d = await r.json(); showToast(d.ok?'✅ Backend conectado · '+(d.ambiente||'OK'):'⚠️ Backend respondió con error', 4000); }
   catch(e) { showToast('❌ No se pudo conectar: '+e.message, 5000); }
+}
+
+// ── Reenviar email con CUFE ───────────────────────────────────────────
+async function feReenviarEmail(numeroFactura) {
+  const f = historial.find(x => x.numero === numeroFactura);
+  if (!f)          { showToast('⚠️ Factura no encontrada'); return; }
+  if (!f.feCorreo) { showToast('⚠️ Esta factura no tiene correo registrado'); return; }
+  if (!f.feCufe)   { showToast('⚠️ La factura aún no tiene CUFE'); return; }
+  const url = feGetBackendUrl();
+  if (!url) { showToast('⚠️ Configura el backend en Ajustes → FE'); return; }
+
+  showToast('📧 Enviando email...', 3000);
+  try {
+    const resp = await fetch(url + '/reenviar-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cufe: f.feCufe, correo: f.feCorreo, nombre: f.feNombre || 'Cliente', numero: f.numero, total: f.total, fecha: f.fecha }),
+      signal: AbortSignal.timeout(15000)
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      showToast('✅ Email enviado a ' + f.feCorreo, 4000);
+    } else {
+      showToast('⚠️ ' + (data.error || 'Error al enviar — revisa SMTP en el backend'), 5000);
+    }
+  } catch(e) {
+    showToast('❌ No se pudo conectar con el backend', 4000);
+  }
+}
+
+// ── Reintentar envío a DIAN desde historial ───────────────────────────
+async function feReintentarEnvio(numeroFactura) {
+  const f = historial.find(x => x.numero === numeroFactura);
+  if (!f) { showToast('⚠️ Factura no encontrada'); return; }
+  showToast('🔄 Reintentando envío a DIAN...', 3000);
+  feAgregarACola(f.numero, feConstruirPayload(f));
+  try {
+    await feProcesarCola();
+    // Refrescar el modal detalle si está abierto
+    const modalDet = document.getElementById('modalDetalle');
+    if (modalDet?.classList.contains('show')) {
+      const fActualizada = historial.find(x => x.numero === numeroFactura);
+      if (fActualizada) {
+        // Reconstruir el modal — reutiliza la función existente
+        try { mostrarDetalleFactura(fActualizada); } catch(_) {}
+      }
+    }
+  } catch(e) {
+    showToast('❌ Error: ' + e.message, 5000);
+  }
+}
+
+// ── Set de pruebas DIAN ───────────────────────────────────────────────
+function feRenderSetPruebas() {
+  const cfg = feGetConfig();
+  const habilitado = !!(cfg.backendUrl && cfg.nit && cfg.resolucion);
+  return `
+  <div style="background:rgba(255,152,0,0.08);border:1.5px solid rgba(255,152,0,0.4);border-radius:var(--r-sm);padding:12px;margin-top:14px;">
+    <div style="font-size:12px;font-weight:800;color:#E65100;margin-bottom:8px;">🧪 Set de pruebas DIAN — Habilitación</div>
+    <div style="font-size:11px;color:var(--gris);line-height:1.6;margin-bottom:10px;">
+      Para habilitarte como software propio debes enviar este set a la DIAN. Haz esto solo cuando tengas el certificado .p12 y el Software ID configurados en el backend.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
+      ${['1. Factura con Consumidor Final (sin documento)','2. Factura con NIT de empresa','3. Nota Crédito referenciando factura 1','4. Nota Débito referenciando factura 2'].map(t=>`
+      <div style="background:var(--blanco);border:1px solid var(--borde);border-radius:6px;padding:7px 10px;font-size:12px;">${t}</div>`).join('')}
+    </div>
+    <button onclick="feEnviarSetPruebas()" ${habilitado?'':'disabled'}
+      style="width:100%;padding:11px;background:${habilitado?'linear-gradient(135deg,#E65100,#F57C00)':'#ccc'};color:white;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:${habilitado?'pointer':'not-allowed'};font-family:inherit;">
+      🚀 ${habilitado ? 'Enviar set al backend → DIAN' : 'Configura backend, NIT y resolución primero'}
+    </button>
+    <div style="font-size:10px;color:var(--gris);margin-top:6px;text-align:center;">
+      El backend enviará los documentos. Revisa el portal DIAN para el resultado.
+    </div>
+  </div>`;
+}
+
+async function feEnviarSetPruebas() {
+  const url = feGetBackendUrl();
+  const cfg = feGetConfig();
+  if (!url)            { showToast('⚠️ Configura la URL del backend primero'); return; }
+  if (!cfg.nit)        { showToast('⚠️ Configura el NIT en la sección FE'); return; }
+  if (!cfg.resolucion) { showToast('⚠️ Configura la resolución DIAN'); return; }
+
+  showToast('🚀 Enviando set de pruebas...', 5000);
+  try {
+    const resp = await fetch(url + '/set-pruebas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emisor: { nit: cfg.nit, nombre: config.nombre || 'Restaurante', prefijo: cfg.prefijo || 'FE', resolucion: cfg.resolucion, fechaResolucion: cfg.fechaResolucion } }),
+      signal: AbortSignal.timeout(60000)
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      showToast('✅ Set enviado — revisa el portal DIAN para aprobación', 6000);
+    } else {
+      showToast('❌ ' + (data.error || 'Error inesperado del backend'), 6000);
+    }
+  } catch(e) {
+    showToast('❌ Error al conectar: ' + e.message, 5000);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════
