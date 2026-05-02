@@ -7998,7 +7998,7 @@ function beepFactura() {
 
 // ── HISTORIAL ─────────────────────────────────────────────────────────
 // Estado de filtros activos
-let _histFiltros = { pago: 'todos', tipo: 'todos', fecha: '' };
+let _histFiltros = { tipos: new Set(), pagos: new Set(), fecha: '' };
 
 function renderHistorial() {
   const el = document.getElementById('histContent');
@@ -8036,18 +8036,25 @@ function renderHistorial() {
     return (p||'').replace(/\$[\s]?[\d.,]+/g,'').replace(/\s{2,}/g,' ').replace(/\+\s*\+/g,'+').trim().replace(/\+\s*$/,'').trim();
   }
   let filtradas = [...historialVisible];
-  if (_histFiltros.pago !== 'todos') {
-    filtradas = filtradas.filter(f => pagoBaseName(f.pago) === _histFiltros.pago);
+
+  // Filtro tipo (multiselección — OR entre los seleccionados)
+  if (_histFiltros.tipos.size > 0) {
+    filtradas = filtradas.filter(f => {
+      for (const t of _histFiltros.tipos) {
+        if (t === 'fe'        && f.esFacturaElectronica)     return true;
+        if (t === 'normal'    && !f.esFacturaElectronica)    return true;
+        if (t === 'domicilio' && f.tipoOrden === 'domicilio') return true;
+        if (t === 'mesa'      && f.tipoOrden === 'mesa')      return true;
+      }
+      return false;
+    });
   }
-  if (_histFiltros.tipo === 'fe') {
-    filtradas = filtradas.filter(f => f.esFacturaElectronica);
-  } else if (_histFiltros.tipo === 'normal') {
-    filtradas = filtradas.filter(f => !f.esFacturaElectronica);
-  } else if (_histFiltros.tipo === 'domicilio') {
-    filtradas = filtradas.filter(f => f.tipoOrden === 'domicilio');
-  } else if (_histFiltros.tipo === 'mesa') {
-    filtradas = filtradas.filter(f => f.tipoOrden === 'mesa');
+
+  // Filtro pago (multiselección — OR entre los seleccionados)
+  if (_histFiltros.pagos.size > 0) {
+    filtradas = filtradas.filter(f => _histFiltros.pagos.has(pagoBaseName(f.pago)));
   }
+
   if (_histFiltros.fecha) {
     filtradas = filtradas.filter(f => f.fecha === _histFiltros.fecha);
   }
@@ -8065,7 +8072,7 @@ function renderHistorial() {
   // ── Fechas disponibles ────────────────────────────────────────────────
   const fechasDisponibles = [...new Set(historialVisible.map(f => f.fecha))].sort().reverse();
 
-  const hayFiltroActivo = _histFiltros.pago !== 'todos' || _histFiltros.tipo !== 'todos' || _histFiltros.fecha !== '';
+  const hayFiltroActivo = _histFiltros.tipos.size > 0 || _histFiltros.pagos.size > 0 || _histFiltros.fecha !== '';
   const totalFiltrado = filtradas.reduce((s, f) => s + f.total, 0);
 
   // ── Render de tarjetas ────────────────────────────────────────────────
@@ -8141,30 +8148,68 @@ function renderHistorial() {
       <div style="display:${window._histAcordeonAbierto?'flex':'none'};flex-direction:column;gap:12px;padding:0 14px 14px;border-top:1px solid var(--borde);">
         <!-- Tipo -->
         <div style="padding-top:12px;">
-          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Tipo de factura</div>
+          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Tipo de factura <span style="font-weight:400;opacity:0.7;">(selección múltiple)</span></div>
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
-            ${[['todos','Todas'],['fe','🧾 F.E.'],['normal','Normal'],['domicilio','🛵 Domicilio'],['mesa','🍽️ Mesa']].map(([v,l])=>
-              `<button onclick="histSetFiltro('tipo','${v}')" style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:20px;border:1.5px solid ${_histFiltros.tipo===v?'var(--rappi)':'var(--borde)'};background:${_histFiltros.tipo===v?'var(--rappi)':'var(--blanco)'};color:${_histFiltros.tipo===v?'white':'var(--negro)'};cursor:pointer;font-family:inherit;touch-action:manipulation;">${l}</button>`
-            ).join('')}
+            ${[['fe','🧾 F.E.'],['normal','Normal'],['domicilio','🛵 Domicilio'],['mesa','🍽️ Mesa']].map(([v,l])=>{
+              const activo = _histFiltros.tipos.has(v);
+              return `<button onclick="histToggleFiltroTipo('${v}')" style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:20px;border:1.5px solid ${activo?'var(--rappi)':'var(--borde)'};background:${activo?'var(--rappi)':'var(--blanco)'};color:${activo?'white':'var(--negro)'};cursor:pointer;font-family:inherit;touch-action:manipulation;display:flex;align-items:center;gap:4px;">
+                ${activo?'<span style="font-size:10px;">✓</span>':''} ${l}
+              </button>`;
+            }).join('')}
           </div>
         </div>
         <!-- Pago -->
         <div>
-          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Método de pago</div>
+          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Método de pago <span style="font-weight:400;opacity:0.7;">(selección múltiple)</span></div>
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
-            <button onclick="histSetFiltro('pago','todos')" style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:20px;border:1.5px solid ${_histFiltros.pago==='todos'?'var(--rappi)':'var(--borde)'};background:${_histFiltros.pago==='todos'?'var(--rappi)':'var(--blanco)'};color:${_histFiltros.pago==='todos'?'white':'var(--negro)'};cursor:pointer;font-family:inherit;">Todos</button>
-            ${pagosDisponibles.map(p =>
-              `<button onclick="histSetFiltro('pago','${esc(p)}')" style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:20px;border:1.5px solid ${_histFiltros.pago===p?'var(--rappi)':'var(--borde)'};background:${_histFiltros.pago===p?'var(--rappi)':'var(--blanco)'};color:${_histFiltros.pago===p?'white':'var(--negro)'};cursor:pointer;font-family:inherit;">${esc(p)}</button>`
-            ).join('')}
+            ${pagosDisponibles.map(p => {
+              const activo = _histFiltros.pagos.has(p);
+              return `<button onclick="histToggleFiltrosPago('${esc(p)}')" style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:20px;border:1.5px solid ${activo?'var(--rappi)':'var(--borde)'};background:${activo?'var(--rappi)':'var(--blanco)'};color:${activo?'white':'var(--negro)'};cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;">
+                ${activo?'<span style="font-size:10px;">✓</span>':''} ${esc(p)}
+              </button>`;
+            }).join('')}
           </div>
         </div>
         <!-- Fecha -->
         <div>
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">Fecha</div>
-          <select onchange="histSetFiltro('fecha',this.value)" style="width:100%;padding:9px 10px;font-size:13px;border:1.5px solid ${_histFiltros.fecha?'var(--rappi)':'var(--borde)'};border-radius:var(--r-sm);background:var(--blanco);color:var(--negro);font-family:inherit;cursor:pointer;">
-            <option value="">Todas las fechas</option>
-            ${fechasDisponibles.map(fd => `<option value="${fd}" ${_histFiltros.fecha===fd?'selected':''}>${fd}</option>`).join('')}
-          </select>
+          <!-- Accesos rápidos -->
+          <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+            ${(()=>{
+              const hoyStr = new Date().toLocaleDateString('es-CO');
+              const ayerStr = new Date(Date.now()-86400000).toLocaleDateString('es-CO');
+              const hoyISO  = new Date().toISOString().split('T')[0];
+              const ayerISO = new Date(Date.now()-86400000).toISOString().split('T')[0];
+              const actHoy  = _histFiltros.fecha === hoyStr;
+              const actAyer = _histFiltros.fecha === ayerStr;
+              return [
+                [`histSetFiltro('fecha','${actHoy?'':hoyStr}')`, 'Hoy',  actHoy],
+                [`histSetFiltro('fecha','${actAyer?'':ayerStr}')`, 'Ayer', actAyer],
+              ].map(([fn, label, activo]) =>
+                `<button onclick="${fn}" style="padding:6px 14px;font-size:12px;font-weight:600;border-radius:20px;border:1.5px solid ${activo?'var(--rappi)':'var(--borde)'};background:${activo?'var(--rappi)':'var(--blanco)'};color:${activo?'white':'var(--negro)'};cursor:pointer;font-family:inherit;">
+                  ${activo?'✓ ':''}${label}
+                </button>`
+              ).join('');
+            })()}
+            ${_histFiltros.fecha ? `<button onclick="histSetFiltro('fecha','')" style="padding:6px 14px;font-size:12px;font-weight:600;border-radius:20px;border:1.5px solid var(--borde);background:var(--blanco);color:var(--gris);cursor:pointer;font-family:inherit;">✕ Limpiar fecha</button>` : ''}
+          </div>
+          <!-- Calendario nativo -->
+          <input type="date"
+            value="${(()=>{
+              if (!_histFiltros.fecha) return '';
+              // Convertir es-CO (d/m/yyyy) → yyyy-mm-dd para el input
+              try {
+                const partes = _histFiltros.fecha.split('/');
+                if (partes.length === 3) {
+                  const [d, m, y] = partes;
+                  return y + '-' + String(m).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+                }
+              } catch(_) {}
+              return '';
+            })()}"
+            onchange="(function(v){ if(!v){ histSetFiltro('fecha',''); return; } const [y,m,d]=v.split('-'); histSetFiltro('fecha', parseInt(d)+'/'+parseInt(m)+'/'+y); })(this.value)"
+            style="width:100%;padding:9px 10px;font-size:13px;border:1.5px solid ${_histFiltros.fecha?'var(--rappi)':'var(--borde)'};border-radius:var(--r-sm);background:var(--blanco);color:var(--negro);font-family:inherit;cursor:pointer;box-sizing:border-box;">
+          ${_histFiltros.fecha ? `<div style="margin-top:5px;font-size:12px;color:var(--rappi);font-weight:600;">📅 Mostrando: ${_histFiltros.fecha}</div>` : ''}
         </div>
       </div>
     </div>
@@ -8189,14 +8234,35 @@ function histToggleAcordeon() {
   renderHistorial();
 }
 
+function histToggleFiltroTipo(valor) {
+  if (_histFiltros.tipos.has(valor)) {
+    _histFiltros.tipos.delete(valor);
+  } else {
+    _histFiltros.tipos.add(valor);
+  }
+  window._histAcordeonAbierto = true;
+  renderHistorial();
+}
+
+function histToggleFiltrosPago(valor) {
+  if (_histFiltros.pagos.has(valor)) {
+    _histFiltros.pagos.delete(valor);
+  } else {
+    _histFiltros.pagos.add(valor);
+  }
+  window._histAcordeonAbierto = true;
+  renderHistorial();
+}
+
 function histSetFiltro(campo, valor) {
+  // Mantener compatibilidad para fecha (sigue siendo string)
   _histFiltros[campo] = valor;
-  window._histAcordeonAbierto = true; // mantener abierto al seleccionar
+  window._histAcordeonAbierto = true;
   renderHistorial();
 }
 
 function histLimpiarFiltros() {
-  _histFiltros = { pago: 'todos', tipo: 'todos', fecha: '' };
+  _histFiltros = { tipos: new Set(), pagos: new Set(), fecha: '' };
   renderHistorial();
 }
 
