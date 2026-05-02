@@ -8075,39 +8075,83 @@ function renderHistorial() {
   const hayFiltroActivo = _histFiltros.tipos.size > 0 || _histFiltros.pagos.size > 0 || _histFiltros.fecha !== '';
   const totalFiltrado = filtradas.reduce((s, f) => s + f.total, 0);
 
-  // ── Render de tarjetas ────────────────────────────────────────────────
+  // ── Render de tarjetas agrupadas por día ─────────────────────────────
   const sorted = [...filtradas].reverse();
+
+  // Agrupar por fecha
+  const grupos = [];
+  const mapGrupos = {};
+  sorted.forEach(f => {
+    const key = f.fecha || 'Sin fecha';
+    if (!mapGrupos[key]) {
+      mapGrupos[key] = { fecha: key, facturas: [], total: 0, count: 0 };
+      grupos.push(mapGrupos[key]);
+    }
+    mapGrupos[key].facturas.push(f);
+    mapGrupos[key].total += f.total;
+    mapGrupos[key].count++;
+  });
+
+  // Nombre amigable para la fecha del encabezado
+  function labelFechaGrupo(fechaStr) {
+    const hoyStr2 = new Date().toLocaleDateString('es-CO');
+    const ayerStr2 = new Date(Date.now()-86400000).toLocaleDateString('es-CO');
+    if (fechaStr === hoyStr2)   return '📅 Hoy — ' + fechaStr;
+    if (fechaStr === ayerStr2)  return '📅 Ayer — ' + fechaStr;
+    // Convertir d/m/yyyy a nombre de día
+    try {
+      const [d, m, y] = fechaStr.split('/');
+      const dt = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+      const diaNombre = dt.toLocaleDateString('es-CO', { weekday: 'long' });
+      return '📅 ' + diaNombre.charAt(0).toUpperCase() + diaNombre.slice(1) + ' — ' + fechaStr;
+    } catch(_) { return '📅 ' + fechaStr; }
+  }
+
   const html = sorted.length === 0
     ? `<div style="text-align:center;padding:32px 0;color:var(--gris);font-size:14px;">Sin facturas con estos filtros</div>`
-    : sorted.map((f) => {
-        const resumen = f.items.map(it => `${it.cantidad}x ${esc(it.nombre)}`).join(', ');
-        // Determinar si esta factura fue atendida por este mesero (para meseros que ven su historial)
-        const esMiOrden = esMeseroHist && (f.cajero === nombreCajero || f.mesero === nombreCajero);
-        const fueCobradasPorOtro = esMiOrden && f.cajero && f.cajero !== nombreCajero;
-        // Para cajero/admin: mostrar mesero que atendió si está disponible
-        const meseroQueTomo = f.mesero || (f.cajero && !esCajero ? f.cajero : '');
+    : grupos.map(grupo => {
+        const tarjetas = grupo.facturas.map((f) => {
+          const resumen = f.items.map(it => `${it.cantidad}x ${esc(it.nombre)}`).join(', ');
+          const esMiOrden = esMeseroHist && (f.cajero === nombreCajero || f.mesero === nombreCajero);
+          const fueCobradasPorOtro = esMiOrden && f.cajero && f.cajero !== nombreCajero;
+          const meseroQueTomo = f.mesero || (f.cajero && !esCajero ? f.cajero : '');
+          return `
+          <div class="hist-item" onclick="verDetalleFactura('${f.numero}')" style="${esMiOrden ? 'border-left:3.5px solid var(--verde-ok);' : ''}margin-bottom:8px;">
+            <div class="hist-header">
+              <div class="hist-num">Factura #${f.numero}</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:10px;font-weight:800;background:rgba(46,125,50,0.12);color:var(--verde-ok);border:1px solid rgba(46,125,50,0.3);border-radius:20px;padding:2px 8px;letter-spacing:0.3px;">✅ PAGADO</span>
+                <div class="hist-fecha">${f.hora}</div>
+              </div>
+            </div>
+            ${fueCobradasPorOtro ? `<div style="font-size:11px;color:#1565C0;font-weight:700;margin-bottom:3px;">🏦 Cobrado por: ${esc(f.cajero)}</div>` : ''}
+            ${(esCajero || (!esMeseroHist)) && meseroQueTomo ? `<div style="font-size:11px;color:var(--gris);font-weight:600;margin-bottom:3px;">🧑 Mesero: ${esc(meseroQueTomo)}${f.cajero && f.cajero !== meseroQueTomo ? ' · Cajero: ' + esc(f.cajero) : ''}</div>` : ''}
+            ${f.tipoOrden === 'mesa' && f.mesaNumero ? `<div style="font-size:12px;color:var(--gris);margin-bottom:3px;">🍽️ ${esc(f.mesaNumero)}</div>` : ''}
+            ${f.tipoOrden === 'domicilio' ? `<div style="font-size:12px;color:var(--rappi);font-weight:600;margin-bottom:3px;">🛵 Domicilio</div>` : ''}
+            <div class="hist-items-list">${resumen.length > 60 ? resumen.substring(0, 60) + '…' : resumen}</div>
+            <div class="hist-footer">
+              <div class="hist-total">${fmt(f.total)}</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                ${f.esFacturaElectronica ? `<span class="hist-fe-badge">🧾 F.E.</span>` : ''}
+                <div class="hist-pago">${f.pago}</div>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+
         return `
-        <div class="hist-item" onclick="verDetalleFactura('${f.numero}')" style="${esMiOrden ? 'border-left:3.5px solid var(--verde-ok);' : ''}">
-          <div class="hist-header">
-            <div class="hist-num">Factura #${f.numero}</div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:10px;font-weight:800;background:rgba(46,125,50,0.12);color:var(--verde-ok);border:1px solid rgba(46,125,50,0.3);border-radius:20px;padding:2px 8px;letter-spacing:0.3px;">✅ PAGADO</span>
-              <div class="hist-fecha">${f.fecha} ${f.hora}</div>
-            </div>
+        <!-- Encabezado del día -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(135deg,var(--rappi-soft),rgba(255,68,26,0.03));border:1.5px solid rgba(255,68,26,0.2);border-radius:var(--r-sm);margin-bottom:8px;margin-top:4px;">
+          <div>
+            <div style="font-size:12px;font-weight:800;color:var(--rappi);">${labelFechaGrupo(grupo.fecha)}</div>
+            <div style="font-size:11px;color:var(--gris);margin-top:2px;">${grupo.count} factura${grupo.count!==1?'s':''}</div>
           </div>
-          ${fueCobradasPorOtro ? `<div style="font-size:11px;color:#1565C0;font-weight:700;margin-bottom:3px;">🏦 Cobrado por: ${esc(f.cajero)}</div>` : ''}
-          ${(esCajero || (!esMeseroHist)) && meseroQueTomo ? `<div style="font-size:11px;color:var(--gris);font-weight:600;margin-bottom:3px;">🧑 Mesero: ${esc(meseroQueTomo)}${f.cajero && f.cajero !== meseroQueTomo ? ' · Cajero: ' + esc(f.cajero) : ''}</div>` : ''}
-          ${f.tipoOrden === 'mesa' && f.mesaNumero ? `<div style="font-size:12px;color:var(--gris);margin-bottom:3px;">🍽️ ${esc(f.mesaNumero)}</div>` : ''}
-          ${f.tipoOrden === 'domicilio' ? `<div style="font-size:12px;color:var(--rappi);font-weight:600;margin-bottom:3px;">🛵 Domicilio</div>` : ''}
-          <div class="hist-items-list">${resumen.length > 60 ? resumen.substring(0, 60) + '…' : resumen}</div>
-          <div class="hist-footer">
-            <div class="hist-total">${fmt(f.total)}</div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              ${f.esFacturaElectronica ? `<span class="hist-fe-badge">🧾 F.E.</span>` : ''}
-              <div class="hist-pago">${f.pago}</div>
-            </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:900;color:var(--rappi);font-family:var(--font-num);">${fmt(grupo.total)}</div>
+            <div style="font-size:10px;color:var(--gris);margin-top:1px;">Total del día</div>
           </div>
-        </div>`;
+        </div>
+        ${tarjetas}`;
       }).join('');
 
   el.innerHTML = `
