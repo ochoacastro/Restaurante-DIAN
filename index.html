@@ -10034,7 +10034,7 @@ function cargarLogo(input) {
   reader.onload = (e) => {
     logoBase64 = e.target.result;
     localStorage.setItem('helechos_logo', logoBase64);
-    // FIX: sincronizar también en helechos_login_icon para que persista al recargar
+    // FIX: mantener helechos_login_icon sincronizado para que persista al recargar
     localStorage.setItem('helechos_login_icon', logoBase64);
     // BUG 5 fix: sincronizar logo con el menú digital (helechos_menu_settings_v1)
     try {
@@ -10975,6 +10975,8 @@ function fbEscucharCambios() {
         if (val.data === logoBase64) return; // Sin cambio
         logoBase64 = val.data;
         localStorage.setItem('helechos_logo', logoBase64);
+        // FIX: mantener helechos_login_icon sincronizado
+        localStorage.setItem('helechos_login_icon', logoBase64);
         mostrarLogoPreview();
         actualizarIconosApp();
       }
@@ -13520,7 +13522,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Cargar textos, ícono y fondo al iniciar
-(function cargarLoginPersonalizacion() {
+// FIX: ejecutar dentro de DOMContentLoaded para que los elementos del DOM existan
+function cargarLoginPersonalizacion() {
   const brand   = localStorage.getItem('helechos_login_brand');
   const sub     = localStorage.getItem('helechos_login_sub');
   const bg      = localStorage.getItem('helechos_login_bg');
@@ -13528,7 +13531,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (brand) { const el = document.getElementById('loginBrandText'); if (el) el.textContent = brand; }
   if (sub)   { const el = document.getElementById('loginSubText');   if (el) el.textContent = sub; }
   if (bg)    { loginBgBase64 = bg; aplicarLoginBg(); }
-  // FIX: sincronizar helechos_logo → helechos_login_icon para que el logo persista al recargar
+  // FIX: sincronizar helechos_logo → helechos_login_icon si falta
   try {
     const mainLogo = localStorage.getItem('helechos_logo');
     const iconKey  = localStorage.getItem('helechos_login_icon');
@@ -13546,7 +13549,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cfgBrand) cfgBrand.value = brand || 'Los Helechos';
   if (cfgSub)   cfgSub.value   = sub   || 'Restaurante Campestre';
   if (cfgEmoji) cfgEmoji.value = emoji || '🌿';
-});
+}
+document.addEventListener('DOMContentLoaded', cargarLoginPersonalizacion);
 
 
 
