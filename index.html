@@ -8078,6 +8078,9 @@ function renderHistorial() {
   // ── Render de tarjetas agrupadas por día ─────────────────────────────
   const sorted = [...filtradas].reverse();
 
+  // Estado de colapso por día (persiste en window)
+  if (!window._histDiasColapsados) window._histDiasColapsados = new Set();
+
   // Agrupar por fecha
   const grupos = [];
   const mapGrupos = {};
@@ -8096,21 +8099,23 @@ function renderHistorial() {
   function labelFechaGrupo(fechaStr) {
     const hoyStr2 = new Date().toLocaleDateString('es-CO');
     const ayerStr2 = new Date(Date.now()-86400000).toLocaleDateString('es-CO');
-    if (fechaStr === hoyStr2)   return '📅 Hoy — ' + fechaStr;
-    if (fechaStr === ayerStr2)  return '📅 Ayer — ' + fechaStr;
-    // Convertir d/m/yyyy a nombre de día
+    if (fechaStr === hoyStr2)  return 'Hoy — ' + fechaStr;
+    if (fechaStr === ayerStr2) return 'Ayer — ' + fechaStr;
     try {
       const [d, m, y] = fechaStr.split('/');
       const dt = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
       const diaNombre = dt.toLocaleDateString('es-CO', { weekday: 'long' });
-      return '📅 ' + diaNombre.charAt(0).toUpperCase() + diaNombre.slice(1) + ' — ' + fechaStr;
-    } catch(_) { return '📅 ' + fechaStr; }
+      return diaNombre.charAt(0).toUpperCase() + diaNombre.slice(1) + ' — ' + fechaStr;
+    } catch(_) { return fechaStr; }
   }
 
   const html = sorted.length === 0
     ? `<div style="text-align:center;padding:32px 0;color:var(--gris);font-size:14px;">Sin facturas con estos filtros</div>`
     : grupos.map(grupo => {
-        const tarjetas = grupo.facturas.map((f) => {
+        const colapsado = window._histDiasColapsados.has(grupo.fecha);
+        const safeKey = grupo.fecha.replace(/\//g,'_');
+
+        const tarjetas = colapsado ? '' : grupo.facturas.map((f) => {
           const resumen = f.items.map(it => `${it.cantidad}x ${esc(it.nombre)}`).join(', ');
           const esMiOrden = esMeseroHist && (f.cajero === nombreCajero || f.mesero === nombreCajero);
           const fueCobradasPorOtro = esMiOrden && f.cajero && f.cajero !== nombreCajero;
@@ -8140,15 +8145,21 @@ function renderHistorial() {
         }).join('');
 
         return `
-        <!-- Encabezado del día -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(135deg,var(--rappi-soft),rgba(255,68,26,0.03));border:1.5px solid rgba(255,68,26,0.2);border-radius:var(--r-sm);margin-bottom:8px;margin-top:4px;">
-          <div>
-            <div style="font-size:12px;font-weight:800;color:var(--rappi);">${labelFechaGrupo(grupo.fecha)}</div>
-            <div style="font-size:11px;color:var(--gris);margin-top:2px;">${grupo.count} factura${grupo.count!==1?'s':''}</div>
+        <!-- Encabezado colapsable del día -->
+        <div onclick="histToggleDia('${grupo.fecha}')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:linear-gradient(135deg,var(--rappi-soft),rgba(255,68,26,0.03));border:1.5px solid rgba(255,68,26,0.25);border-radius:var(--r-sm);margin-bottom:${colapsado?'6':'8'}px;margin-top:4px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:16px;">📅</span>
+            <div>
+              <div style="font-size:13px;font-weight:800;color:var(--rappi);">${labelFechaGrupo(grupo.fecha)}</div>
+              <div style="font-size:11px;color:var(--gris);margin-top:1px;">${grupo.count} factura${grupo.count!==1?'s':''}</div>
+            </div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:16px;font-weight:900;color:var(--rappi);font-family:var(--font-num);">${fmt(grupo.total)}</div>
-            <div style="font-size:10px;color:var(--gris);margin-top:1px;">Total del día</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="text-align:right;">
+              <div style="font-size:15px;font-weight:900;color:var(--rappi);font-family:var(--font-num);">${fmt(grupo.total)}</div>
+              <div style="font-size:10px;color:var(--gris);">Total del día</div>
+            </div>
+            <span style="font-size:18px;color:var(--rappi);font-weight:700;transition:transform 0.2s;display:inline-block;transform:${colapsado?'rotate(-90deg)':'rotate(0deg)'};">⌄</span>
           </div>
         </div>
         ${tarjetas}`;
@@ -8341,6 +8352,16 @@ function renderHistorial() {
 
 function histToggleAcordeon() {
   window._histAcordeonAbierto = !window._histAcordeonAbierto;
+  renderHistorial();
+}
+
+function histToggleDia(fecha) {
+  if (!window._histDiasColapsados) window._histDiasColapsados = new Set();
+  if (window._histDiasColapsados.has(fecha)) {
+    window._histDiasColapsados.delete(fecha);
+  } else {
+    window._histDiasColapsados.add(fecha);
+  }
   renderHistorial();
 }
 
