@@ -6246,6 +6246,7 @@ function selectSkin(key) {
   });
   renderSkinPhonePreview(key);
   renderAdBannerPreview();   // actualizar preview del banner
+  renderMenuPdfGrid();       // actualizar botón PDF al skin seleccionado
   showToast('🎨 Skin "' + (MENU_SKINS[key]?.nombre || key) + '" aplicado');
 }
 
@@ -6416,36 +6417,38 @@ function quitarAdBanner() {
 function renderMenuPdfGrid() {
   const grid = document.getElementById('menuPdfSkinGrid');
   if (!grid) return;
-  grid.innerHTML = Object.entries(MENU_SKINS).map(([key, sk]) => {
-    return `<button
-      onclick="descargarMenuEspecialPDF('${key}')"
+  // Solo mostrar el botón del skin actualmente seleccionado
+  const currentKey = getSkinKey();
+  const sk = MENU_SKINS[currentKey] || MENU_SKINS.clasico;
+  grid.style.gridTemplateColumns = '1fr';
+  grid.innerHTML = `<button
+      onclick="descargarMenuEspecialPDF('${currentKey}')"
       style="
-        display:flex;align-items:center;gap:9px;
-        padding:11px 12px;border-radius:12px;border:none;cursor:pointer;
-        background:var(--gris-cl);color:var(--negro);
-        font-family:inherit;font-size:13px;font-weight:700;
+        display:flex;align-items:center;gap:12px;
+        padding:14px 16px;border-radius:14px;border:2px solid ${sk.acento}44;cursor:pointer;
+        background:${sk.bgDefault};color:#fff;
+        font-family:inherit;font-size:14px;font-weight:800;
         text-align:left;transition:background 0.15s,transform 0.12s;
-        position:relative;overflow:hidden;
+        position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.25);
       "
       onmousedown="this.style.transform='scale(0.97)'"
       onmouseup="this.style.transform=''"
       onmouseleave="this.style.transform=''"
-      id="pdfBtn_${key}"
+      id="pdfBtn_${currentKey}"
     >
+      <span style="position:absolute;inset:0;background:${sk.overlay};pointer-events:none;"></span>
       <span style="
-        width:36px;height:36px;border-radius:9px;flex-shrink:0;
+        width:44px;height:44px;border-radius:10px;flex-shrink:0;
         display:flex;align-items:center;justify-content:center;
-        font-size:20px;background:${sk.bgDefault};position:relative;overflow:hidden;
-      ">
-        <span style="position:absolute;inset:0;background:${sk.overlay};border-radius:9px;"></span>
-        <span style="position:relative;z-index:1;">${sk.emoji}</span>
-      </span>
-      <div style="min-width:0;flex:1;">
-        <div style="font-size:12px;font-weight:800;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sk.nombre}</div>
-        <div style="font-size:10px;color:var(--gris);font-weight:500;margin-top:1px;">⬇ PDF</div>
+        font-size:26px;background:rgba(255,255,255,0.12);
+        border:1.5px solid ${sk.acento}55;position:relative;z-index:1;
+      ">${sk.emoji}</span>
+      <div style="min-width:0;flex:1;position:relative;z-index:1;">
+        <div style="font-size:14px;font-weight:900;color:${sk.acento};line-height:1.2;">${sk.nombre}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.75);font-weight:600;margin-top:2px;">⬇ Descargar PDF del menú</div>
       </div>
+      <span style="font-size:20px;position:relative;z-index:1;opacity:0.8;">📄</span>
     </button>`;
-  }).join('');
 }
 
 // Renderizar grilla cuando se abre el acordeón de diseño
@@ -6463,14 +6466,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── DESCARGAR MENÚ ESPECIAL EN PDF ──────────────────────────────────────
 function descargarMenuEspecialPDF(forceSkinKey) {
   const statusEl = document.getElementById('menuEspecialPdfStatus');
-  // Feedback visual en el botón presionado
-  const btnId = 'pdfBtn_' + (forceSkinKey || getSkinKey());
-  const btnEl = document.getElementById(btnId);
+  const btnId  = 'pdfBtn_' + (forceSkinKey || getSkinKey());
+  const btnEl  = document.getElementById(btnId);
   if (btnEl) {
     const orig = btnEl.innerHTML;
-    btnEl.innerHTML = `<span style="width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">⏳</span><div style="flex:1;font-size:12px;font-weight:700;">Generando…</div>`;
+    btnEl.innerHTML = `<span style="font-size:20px;position:relative;z-index:1;">⏳</span><div style="flex:1;font-size:13px;font-weight:800;position:relative;z-index:1;">Generando…</div>`;
     btnEl.disabled = true;
-    setTimeout(() => { btnEl.innerHTML = orig; btnEl.disabled = false; }, 3500);
+    setTimeout(() => { btnEl.innerHTML = orig; btnEl.disabled = false; }, 4000);
   }
   try {
     if (!window.jspdf) throw new Error('jsPDF no disponible');
@@ -6478,29 +6480,48 @@ function descargarMenuEspecialPDF(forceSkinKey) {
 
     // ── Skin activo ──────────────────────────────────────────────────
     const skinKey = forceSkinKey || getSkinKey();
-    const skin    = (MENU_SKINS && MENU_SKINS[skinKey]) || {
-      nombre: 'Menú Especial', acento: '#f5dc82', acentoRgb: '245,220,130',
-      catGrad: 'linear-gradient(135deg,#c8620a,#e07a12)', overlay: 'rgba(8,6,2,0.82)',
-      bgDefault: '', footer: '❦ Gracias por visitarnos ❦', itemColor: '#f0e8d0'
+    const skin = (MENU_SKINS && MENU_SKINS[skinKey]) || {
+      nombre:'Menú', acento:'#f5dc82', acentoRgb:'245,220,130',
+      catGrad:'linear-gradient(135deg,#c8620a,#e07a12)',
+      overlay:'rgba(8,6,2,0.82)', bgDefault:'', footer:'Gracias por visitarnos', itemColor:'#f0e8d0'
     };
 
-    // Parsear color de acento (hex → r,g,b)
-    const parseHex = (hex) => {
+    // Parsear colores
+    const parseHex = hex => {
       const h = hex.replace('#','');
-      if (h.length === 6) return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
-      return [245,220,130];
+      return h.length===6 ? [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)] : [245,220,130];
     };
-    // Parsear acentoRgb '255,179,217'
-    const parseRgb = (str) => { const p=str.split(',').map(Number); return [p[0]||245,p[1]||220,p[2]||130]; };
+    const parseRgb = str => { const p=str.split(',').map(Number); return [p[0]||245,p[1]||220,p[2]||130]; };
     const [ar,ag,ab] = skin.acentoRgb ? parseRgb(skin.acentoRgb) : parseHex(skin.acento||'#f5dc82');
 
-    // Parsear color de cabecera de categoría desde catGrad (primer color)
-    const parseCatColor = (grad) => {
+    // Color oscuro de fondo de página (extraído del overlay/bgDefault)
+    // Usamos colores fijos por skin para el fondo
+    const BG_COLORS = {
+      clasico:     [13,10,4],
+      madre:       [26,0,16],
+      padre:       [2,6,18],
+      halloween:   [10,0,16],
+      navidad:     [2,8,2],
+      sanvalentin: [18,0,6],
+    };
+    const [bgR,bgG,bgB] = BG_COLORS[skinKey] || [13,10,4];
+
+    // Color de la cabecera de categoría (primer color del catGrad)
+    const parseCatColor = grad => {
       const m = (grad||'').match(/#([0-9a-fA-F]{6})/g);
-      if (m && m.length) return parseHex(m[0]);
-      return [55,30,8];
+      return m && m.length ? parseHex(m[0]) : [55,30,8];
     };
     const [cr,cg,cb] = parseCatColor(skin.catGrad);
+
+    // Mensajes especiales por skin (mismos que menu.html)
+    const MC_GREETINGS = {
+      madre:       { emoji:'🌸', title:'¡Feliz Día de la Madre!',  msg:'Hoy celebramos a la mujer más especial de nuestra vida.\nGracias por tu amor infinito, mamá. ¡Este menú es para ti!' },
+      padre:       { emoji:'👔', title:'¡Feliz Día del Padre!',    msg:'Para el superhéroe de casa, el mejor papá del mundo.\n¡Disfruta este día tan especial con toda la familia!' },
+      halloween:   { emoji:'🎃', title:'¡Feliz Halloween!',         msg:'Una noche de misterio, sustos y mucho sabor.\n¡Aquí siempre te tratamos muy bien!' },
+      navidad:     { emoji:'🎄', title:'¡Feliz Navidad!',           msg:'Que esta temporada esté llena de amor, alegría y sabores únicos.\n¡De parte de todo el equipo, Felices Fiestas!' },
+      sanvalentin: { emoji:'❤',  title:'¡Feliz San Valentín!',     msg:'Una noche especial para compartir con quien más amas.\nGracias por elegirnos para celebrar el amor.' },
+    };
+    const greet = MC_GREETINGS[skinKey] || null;
 
     // ── Datos del menú ────────────────────────────────────────────────
     let menuItems = [];
@@ -6511,209 +6532,234 @@ function descargarMenuEspecialPDF(forceSkinKey) {
     // Categorías ocultas
     const hidden = [];
     try {
-      const raw2 = localStorage.getItem(MENU_SETTINGS_KEY);
-      const ms2  = raw2 ? JSON.parse(raw2) : {};
+      const ms2 = JSON.parse(localStorage.getItem(MENU_SETTINGS_KEY)||'{}');
       if (Array.isArray(ms2.hiddenCats)) hidden.push(...ms2.hiddenCats);
     } catch(e) {}
     const items  = menuItems.filter(i => i.disponible !== false && !hidden.includes(i.categoria));
-    const cats   = [...new Set(items.map(i => i.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+    const cats   = [...new Set(items.map(i=>i.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
     const sinCat = items.filter(i => !i.categoria);
 
-    // ── Dimensiones A4 ────────────────────────────────────────────────
-    const doc  = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
-    const PW   = 210, PH = 297;
-    const ml   = 16, mr = 16, mTop = 16;
-    const cw   = PW - ml - mr;
+    // ── Crear documento A4 ────────────────────────────────────────────
+    const doc = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+    const PW=210, PH=297, ml=14, mr=14, mTop=14;
+    const cw = PW - ml - mr;
     let y = mTop;
 
-    // ── Formato de precio ─────────────────────────────────────────────
-    const fmtP = v => {
-      const n = Number(v);
-      if (!n && n !== 0) return '';
-      return '$ ' + n.toLocaleString('es-CO');
+    // ── Helper: rellenar página con fondo oscuro ──────────────────────
+    const fillBg = () => {
+      doc.setFillColor(bgR, bgG, bgB);
+      doc.rect(0, 0, PW, PH, 'F');
     };
 
-    // ── Helper: nueva página con fondo blanco ─────────────────────────
-    const addPageBlank = () => {
+    // ── Helper: nueva página ──────────────────────────────────────────
+    const addPage = () => {
       doc.addPage();
+      fillBg();
       y = mTop;
     };
 
-    // ── Helper: verificar espacio, avanzar página si es necesario ─────
-    const checkY = (needed) => {
-      if (y + needed > PH - 18) { addPageBlank(); }
-    };
+    // ── Helper: espacio disponible ────────────────────────────────────
+    const checkY = needed => { if (y + needed > PH - 18) addPage(); };
 
-    // ════════════════════════════════════════════════════════════════
-    // CABECERA DEL DOCUMENTO (solo en pag 1)
-    // ════════════════════════════════════════════════════════════════
+    // ── Fondo página 1 ────────────────────────────────────────────────
+    fillBg();
 
-    // Logo (esquina superior izquierda, pequeño)
+    // ── LOGO ──────────────────────────────────────────────────────────
     const logoData = localStorage.getItem('helechos_logo');
     let logoH = 0;
     if (logoData) {
       try {
         const props = doc.getImageProperties(logoData);
-        const lw = 18, lh = lw * (props.height / props.width);
-        doc.addImage(logoData, props.fileType || 'PNG', ml, y, lw, lh);
-        logoH = lh;
+        const lw = 20, lh = lw * (props.height / props.width);
+        // Centrar logo
+        doc.addImage(logoData, props.fileType||'PNG', (PW-lw)/2, y, lw, lh);
+        logoH = lh + 4;
       } catch(e) {}
     }
+    y += logoH;
 
-    // Nombre del restaurante — junto al logo
-    const textX = logoData && logoH > 0 ? ml + 21 : ml;
-    const titleMaxW = PW - textX - mr;
-
+    // ── NOMBRE DEL RESTAURANTE ────────────────────────────────────────
     doc.setFont('helvetica','bold');
-    doc.setFontSize(18);
-    doc.setTextColor(25, 12, 3);
-    const titleLines = doc.splitTextToSize(nombre.toUpperCase(), titleMaxW);
-    doc.text(titleLines, textX, y + 6);
-    const headerH = Math.max(logoH, titleLines.length * 7 + 6);
+    doc.setFontSize(20);
+    doc.setTextColor(ar, ag, ab);
+    const titleLines = doc.splitTextToSize(nombre.toUpperCase(), cw);
+    doc.text(titleLines, PW/2, y + 7, { align:'center' });
+    y += titleLines.length * 8 + 2;
 
-    y += headerH + 2;
-
-    // Sub-cabecera: skin + fecha — estilo monospace ligero
+    // Sub-línea: RESTAURANTE
     doc.setFont('helvetica','normal');
-    doc.setFontSize(9);
-    doc.setTextColor(130,90,30);
-    // Letra espaciada tipo "D i a   d e   l a   M a d r e"
-    const subText = (skin.nombre || 'Menú Especial') + '   ·   ' + fecha;
-    // Simular espaciado con espacios entre letras
-    const spacedSub = subText.split('').join('\u200A'); // hair space entre cada letra
-    doc.text(subText, ml, y, { charSpace: 1.2 });
-    y += 5;
+    doc.setFontSize(8);
+    doc.setTextColor(ar, ag, ab);
+    doc.setCharSpace(3);
+    doc.text('RESTAURANTE', PW/2, y, { align:'center' });
+    doc.setCharSpace(0);
+    y += 6;
 
-    // Línea dorada separadora
+    // Línea separadora color acento
     doc.setDrawColor(ar, ag, ab);
-    doc.setLineWidth(0.7);
-    doc.line(ml, y, PW - mr, y);
-    y += 8;
+    doc.setLineWidth(0.6);
+    doc.line(ml + 20, y, PW - mr - 20, y);
+    y += 7;
 
-    // ════════════════════════════════════════════════════════════════
-    // RENDER DE CATEGORÍAS
-    // ════════════════════════════════════════════════════════════════
-    const renderGroup = (catName, groupItems) => {
-      checkY(14);
+    // ── TARJETA DE BIENVENIDA (solo skins especiales) ─────────────────
+    if (greet) {
+      const cardH = 28;
+      // Fondo de la tarjeta: un rectángulo semitransparente (simulado con color levemente más claro)
+      const [cR,cG,cB] = [Math.min(bgR+30,80), Math.min(bgG+15,50), Math.min(bgB+30,80)];
+      doc.setFillColor(cR, cG, cB);
+      doc.roundedRect(ml, y, cw, cardH, 4, 4, 'F');
+      // Borde color acento
+      doc.setDrawColor(ar, ag, ab);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(ml, y, cw, cardH, 4, 4, 'S');
 
-      // Cabecera categoría — rectángulo oscuro con texto en color acento
-      doc.setFillColor(cr, cg, cb);
-      doc.rect(ml, y, cw, 7.5, 'F');
+      // Título del mensaje
       doc.setFont('helvetica','bold');
-      doc.setFontSize(9);
+      doc.setFontSize(12);
       doc.setTextColor(ar, ag, ab);
-      doc.text(catName.toUpperCase(), ml + 5, y + 5.2);
-      y += 11;
+      doc.text(greet.title, PW/2, y + 8, { align:'center' });
 
-      // Ítems de la categoría
-      groupItems.forEach((item, idx) => {
-        checkY(10);
-        const precio     = fmtP(item.precio ?? item.precioLocal ?? 0);
-        const nombreItem = item.nombre || '';
-        const desc       = item.descripcion || '';
+      // Cuerpo del mensaje
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(ar, ag, ab);
+      const msgLines = greet.msg.split('\n');
+      let my = y + 14;
+      msgLines.forEach(line => {
+        const parts = doc.splitTextToSize(line, cw - 12);
+        parts.forEach(part => {
+          doc.text(part, PW/2, my, { align:'center' });
+          my += 4.5;
+        });
+      });
 
-        // Calcular ancho del precio para reservar espacio
+      y += cardH + 8;
+    }
+
+    // ── RENDER DE CATEGORÍAS ──────────────────────────────────────────
+    const fmtP = v => {
+      const n = Number(v);
+      if (!n && n!==0) return '';
+      return '$ ' + n.toLocaleString('es-CO');
+    };
+
+    // Texto tenue del nombre de categoría encima de la barra (estilo menu.html)
+    const renderGroup = (catName, groupItems) => {
+      checkY(18);
+
+      // Etiqueta pequeña encima — letra espaciada color acento tenue
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7);
+      doc.setTextColor(ar, ag, ab);
+      doc.setCharSpace(2);
+      doc.text(catName.toUpperCase(), PW/2, y + 4, { align:'center' });
+      doc.setCharSpace(0);
+      y += 6;
+
+      // Barra de categoría — degradado simulado con rectángulo sólido del color catGrad
+      doc.setFillColor(cr, cg, cb);
+      doc.roundedRect(ml, y, cw, 8, 2, 2, 'F');
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(255, 255, 255);
+      doc.setCharSpace(1.5);
+      doc.text(catName.toUpperCase(), PW/2, y + 5.5, { align:'center' });
+      doc.setCharSpace(0);
+      y += 12;
+
+      // Ítems
+      groupItems.forEach(item => {
+        checkY(9);
+        const precio    = fmtP(item.precio ?? item.precioLocal ?? 0);
+        const nombreIt  = item.nombre || '';
+        const desc      = item.descripcion || '';
+
         doc.setFont('helvetica','bold');
         doc.setFontSize(10);
-        const priceW = precio ? doc.getTextWidth(precio) + 3 : 0;
+        const priceW = precio ? doc.getTextWidth(precio) + 4 : 0;
         const nameW  = cw - priceW - 4;
 
-        // Nombre del plato
-        doc.setTextColor(20, 10, 3);
-        const nameParts = doc.splitTextToSize(nombreItem, nameW);
+        // Nombre del plato — color claro del skin (itemColor simulado con blanco suavizado)
+        doc.setTextColor(240, 235, 225);
+        const nameParts = doc.splitTextToSize(nombreIt, nameW);
         doc.text(nameParts, ml + 3, y);
 
-        // Precio — color acento (naranja/dorado/rosa según skin)
+        // Precio — color acento
         if (precio) {
           doc.setFont('helvetica','bold');
           doc.setFontSize(10);
-          doc.setTextColor(cr, cg, cb);
+          doc.setTextColor(ar, ag, ab);
           doc.text(precio, PW - mr - 2, y, { align:'right' });
         }
-
         y += nameParts.length * 5.5;
 
-        // Descripción opcional
+        // Descripción
         if (desc) {
-          checkY(6);
+          checkY(5);
           doc.setFont('helvetica','normal');
           doc.setFontSize(7.5);
-          doc.setTextColor(110, 85, 60);
-          const descParts = doc.splitTextToSize(desc, nameW + priceW - 2);
+          doc.setTextColor(180, 160, 140);
+          const descParts = doc.splitTextToSize(desc, cw - 6);
           doc.text(descParts, ml + 3, y);
           y += descParts.length * 4;
         }
 
-        // Separador sutil entre ítems
-        doc.setDrawColor(215, 195, 165);
-        doc.setLineWidth(0.25);
+        // Separador tenue
+        doc.setDrawColor(ar, ag, ab);
+        doc.setLineWidth(0.15);
+        doc.setLineDashPattern([1,2], 0);
         doc.line(ml + 3, y + 1.5, PW - mr - 3, y + 1.5);
+        doc.setLineDashPattern([], 0);
         y += 5.5;
       });
-
-      y += 4; // espacio entre grupos
+      y += 5;
     };
 
-    // Renderizar todas las categorías
-    cats.forEach(cat => {
-      const gi = items.filter(i => i.categoria === cat);
-      if (gi.length) renderGroup(cat, gi);
-    });
+    cats.forEach(cat => { const gi=items.filter(i=>i.categoria===cat); if(gi.length) renderGroup(cat,gi); });
     if (sinCat.length) renderGroup('Otros', sinCat);
 
     if (!items.length) {
       doc.setFont('helvetica','italic');
       doc.setFontSize(12);
-      doc.setTextColor(160);
-      doc.text('Sin platos disponibles', PW/2, y + 20, { align:'center' });
+      doc.setTextColor(ar, ag, ab);
+      doc.text('Sin platos disponibles', PW/2, y+20, { align:'center' });
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // PIE DE PÁGINA EN CADA PÁGINA
-    // ════════════════════════════════════════════════════════════════
-    const totalPages = doc.getNumberOfPages();
-    const footer = skin.footer || '❦ Gracias por visitarnos ❦';
-    // Limpiar emojis del footer para jsPDF (no renderiza emojis bien)
-    const footerClean = footer.replace(/[\u{1F300}-\u{1FFFF}]|[❦✦✧♦♥❤💕🌷🌸👔🎃🎄]/gu, '').trim()
-      || '* Gracias por visitarnos *';
+    // ── PIE DE PÁGINA EN CADA PÁGINA ─────────────────────────────────
+    const footerClean = (skin.footer||'Gracias por visitarnos')
+      .replace(/[\u{1F300}-\u{1FFFF}]|[❦✦✧♦♥❤💕🌷🌸👔🎃🎄]/gu,'').trim()
+      || 'Gracias por visitarnos';
 
-    for (let p = 1; p <= totalPages; p++) {
+    const totalPages = doc.getNumberOfPages();
+    for (let p=1; p<=totalPages; p++) {
       doc.setPage(p);
-      // Línea pie
-      doc.setDrawColor(200, 170, 120);
+      doc.setDrawColor(ar, ag, ab);
       doc.setLineWidth(0.4);
-      doc.line(ml, PH - 13, PW - mr, PH - 13);
-      // Texto pie izquierda/centro
+      doc.line(ml, PH-13, PW-mr, PH-13);
       doc.setFont('helvetica','italic');
       doc.setFontSize(7.5);
-      doc.setTextColor(160, 120, 60);
-      doc.text(footerClean, PW/2, PH - 9, { align:'center' });
-      // Número de página derecha
+      doc.setTextColor(ar, ag, ab);
+      doc.text(footerClean, PW/2, PH-9, { align:'center' });
       doc.setFont('helvetica','normal');
-      doc.setFontSize(7.5);
-      doc.setTextColor(170, 150, 120);
-      doc.text('Pág ' + p + ' de ' + totalPages, PW - mr, PH - 9, { align:'right' });
+      doc.setFontSize(7);
+      doc.setTextColor(ar, ag, ab);
+      doc.text('Pág '+p+' de '+totalPages, PW-mr, PH-9, { align:'right' });
     }
 
     // ── Guardar ───────────────────────────────────────────────────────
     const fechaFile = new Date().toLocaleDateString('es-CO').replace(/\//g,'-');
     doc.save('Menu_' + skinKey + '_' + fechaFile + '.pdf');
-    const skinNombre = (MENU_SKINS[skinKey]?.nombre || skinKey).replace(/[^\w\s]/gu,'').trim();
+    const skinNombre = (MENU_SKINS[skinKey]?.nombre||skinKey).replace(/[^\w\s]/gu,'').trim();
     showToast('📄 ' + skinNombre + ' — PDF descargado');
     if (statusEl) {
-      statusEl.textContent = '✅ PDF "' + skinNombre + '" generado correctamente';
+      statusEl.textContent = '✅ PDF "' + skinNombre + '" generado';
       statusEl.style.color = 'var(--verde-ok)';
       statusEl.style.display = 'block';
       setTimeout(()=>{ statusEl.style.display='none'; }, 3500);
     }
-    // Restaurar botón con check temporal
     if (btnEl) {
       clearTimeout(btnEl._pdfTimer);
-      const orig2 = btnEl.innerHTML;
-      btnEl.innerHTML = orig2.replace('⬇ PDF','✅ Listo');
-      btnEl._pdfTimer = setTimeout(() => {
-        renderMenuPdfGrid();
-      }, 2000);
+      btnEl._pdfTimer = setTimeout(() => { renderMenuPdfGrid(); }, 2000);
     }
   } catch(err) {
     showToast('❌ Error generando PDF: ' + err.message);
