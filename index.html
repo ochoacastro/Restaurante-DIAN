@@ -6951,7 +6951,7 @@ function saveConfig() {
 
   // ── Actualizar título de la pestaña/PWA ──
   const brand = loginBrand || config.nombre || 'POS';
-  document.title = brand + ' · POS';
+  document.title = (config.nombre || brand) + ' · POS';
   try {
     const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
     if (appleTitle) appleTitle.setAttribute('content', brand);
@@ -7113,8 +7113,7 @@ function renderHeader() {
   // Nombre del negocio en el header
   const ht = document.getElementById('headerTitle');
   if (ht) {
-    const brand = localStorage.getItem('helechos_login_brand') || config.nombre || 'POS';
-    ht.textContent = brand;
+    ht.textContent = config.nombre || 'POS';
   }
 }
 // fix #12: el intervalo de renderHeader se inicia en init(), no al parsear el script,
@@ -11167,16 +11166,25 @@ function actualizarIconosApp() {
     const hEmoji = document.getElementById('headerIconEmoji');
     const lImg   = document.getElementById('loginLogoImg');
     const lEmoji = document.getElementById('loginLogoEmoji');
-    if (logoBase64) {
-      if (hImg)   { hImg.src = logoBase64; hImg.style.display = 'block'; }
+
+    // Header: usa el logo del RESTAURANTE (helechos_logo)
+    const restLogo = logoBase64 || localStorage.getItem('helechos_logo');
+    if (restLogo) {
+      if (hImg)   { hImg.src = restLogo; hImg.style.display = 'block'; }
       if (hEmoji) hEmoji.style.display = 'none';
-      if (lImg)   { lImg.src = logoBase64; lImg.style.display = 'block'; }
-      if (lEmoji) lEmoji.style.display = 'none';
       const fav = document.getElementById('faviconDinamico');
-      if (fav) fav.href = logoBase64;
+      if (fav) fav.href = restLogo;
     } else {
       if (hImg)   hImg.style.display = 'none';
       if (hEmoji) hEmoji.style.display = '';
+    }
+
+    // Login: usa el ícono/logo del SISTEMA (helechos_login_icon)
+    const loginIcon = localStorage.getItem('helechos_login_icon');
+    if (loginIcon) {
+      if (lImg)   { lImg.src = loginIcon; lImg.style.display = 'block'; }
+      if (lEmoji) lEmoji.style.display = 'none';
+    } else {
       if (lImg)   lImg.style.display = 'none';
       if (lEmoji) lEmoji.style.display = '';
     }
@@ -14819,14 +14827,6 @@ function cargarLoginPersonalizacion() {
   if (brand) { const el = document.getElementById('loginBrandText'); if (el) el.textContent = brand; }
   if (sub)   { const el = document.getElementById('loginSubText');   if (el) el.textContent = sub; }
   if (bg)    { loginBgBase64 = bg; aplicarLoginBg(); }
-  // FIX: si helechos_login_icon está vacío pero helechos_logo tiene datos, sincronizar
-  try {
-    const mainLogo = localStorage.getItem('helechos_logo');
-    const iconKey  = localStorage.getItem('helechos_login_icon');
-    if (mainLogo && !iconKey) {
-      localStorage.setItem('helechos_login_icon', mainLogo);
-    }
-  } catch(_) {}
   aplicarLoginIcon();
   mostrarLoginIconPreview();
   mostrarLoginBgPreview();
