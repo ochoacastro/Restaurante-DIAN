@@ -3884,13 +3884,11 @@
 
         <!-- DESCARGA PDF MENÚ ESPECIAL -->
         <div>
-          <div class="form-label form-label-small" style="margin-bottom:4px;">📄 Descargar Menú Especial en PDF</div>
+          <div class="form-label form-label-small" style="margin-bottom:4px;">📄 Descargar Menú en PDF</div>
           <div style="font-size:11px;color:var(--gris);margin-bottom:12px;line-height:1.5;">
-            Genera un PDF del menú clásico con el skin activo para guardarlo e imprimirlo.
+            Genera el menú actualizado con precios reales. Cada diseño descarga su propio PDF.
           </div>
-          <button onclick="descargarMenuEspecialPDF()" class="btn-save-config" style="width:100%;padding:12px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;">
-            ⬇️ Descargar Menú Especial PDF
-          </button>
+          <div id="menuPdfSkinGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
           <div id="menuEspecialPdfStatus" style="margin-top:8px;font-size:12px;color:var(--gris);text-align:center;display:none;"></div>
         </div>
 
@@ -6414,15 +6412,72 @@ function quitarAdBanner() {
   showToast('🗑️ Banners quitados');
 }
 
+// ── GRILLA DE BOTONES PDF POR SKIN ──────────────────────────────────────
+function renderMenuPdfGrid() {
+  const grid = document.getElementById('menuPdfSkinGrid');
+  if (!grid) return;
+  grid.innerHTML = Object.entries(MENU_SKINS).map(([key, sk]) => {
+    return `<button
+      onclick="descargarMenuEspecialPDF('${key}')"
+      style="
+        display:flex;align-items:center;gap:9px;
+        padding:11px 12px;border-radius:12px;border:none;cursor:pointer;
+        background:var(--gris-cl);color:var(--negro);
+        font-family:inherit;font-size:13px;font-weight:700;
+        text-align:left;transition:background 0.15s,transform 0.12s;
+        position:relative;overflow:hidden;
+      "
+      onmousedown="this.style.transform='scale(0.97)'"
+      onmouseup="this.style.transform=''"
+      onmouseleave="this.style.transform=''"
+      id="pdfBtn_${key}"
+    >
+      <span style="
+        width:36px;height:36px;border-radius:9px;flex-shrink:0;
+        display:flex;align-items:center;justify-content:center;
+        font-size:20px;background:${sk.bgDefault};position:relative;overflow:hidden;
+      ">
+        <span style="position:absolute;inset:0;background:${sk.overlay};border-radius:9px;"></span>
+        <span style="position:relative;z-index:1;">${sk.emoji}</span>
+      </span>
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:12px;font-weight:800;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sk.nombre}</div>
+        <div style="font-size:10px;color:var(--gris);font-weight:500;margin-top:1px;">⬇ PDF</div>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+// Renderizar grilla cuando se abre el acordeón de diseño
+const _origCfgRenderDiseno = window.cfgRenderDiseno;
+document.addEventListener('DOMContentLoaded', () => {
+  // Renderizar al abrir el panel de diseño (accordeon)
+  document.querySelectorAll('.cfg-acc-header').forEach(h => {
+    h.addEventListener('click', () => {
+      setTimeout(renderMenuPdfGrid, 50);
+    });
+  });
+  renderMenuPdfGrid();
+});
+
 // ── DESCARGAR MENÚ ESPECIAL EN PDF ──────────────────────────────────────
-function descargarMenuEspecialPDF() {
+function descargarMenuEspecialPDF(forceSkinKey) {
   const statusEl = document.getElementById('menuEspecialPdfStatus');
+  // Feedback visual en el botón presionado
+  const btnId = 'pdfBtn_' + (forceSkinKey || getSkinKey());
+  const btnEl = document.getElementById(btnId);
+  if (btnEl) {
+    const orig = btnEl.innerHTML;
+    btnEl.innerHTML = `<span style="width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">⏳</span><div style="flex:1;font-size:12px;font-weight:700;">Generando…</div>`;
+    btnEl.disabled = true;
+    setTimeout(() => { btnEl.innerHTML = orig; btnEl.disabled = false; }, 3500);
+  }
   try {
     if (!window.jspdf) throw new Error('jsPDF no disponible');
     const { jsPDF } = window.jspdf;
 
     // ── Skin activo ──────────────────────────────────────────────────
-    const skinKey = getSkinKey();
+    const skinKey = forceSkinKey || getSkinKey();
     const skin    = (MENU_SKINS && MENU_SKINS[skinKey]) || {
       nombre: 'Menú Especial', acento: '#f5dc82', acentoRgb: '245,220,130',
       catGrad: 'linear-gradient(135deg,#c8620a,#e07a12)', overlay: 'rgba(8,6,2,0.82)',
@@ -6642,13 +6697,23 @@ function descargarMenuEspecialPDF() {
 
     // ── Guardar ───────────────────────────────────────────────────────
     const fechaFile = new Date().toLocaleDateString('es-CO').replace(/\//g,'-');
-    doc.save('MenuEspecial_' + skinKey + '_' + fechaFile + '.pdf');
-    showToast('📄 Menú Especial PDF descargado');
+    doc.save('Menu_' + skinKey + '_' + fechaFile + '.pdf');
+    const skinNombre = (MENU_SKINS[skinKey]?.nombre || skinKey).replace(/[^\w\s]/gu,'').trim();
+    showToast('📄 ' + skinNombre + ' — PDF descargado');
     if (statusEl) {
-      statusEl.textContent = '✅ PDF generado correctamente';
+      statusEl.textContent = '✅ PDF "' + skinNombre + '" generado correctamente';
       statusEl.style.color = 'var(--verde-ok)';
       statusEl.style.display = 'block';
       setTimeout(()=>{ statusEl.style.display='none'; }, 3500);
+    }
+    // Restaurar botón con check temporal
+    if (btnEl) {
+      clearTimeout(btnEl._pdfTimer);
+      const orig2 = btnEl.innerHTML;
+      btnEl.innerHTML = orig2.replace('⬇ PDF','✅ Listo');
+      btnEl._pdfTimer = setTimeout(() => {
+        renderMenuPdfGrid();
+      }, 2000);
     }
   } catch(err) {
     showToast('❌ Error generando PDF: ' + err.message);
