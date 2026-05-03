@@ -2485,6 +2485,91 @@
   .qr-note { font-size: 11px; color: var(--gris); margin-top: 8px; line-height: 1.4; }
   .qr-action-btn { border: none; border-radius: 12px; padding: 12px 14px; font-weight: 900; font-size: 13px; background: var(--fondo); color: var(--negro); border: 1.5px solid var(--borde); cursor: pointer; font-family: inherit; }
 
+  /* ── SKIN EDITOR ─────────────────────────── */
+  .skin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .skin-card {
+    border: 2px solid var(--borde);
+    border-radius: 14px;
+    padding: 14px 10px 10px;
+    cursor: pointer;
+    text-align: center;
+    background: var(--blanco);
+    transition: border-color .18s, transform .15s, box-shadow .18s;
+    position: relative;
+    overflow: hidden;
+  }
+  .skin-card:active { transform: scale(.97); }
+  .skin-card.active {
+    border-color: var(--rappi);
+    box-shadow: 0 0 0 3px rgba(255,68,26,.18);
+  }
+  .skin-card-check {
+    position: absolute; top: 7px; right: 8px;
+    font-size: 14px; display: none;
+  }
+  .skin-card.active .skin-card-check { display: block; }
+  .skin-card-preview {
+    width: 100%; height: 52px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    position: relative; overflow: hidden;
+  }
+  .skin-card-name { font-size: 11px; font-weight: 800; color: var(--negro); line-height: 1.3; }
+  .skin-phone-preview {
+    display: flex; justify-content: center; margin: 14px 0 8px;
+  }
+  .skin-phone {
+    position: relative; width: 130px; height: 230px;
+    border-radius: 20px; border: 4px solid #333;
+    background: #111; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,.35);
+  }
+  .skin-phone-notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 36px; height: 9px; background: #333;
+    border-radius: 0 0 7px 7px; z-index: 10;
+  }
+  .skin-phone-screen {
+    width: 100%; height: 100%; position: relative; overflow: hidden;
+  }
+  .skin-phone-overlay {
+    position: absolute; inset: 0; z-index: 2;
+  }
+  .skin-phone-content {
+    position: absolute; inset: 0; z-index: 3;
+    display: flex; flex-direction: column;
+    align-items: center; padding: 18px 8px 8px;
+    gap: 4px;
+  }
+  .skin-ph-title {
+    font-size: 8px; font-weight: 900; letter-spacing: 1.5px;
+    text-transform: uppercase; font-family: Georgia, serif;
+  }
+  .skin-ph-sub {
+    font-size: 6px; letter-spacing: 2px; text-transform: uppercase; opacity: .6;
+  }
+  .skin-ph-div {
+    width: 70%; height: 1px; margin: 3px 0; opacity: .4;
+  }
+  .skin-ph-cat {
+    border-radius: 4px; padding: 3px 10px;
+    font-size: 5.5px; font-weight: 900; color: #fff;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .skin-ph-item {
+    width: 90%; display: flex; justify-content: space-between;
+    font-size: 6px; padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    opacity: .85;
+  }
+  .skin-ph-footer {
+    position: absolute; bottom: 6px; left: 0; right: 0;
+    text-align: center; font-size: 5px; letter-spacing: 1.5px;
+    text-transform: uppercase; opacity: .35;
+  }
+
   /* ── Cat manager ── */
   .cat-mgr-item { display: flex; align-items: center; gap: 10px; background: var(--fondo); border: 1.5px solid var(--borde); border-radius: 12px; padding: 10px 12px; }
   .cat-mgr-name { flex: 1; font-size: 14px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3664,6 +3749,32 @@
             </label>
             <button id="classicBgQuitarBtn" style="display:none;background:#D32F2F;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;padding:10px 14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;" onclick="quitarClassicBg()">✕ Quitar</button>
           </div>
+        </div>
+
+        <div style="height:1px;background:var(--borde);margin:4px 0;"></div>
+
+        <!-- SKIN DEL MENÚ CLÁSICO -->
+        <div>
+          <div class="form-label form-label-small" style="margin-bottom:4px;">🎨 Skin del Menú Clásico</div>
+          <div style="font-size:11px;color:var(--gris);margin-bottom:14px;line-height:1.5;">
+            Elige la paleta de colores y decoración del menú según la ocasión. Se aplica en tiempo real.
+          </div>
+
+          <!-- Grid de skins -->
+          <div class="skin-grid" id="skinGrid"></div>
+
+          <!-- Preview en teléfono -->
+          <div class="skin-phone-preview">
+            <div class="skin-phone">
+              <div class="skin-phone-notch"></div>
+              <div class="skin-phone-screen" id="skinPhoneScreen">
+                <div class="skin-phone-overlay" id="skinPhoneOverlay"></div>
+                <div class="skin-phone-content" id="skinPhoneContent"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="qr-note" style="margin-top:4px;">Los colores se sincronizan automáticamente con el menú digital al guardar.</div>
         </div>
 
       </div>
@@ -5939,6 +6050,96 @@ function quitarClassicBg() {
   renderClassicBgPreview();
   showToast('🗑️ Imagen del menú clásico quitada');
 }
+
+// ── SKIN EDITOR ────────────────────────────────────────────────────────
+const MENU_SKINS = {
+  clasico:     { nombre: 'Clásico ✨',      emoji: '📋', acento: '#f5dc82', acentoRgb: '245,220,130', catGrad: 'linear-gradient(135deg,#c8620a,#e07a12)', overlay: 'rgba(8,6,2,0.82)',   bgDefault: 'linear-gradient(160deg,#0d0a04,#1a1204)', footer: '❦ Gracias por visitarnos ❦',     itemColor: '#f0e8d0' },
+  madre:       { nombre: 'Día de la Madre 🌸', emoji: '🌷', acento: '#ffb3d9', acentoRgb: '255,179,217', catGrad: 'linear-gradient(135deg,#c2185b,#e91e8c)', overlay: 'rgba(10,2,8,0.80)',  bgDefault: 'linear-gradient(160deg,#1a0010,#2d0020)', footer: '🌷 Con amor para mamá 🌷',          itemColor: '#ffe8f4' },
+  padre:       { nombre: 'Día del Padre 👔',   emoji: '👔', acento: '#90caf9', acentoRgb: '144,202,249', catGrad: 'linear-gradient(135deg,#1565c0,#1976d2)', overlay: 'rgba(2,6,18,0.85)', bgDefault: 'linear-gradient(160deg,#020612,#041228)', footer: '👔 Para el mejor papá del mundo 👔', itemColor: '#e3f2fd' },
+  halloween:   { nombre: 'Halloween 🎃',       emoji: '🎃', acento: '#ff9800', acentoRgb: '255,152,0',   catGrad: 'linear-gradient(135deg,#4a0080,#6a0dad)', overlay: 'rgba(4,0,8,0.88)',  bgDefault: 'linear-gradient(160deg,#0a0010,#1a000a)', footer: '🕷️ ¡Trick or treat! 🎃',            itemColor: '#ffe0b2' },
+  navidad:     { nombre: 'Navidad 🎄',          emoji: '🎄', acento: '#ffeb3b', acentoRgb: '255,235,59',  catGrad: 'linear-gradient(135deg,#b71c1c,#c62828)', overlay: 'rgba(2,8,2,0.84)',  bgDefault: 'linear-gradient(160deg,#020802,#0a1a0a)', footer: '🎄 ¡Feliz Navidad! 🎅',             itemColor: '#fff9e6' },
+  sanvalentin: { nombre: 'San Valentín ❤️',    emoji: '💕', acento: '#ff6b9d', acentoRgb: '255,107,157', catGrad: 'linear-gradient(135deg,#880e4f,#ad1457)', overlay: 'rgba(12,2,6,0.82)', bgDefault: 'linear-gradient(160deg,#120006,#200010)', footer: '💕 Una noche especial para dos 💕',   itemColor: '#fce4ec' },
+};
+
+function getSkinKey() {
+  try {
+    const raw = localStorage.getItem(MENU_SETTINGS_KEY);
+    if (raw) return JSON.parse(raw).classicSkin || 'clasico';
+  } catch(e) {}
+  return 'clasico';
+}
+
+function setSkinKey(key) {
+  try {
+    const raw = localStorage.getItem(MENU_SETTINGS_KEY);
+    const ms = raw ? JSON.parse(raw) : {};
+    ms.classicSkin = key;
+    localStorage.setItem(MENU_SETTINGS_KEY, JSON.stringify(ms));
+    if (window.fbSync) fbSync('menuSettings/classicSkin', key);
+  } catch(e) {}
+}
+
+function renderSkinGrid() {
+  const grid = document.getElementById('skinGrid');
+  if (!grid) return;
+  const current = getSkinKey();
+  grid.innerHTML = Object.entries(MENU_SKINS).map(([key, sk]) => {
+    const isActive = key === current;
+    // Mini paleta de colores para la card
+    const gradStyle = `background:${sk.bgDefault};`;
+    return `<div class="skin-card${isActive?' active':''}" data-skin="${key}" onclick="selectSkin('${key}')">
+      <span class="skin-card-check">✅</span>
+      <div class="skin-card-preview" style="${gradStyle}">
+        <span style="font-size:24px;position:relative;z-index:2;">${sk.emoji}</span>
+        <div style="position:absolute;inset:0;background:${sk.overlay};border-radius:8px;"></div>
+        <div style="position:absolute;bottom:4px;right:6px;z-index:2;font-size:9px;font-weight:900;color:${sk.acento};letter-spacing:1px;">MENÚ</div>
+      </div>
+      <div class="skin-card-name">${sk.nombre}</div>
+    </div>`;
+  }).join('');
+  renderSkinPhonePreview(current);
+}
+
+function renderSkinPhonePreview(key) {
+  const sk = MENU_SKINS[key] || MENU_SKINS.clasico;
+  const screen  = document.getElementById('skinPhoneScreen');
+  const overlay = document.getElementById('skinPhoneOverlay');
+  const content = document.getElementById('skinPhoneContent');
+  if (!screen) return;
+  screen.style.background = sk.bgDefault;
+  overlay.style.background = sk.overlay;
+  content.innerHTML = `
+    <div class="skin-ph-title" style="color:${sk.acento};">LOS HELECHOS</div>
+    <div class="skin-ph-sub" style="color:${sk.acento};">Carta del restaurante</div>
+    <div class="skin-ph-div" style="background:${sk.acento};"></div>
+    <div style="height:4px;"></div>
+    <div class="skin-ph-cat" style="background:${sk.catGrad};">Entradas</div>
+    <div class="skin-ph-item" style="color:${sk.itemColor};"><span>Plato especial</span><span style="color:${sk.acento};">$18.000</span></div>
+    <div class="skin-ph-item" style="color:${sk.itemColor};"><span>Del chef</span><span style="color:${sk.acento};">$24.000</span></div>
+    <div style="height:6px;"></div>
+    <div class="skin-ph-cat" style="background:${sk.catGrad};">Bebidas</div>
+    <div class="skin-ph-item" style="color:${sk.itemColor};"><span>Jugo natural</span><span style="color:${sk.acento};">$6.000</span></div>
+    <div class="skin-ph-footer" style="color:${sk.acento};">${sk.footer}</div>
+  `;
+}
+
+function selectSkin(key) {
+  setSkinKey(key);
+  // Actualizar tarjetas
+  document.querySelectorAll('.skin-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.skin === key);
+  });
+  renderSkinPhonePreview(key);
+  showToast('🎨 Skin "' + (MENU_SKINS[key]?.nombre || key) + '" aplicado');
+}
+
+// Inicializar cuando se abre la sección de diseño
+(function() {
+  // Render inicial diferido para no bloquear carga
+  document.addEventListener('DOMContentLoaded', () => {
+    // Se renderiza al abrir el acordeón (ver cfgRenderDiseno)
+  });
+})();
 
 function saveConfig() {
   const cfgNombre = document.getElementById('cfgNombre').value.trim();
@@ -11786,7 +11987,7 @@ function onCfgAccOpen(id) {
   if (id === 'cfgacc-catimgs')  cfgRenderCatImages();
   if (id === 'cfgacc-productos') { renderProductosConfig(); }
   if (id === 'cfgacc-precios')  { renderPreciosConfig(); }
-  if (id === 'cfgacc-diseno')   { cfgRenderDiseno(); renderClosedBgPreview(); renderClassicBgPreview(); }
+  if (id === 'cfgacc-diseno')   { cfgRenderDiseno(); renderClosedBgPreview(); renderClassicBgPreview(); renderSkinGrid(); }
   if (id === 'cfgacc-restaurante') { renderHorarios(); renderFestivos(); }
   if (id === 'cfgAccFE') {
     // Handled by toggleCfgAccFE()
@@ -12347,16 +12548,7 @@ async function cfgQrShare() {
 }
 
 // Prellenar URL con la del propio archivo
-(function(){
-  const inp = document.getElementById('qrUrlInput');
-  if (inp && !inp.value) {
-    // Construye la URL del menú relativa al dominio/ruta actual,
-    // sin importar en qué servidor esté alojado el sistema.
-    const loc = window.location;
-    const base = loc.origin + loc.pathname.replace(/\/[^/]*$/, '/');
-    inp.value = base + 'menu.html';
-  }
-})();
+(function(){ const inp = document.getElementById('qrUrlInput'); if (inp && !inp.value) inp.value = 'https://ochoacastro.github.io/Restaurante-los-helechos/menu.html'; })();
 
 // ══════════════════════════════════════════════════════════════════════
 // MÓDULO FACTURA ELECTRÓNICA — CLIENTE
