@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Los Helechos · Menú</title>
+<title>Mi Restaurante · Menú</title>
 <meta name="theme-color" content="#FF441A" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1756,7 +1756,7 @@
 
   <!-- Barra superior con logo + estado Firebase -->
   <div class="start-topbar">
-    <div class="logo" id="startLogo">🌿</div>
+    <div class="logo" id="startLogo">🍽️</div>
     <span id="startFbBulb" title="Estado Firebase">💡</span>
   </div>
 
@@ -1774,9 +1774,9 @@
 
   <!-- Bloque inferior: copy + botones -->
   <div class="start-bottom">
-    <div class="start-eyebrow">🌿 Bienvenido</div>
-    <div class="start-title" id="startTitle">Los Helechos</div>
-    <div class="start-subtitle">¿Cómo quieres ver el menú hoy?</div>
+    <div class="start-eyebrow" id="startEyebrow">🍽️ Bienvenido</div>
+    <div class="start-title" id="startTitle">Mi Restaurante</div>
+    <div class="start-subtitle" id="startSubtitle">¿Cómo quieres ver el menú hoy?</div>
 
     <div class="start-actions">
       <button class="mode-choice rest" data-start-mode="restaurante" type="button">
@@ -1814,10 +1814,10 @@
   <header class="header">
     <div class="top">
       <div class="brand">
-        <div class="logo">🌿</div>
+        <div class="logo" id="appHeaderLogo">🍽️</div>
         <div class="title-wrap">
-          <div class="title">Los Helechos</div>
-          <div class="sub">Menú digital para clientes</div>
+          <div class="title" id="appHeaderTitle">Mi Restaurante</div>
+          <div class="sub" id="appHeaderSub">Menú digital</div>
         </div>
       </div>
     </div>
@@ -2116,23 +2116,28 @@
           <span class="acc-icon">🏪</span>
           <div>
             <div class="acc-title">Datos del negocio</div>
-            <div class="acc-sub">WhatsApp y logo</div>
+            <div class="acc-sub" id="accNegocioSub">WhatsApp y logo</div>
           </div>
         </div>
         <span class="acc-arrow">▼</span>
       </div>
       <div class="acc-body">
         <div class="acc-inner">
+          <div class="design-card" style="margin:0;background:rgba(255,68,26,0.06);border:1.5px solid rgba(255,68,26,0.2);">
+            <div style="font-size:13px;font-weight:700;color:var(--rappi);margin-bottom:6px;">ℹ️ Nombre y logo del restaurante</div>
+            <div class="bg-note" style="color:var(--gris-osc);">El nombre, subtítulo y logo se configuran desde el <b>sistema POS (index.html)</b> → Configuración → Datos del restaurante y Pantalla de inicio.</div>
+          </div>
           <div class="design-card" style="margin:0;">
             <div class="label">Número de WhatsApp del negocio</div>
             <input id="businessWhatsappInput" class="field" placeholder="573001234567" inputmode="numeric">
-            <div class="bg-note">Ese será el número al que se abrirá WhatsApp cuando el cliente envíe su pedido.</div>
+            <div class="bg-note">Número al que se enviarán los pedidos por WhatsApp.</div>
           </div>
           <div class="design-card" style="margin:0;">
             <div class="label">Logo del negocio</div>
-            <div id="logoPreview" class="logo-preview">🌿</div>
-            <div class="bg-note">El logo se configura desde el sistema POS (index.html).</div>
+            <div id="logoPreview" class="logo-preview">🍽️</div>
+            <div class="bg-note">Se sincroniza automáticamente desde el POS.</div>
           </div>
+          <button id="saveNegocioBtn" type="button" class="btn-primary" style="width:100%;margin-top:4px;">💾 Guardar WhatsApp</button>
         </div>
       </div>
     </div>
@@ -2893,18 +2898,35 @@ function applyTheme(){
         `linear-gradient(to bottom,rgba(8,5,2,.18) 0%,rgba(8,5,2,.55) 40%,rgba(8,5,2,.92) 72%,rgba(8,5,2,1) 100%),url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=75') center/cover no-repeat`;
     }
   }
-  // Nombre del negocio en el título de portada
+  // Nombre y subtítulo — siempre desde el POS (index.html)
+  const _resolveNombre = () => {
+    try { const b = localStorage.getItem('helechos_login_brand'); if (b) return b; } catch(e){}
+    try { const c = JSON.parse(localStorage.getItem('helechos_config') || '{}'); if (c.nombre) return c.nombre; } catch(e){}
+    return 'Mi Restaurante';
+  };
+  const _resolveSubtitle = () => {
+    try { const s = localStorage.getItem('helechos_login_sub'); if (s) return s; } catch(e){}
+    try { const c = JSON.parse(localStorage.getItem('helechos_config') || '{}'); if (c.slogan) return c.slogan; } catch(e){}
+    return 'Menú digital';
+  };
+
+  const nombre = _resolveNombre();
+  const subtitulo = _resolveSubtitle();
+
   const startTitle = $('#startTitle');
-  if(startTitle){
-    let nombre = settings.businessName || '';
-    if(!nombre){
-      try {
-        const cfg = JSON.parse(localStorage.getItem('helechos_config') || '{}');
-        nombre = cfg.nombre || '';
-      } catch(e){}
-    }
-    startTitle.textContent = nombre || 'Los Helechos';
-  }
+  if (startTitle) startTitle.textContent = nombre;
+
+  const startEyebrow = $('#startEyebrow');
+  if (startEyebrow) startEyebrow.textContent = (settings.businessLogo ? '' : '🍽️ ') + 'Bienvenido';
+
+  const appHeaderTitle = $('#appHeaderTitle');
+  if (appHeaderTitle) appHeaderTitle.textContent = nombre;
+
+  const appHeaderSub = $('#appHeaderSub');
+  if (appHeaderSub) appHeaderSub.textContent = subtitulo;
+
+  // Título de la pestaña
+  document.title = nombre + ' · Menú';
 
   const hero = $('.hero');
   if(hero){
@@ -2941,13 +2963,13 @@ function applyTheme(){
 function renderBusinessLogo(){
   const logoHtml = settings.businessLogo
     ? `<img src="${settings.businessLogo}" alt="Logo del negocio">`
-    : `<span>🌿</span>`;
+    : `<span>🍽️</span>`;
   $$('.logo').forEach(el => { el.innerHTML = logoHtml; });
   const preview = $('#logoPreview');
   if(preview){
     preview.innerHTML = settings.businessLogo
       ? `<img src="${settings.businessLogo}" alt="Vista previa del logo">`
-      : `<span>🌿</span>`;
+      : `<span>🍽️</span>`;
   }
 }
 
@@ -4041,8 +4063,13 @@ $('#waBtn').addEventListener('click', () => {
   const lines = cart.map(i => `• ${i.nombre} x${i.cantidad} = ${fmtWa(i.precio * i.cantidad)}`);
   const totalTxt = fmtWa(subtotal());
   const typeTxt = mode === 'restaurante' ? 'Restaurante' : 'Domicilio';
+  const negocioNombre = (() => {
+    try { const b = localStorage.getItem('helechos_login_brand'); if (b) return b; } catch(e){}
+    try { return JSON.parse(localStorage.getItem('helechos_config') || '{}').nombre || ''; } catch(e){}
+    return 'Mi Restaurante';
+  })();
   const msg = [
-    `🛵 Pedido ${typeTxt} - Los Helechos`,
+    `🛵 Pedido ${typeTxt} - ${negocioNombre}`,
     '',
     `👤 Nombre: ${name}`,
     `📱 Teléfono: ${phone}`,
@@ -4088,6 +4115,23 @@ $('#pinBackBtn').addEventListener('click', hideAdminLogin);
 // fix #7: botón guardar PINs configurables
 const savePinsBtnEl = $('#savePinsBtn');
 if(savePinsBtnEl) savePinsBtnEl.addEventListener('click', savePins);
+
+// Guardar número de WhatsApp del negocio
+function saveNegocio(){
+  const waVal = ($('#businessWhatsappInput')?.value || '').trim();
+  settings.businessWhatsApp = waVal;
+  saveSettings();
+}
+
+const saveNegocioBtnEl = $('#saveNegocioBtn');
+if(saveNegocioBtnEl) saveNegocioBtnEl.addEventListener('click', () => {
+  saveNegocio();
+  const btn = saveNegocioBtnEl;
+  const orig = btn.textContent;
+  btn.textContent = '✅ WhatsApp guardado';
+  btn.disabled = true;
+  setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
+});
 
 $('#appAlertOk').addEventListener('click', hideAlertDialog);
 $('#appAlertModal').addEventListener('click', (e) => {
@@ -4950,7 +4994,9 @@ if (cfg && cfg.apiKey && cfg.databaseURL) {
       if(!dataUrl) return;
       const a = document.createElement('a');
       a.href = dataUrl;
-      a.download = 'qr-menu-helechos.png';
+      const _qrNombre = (() => { try { return localStorage.getItem('helechos_login_brand') || JSON.parse(localStorage.getItem('helechos_config')||'{}').nombre || 'menu'; } catch(e){ return 'menu'; } })();
+      const qrNombre = _qrNombre.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      a.download = `qr-menu-${qrNombre}.png`;
       a.click();
     });
 
@@ -4958,7 +5004,8 @@ if (cfg && cfg.apiKey && cfg.databaseURL) {
     shareBtn.addEventListener('click', async () => {
       if(navigator.share){
         try {
-          await navigator.share({ title: 'Menú Los Helechos', url: currentUrl });
+          const _shareNombre = (() => { try { return localStorage.getItem('helechos_login_brand') || JSON.parse(localStorage.getItem('helechos_config')||'{}').nombre || ''; } catch(e){ return ''; } })();
+          await navigator.share({ title: 'Menú ' + (_shareNombre || 'del restaurante'), url: currentUrl });
         } catch(e) {}
       } else {
         // fallback: copiar
@@ -5344,6 +5391,11 @@ window.renderCategoryGridSafe = function() {
 // Así el menú actualiza el logo instantáneamente sin necesidad de Firebase.
 (function initLogoStorageSync(){
   window.addEventListener('storage', (e) => {
+    // Nombre / subtítulo cambiados desde el POS
+    if (e.key === 'helechos_login_brand' || e.key === 'helechos_login_sub' || e.key === 'helechos_config') {
+      if (window.applyTheme) window.applyTheme();
+      return;
+    }
     // Clave directa del POS
     if (e.key === 'helechos_logo') {
       const logo = e.newValue || '';
@@ -5417,8 +5469,10 @@ window.renderCategoryGridSafe = function() {
       if (logo) { mcLogo.src = logo; mcLogo.style.display = 'block'; }
       else { mcLogo.style.display = 'none'; }
     }
-    if (mcTitle) mcTitle.textContent = (settings.businessName || 'Menú').toUpperCase();
-    if (mcSub)   mcSub.textContent   = settings.businessSubtitle || 'Carta del restaurante';
+    const _mcNombre = (() => { try { return localStorage.getItem('helechos_login_brand') || JSON.parse(localStorage.getItem('helechos_config')||'{}').nombre || ''; } catch(e){ return ''; } })();
+    const _mcSub    = (() => { try { return localStorage.getItem('helechos_login_sub') || ''; } catch(e){ return ''; } })();
+    if (mcTitle) mcTitle.textContent = (_mcNombre || 'Menú').toUpperCase();
+    if (mcSub)   mcSub.textContent   = _mcSub || 'Carta del restaurante';
 
     // Agrupar items disponibles por categoría (excluyendo categorías ocultas)
     const hidden = hiddenCats();
