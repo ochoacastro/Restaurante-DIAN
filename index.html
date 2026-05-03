@@ -4062,11 +4062,16 @@
     <div class="cfg-acc-body">
       <div class="cfg-acc-inner">
         <div class="consecutivo-display">
-          <div>
+          <div style="flex:1;min-width:0;">
             <div style="font-size:11px;color:var(--gris);margin-bottom:2px;">Próximo recibo POS</div>
             <span id="cfgConsec">000001</span>
+            <input id="cfgConsecInput" type="number" min="1" style="display:none;width:110px;padding:5px 10px;font-size:20px;font-weight:800;color:var(--rappi);font-family:var(--font-num);border:2px solid var(--rappi);border-radius:8px;background:var(--blanco);text-align:center;" />
           </div>
-          <button onclick="resetConsec()" style="background:white;border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Reiniciar</button>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;flex-shrink:0;">
+            <button id="btnEditConsec" onclick="editarConsec()" style="background:var(--blanco);border:1.5px solid #1976D2;color:#1976D2;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ Editar</button>
+            <button id="btnGuardarConsec" onclick="guardarConsec()" style="display:none;background:var(--rappi);border:none;color:white;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✅ Guardar</button>
+            <button onclick="resetConsec()" style="background:white;border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">Reiniciar</button>
+          </div>
         </div>
         <div class="consecutivo-display" style="margin-top:10px;">
           <div style="flex:1;min-width:0;">
@@ -6960,6 +6965,47 @@ function resetConsecFE() {
     actualizarConsecDisplay();
     showToast('✅ Consecutivo F.E. reiniciado');
   }});
+}
+
+function editarConsec() {
+  const span  = document.getElementById('cfgConsec');
+  const input = document.getElementById('cfgConsecInput');
+  const btnEditar  = document.getElementById('btnEditConsec');
+  const btnGuardar = document.getElementById('btnGuardarConsec');
+  if (!span || !input) return;
+  input.value = config.consecutivo || 1;
+  span.style.display  = 'none';
+  input.style.display = 'inline-block';
+  btnEditar.style.display  = 'none';
+  btnGuardar.style.display = 'inline-block';
+  input.focus(); input.select();
+}
+
+function guardarConsec() {
+  const span  = document.getElementById('cfgConsec');
+  const input = document.getElementById('cfgConsecInput');
+  const btnEditar  = document.getElementById('btnEditConsec');
+  const btnGuardar = document.getElementById('btnGuardarConsec');
+  if (!input) return;
+  const nuevoVal = parseInt(input.value, 10);
+  if (!nuevoVal || nuevoVal < 1) { showToast('⚠️ Ingresa un número válido mayor a 0'); return; }
+  function volverDisplay() {
+    if (span)  { span.style.display = 'inline'; span.textContent = String(config.consecutivo||1).padStart(6,'0'); }
+    if (input) input.style.display = 'none';
+    if (btnEditar)  btnEditar.style.display  = 'inline-block';
+    if (btnGuardar) btnGuardar.style.display = 'none';
+  }
+  confirmar({ icono:'🧾', titulo:'Cambiar consecutivo POS', mensaje:`¿Establecer el próximo recibo POS en ${String(nuevoVal).padStart(6,'0')}?`, textoOk:'Guardar', callback() {
+    config.consecutivo = nuevoVal;
+    localStorage.setItem('helechos_config', JSON.stringify(config));
+    if (window._FB) {
+      const { db, ref, set } = window._FB;
+      set(ref(db, 'helechos/consecutivo'), nuevoVal).catch(() => {});
+    }
+    actualizarConsecDisplay();
+    volverDisplay();
+    showToast('✅ Consecutivo POS actualizado');
+  }, callbackCancelar() { volverDisplay(); }});
 }
 
 function editarConsecFE() {
