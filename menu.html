@@ -3492,10 +3492,24 @@ function renderCart(){
 
 function updateTop(){
   $('#modeBadge').textContent = mode === 'restaurante' ? '🍽 Restaurante' : '🛵 Domicilio';
-  if($('#heroTitle')) $('#heroTitle').textContent = mode === 'restaurante' ? 'Menú del restaurante' : 'Menú de domicilio';
-  if($('#heroText')) $('#heroText').textContent = mode === 'restaurante'
-    ? 'Solo consulta platos, fotos y precios.'
-    : 'Toca un plato para ver la ficha grande y agregarlo al pedido.';
+
+  // Textos del hero — personalizables desde el POS
+  (function() {
+    let tR = 'Menú del restaurante', dR = 'Solo consulta platos, fotos y precios.';
+    let tD = 'Menú de domicilio',    dD = 'Toca un plato para ver la ficha grande y agregarlo al pedido.';
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) {
+        const ms = JSON.parse(raw);
+        if (ms.heroTitleRest && ms.heroTitleRest.trim()) tR = ms.heroTitleRest.trim();
+        if (ms.heroTextRest  && ms.heroTextRest.trim())  dR = ms.heroTextRest.trim();
+        if (ms.heroTitleDom  && ms.heroTitleDom.trim())  tD = ms.heroTitleDom.trim();
+        if (ms.heroTextDom   && ms.heroTextDom.trim())   dD = ms.heroTextDom.trim();
+      }
+    } catch(e) {}
+    if ($('#heroTitle')) $('#heroTitle').textContent = mode === 'restaurante' ? tR : tD;
+    if ($('#heroText'))  $('#heroText').textContent  = mode === 'restaurante' ? dR : dD;
+  })();
   $('#badgeFloat').textContent = cart.reduce((s,i)=>s+i.cantidad,0);
   $('#floatSmall').textContent = `${cart.reduce((s,i)=>s+i.cantidad,0)} ítems`;
   $('#floatTotal').textContent = fmt(subtotal());
