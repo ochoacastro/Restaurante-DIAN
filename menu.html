@@ -3160,8 +3160,8 @@ function applyTheme(){
   }
   // Nombre y subtítulo — siempre desde el POS (index.html)
   const _resolveNombre = () => {
+    try { const c = JSON.parse(localStorage.getItem('helechos_config') || '{}'); if (c.nombre && c.nombre !== 'Mi Restaurante') return c.nombre; } catch(e){}
     try { const b = localStorage.getItem('helechos_login_brand'); if (b) return b; } catch(e){}
-    try { const c = JSON.parse(localStorage.getItem('helechos_config') || '{}'); if (c.nombre) return c.nombre; } catch(e){}
     return 'Mi Restaurante';
   };
   const _resolveSubtitle = () => {
@@ -4355,8 +4355,8 @@ $('#waBtn').addEventListener('click', () => {
   const totalTxt = fmtWa(subtotal());
   const typeTxt = mode === 'restaurante' ? 'Restaurante' : 'Domicilio';
   const negocioNombre = (() => {
+    try { const c = JSON.parse(localStorage.getItem('helechos_config') || '{}'); if (c.nombre && c.nombre !== 'Mi Restaurante') return c.nombre; } catch(e){}
     try { const b = localStorage.getItem('helechos_login_brand'); if (b) return b; } catch(e){}
-    try { return JSON.parse(localStorage.getItem('helechos_config') || '{}').nombre || ''; } catch(e){}
     return 'Mi Restaurante';
   })();
   const msg = [
@@ -5285,7 +5285,7 @@ if (cfg && cfg.apiKey && cfg.databaseURL) {
       if(!dataUrl) return;
       const a = document.createElement('a');
       a.href = dataUrl;
-      const _qrNombre = (() => { try { return localStorage.getItem('helechos_login_brand') || JSON.parse(localStorage.getItem('helechos_config')||'{}').nombre || 'menu'; } catch(e){ return 'menu'; } })();
+      const _qrNombre = (() => { try { const c = JSON.parse(localStorage.getItem('helechos_config')||'{}'); return (c.nombre && c.nombre !== 'Mi Restaurante' ? c.nombre : null) || localStorage.getItem('helechos_login_brand') || 'menu'; } catch(e){ return 'menu'; } })();
       const qrNombre = _qrNombre.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       a.download = `qr-menu-${qrNombre}.png`;
       a.click();
@@ -5295,7 +5295,7 @@ if (cfg && cfg.apiKey && cfg.databaseURL) {
     shareBtn.addEventListener('click', async () => {
       if(navigator.share){
         try {
-          const _shareNombre = (() => { try { return localStorage.getItem('helechos_login_brand') || JSON.parse(localStorage.getItem('helechos_config')||'{}').nombre || ''; } catch(e){ return ''; } })();
+          const _shareNombre = (() => { try { const c = JSON.parse(localStorage.getItem('helechos_config')||'{}'); return (c.nombre && c.nombre !== 'Mi Restaurante' ? c.nombre : null) || localStorage.getItem('helechos_login_brand') || ''; } catch(e){ return ''; } })();
           await navigator.share({ title: 'Menú ' + (_shareNombre || 'del restaurante'), url: currentUrl });
         } catch(e) {}
       } else {
@@ -6168,7 +6168,7 @@ window.renderCategoryGridSafe = function() {
       if (logo) { mcLogo.src = logo; mcLogo.style.display = 'block'; }
       else { mcLogo.style.display = 'none'; }
     }
-    const _mcNombre = (() => { try { return localStorage.getItem('helechos_login_brand') || JSON.parse(localStorage.getItem('helechos_config')||'{}').nombre || ''; } catch(e){ return ''; } })();
+    const _mcNombre = (() => { try { const c = JSON.parse(localStorage.getItem('helechos_config')||'{}'); return (c.nombre && c.nombre !== 'Mi Restaurante' ? c.nombre : null) || localStorage.getItem('helechos_login_brand') || ''; } catch(e){ return ''; } })();
     const _mcSub    = (() => { try { return localStorage.getItem('helechos_login_sub') || ''; } catch(e){ return ''; } })();
     if (mcTitle) mcTitle.textContent = (_mcNombre || 'Menú').toUpperCase();
     if (mcSub)   mcSub.textContent   = _mcSub || 'Carta del restaurante';
