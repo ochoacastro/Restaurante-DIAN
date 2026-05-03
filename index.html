@@ -6276,79 +6276,244 @@ function descargarMenuEspecialPDF() {
   try {
     if (!window.jspdf) throw new Error('jsPDF no disponible');
     const { jsPDF } = window.jspdf;
+
+    // ── Skin activo ──────────────────────────────────────────────────
     const skinKey = getSkinKey();
-    const skin = (MENU_SKINS && MENU_SKINS[skinKey]) || { nombre: 'Menú Especial' };
+    const skin    = (MENU_SKINS && MENU_SKINS[skinKey]) || {
+      nombre: 'Menú Especial', acento: '#f5dc82', acentoRgb: '245,220,130',
+      catGrad: 'linear-gradient(135deg,#c8620a,#e07a12)', overlay: 'rgba(8,6,2,0.82)',
+      bgDefault: '', footer: '❦ Gracias por visitarnos ❦', itemColor: '#f0e8d0'
+    };
+
+    // Parsear color de acento (hex → r,g,b)
+    const parseHex = (hex) => {
+      const h = hex.replace('#','');
+      if (h.length === 6) return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
+      return [245,220,130];
+    };
+    // Parsear acentoRgb '255,179,217'
+    const parseRgb = (str) => { const p=str.split(',').map(Number); return [p[0]||245,p[1]||220,p[2]||130]; };
+    const [ar,ag,ab] = skin.acentoRgb ? parseRgb(skin.acentoRgb) : parseHex(skin.acento||'#f5dc82');
+
+    // Parsear color de cabecera de categoría desde catGrad (primer color)
+    const parseCatColor = (grad) => {
+      const m = (grad||'').match(/#([0-9a-fA-F]{6})/g);
+      if (m && m.length) return parseHex(m[0]);
+      return [55,30,8];
+    };
+    const [cr,cg,cb] = parseCatColor(skin.catGrad);
+
+    // ── Datos del menú ────────────────────────────────────────────────
     let menuItems = [];
     try { const raw = localStorage.getItem('helechos_menu'); if (raw) menuItems = JSON.parse(raw); } catch(e) {}
     const nombre = config.nombre || 'Mi Restaurante';
     const fecha  = new Date().toLocaleDateString('es-CO');
+
+    // Categorías ocultas
     const hidden = [];
     try {
       const raw2 = localStorage.getItem(MENU_SETTINGS_KEY);
       const ms2  = raw2 ? JSON.parse(raw2) : {};
       if (Array.isArray(ms2.hiddenCats)) hidden.push(...ms2.hiddenCats);
     } catch(e) {}
-    const items = menuItems.filter(i => i.disponible !== false && !hidden.includes(i.categoria));
-    const cats  = [...new Set(items.map(i => i.categoria).filter(Boolean))].sort((a,b) => a.localeCompare(b,'es'));
+    const items  = menuItems.filter(i => i.disponible !== false && !hidden.includes(i.categoria));
+    const cats   = [...new Set(items.map(i => i.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
     const sinCat = items.filter(i => !i.categoria);
-    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-    const PW=210, ml=18, mr=18, mTop=20, cw=PW-ml-mr;
+
+    // ── Dimensiones A4 ────────────────────────────────────────────────
+    const doc  = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+    const PW   = 210, PH = 297;
+    const ml   = 16, mr = 16, mTop = 16;
+    const cw   = PW - ml - mr;
     let y = mTop;
-    const fmtP = v => { const n=Number(v); if(!n&&n!==0) return ''; return '$ '+n.toLocaleString('es-CO'); };
+
+    // ── Formato de precio ─────────────────────────────────────────────
+    const fmtP = v => {
+      const n = Number(v);
+      if (!n && n !== 0) return '';
+      return '$ ' + n.toLocaleString('es-CO');
+    };
+
+    // ── Helper: nueva página con fondo blanco ─────────────────────────
+    const addPageBlank = () => {
+      doc.addPage();
+      y = mTop;
+    };
+
+    // ── Helper: verificar espacio, avanzar página si es necesario ─────
+    const checkY = (needed) => {
+      if (y + needed > PH - 18) { addPageBlank(); }
+    };
+
+    // ════════════════════════════════════════════════════════════════
+    // CABECERA DEL DOCUMENTO (solo en pag 1)
+    // ════════════════════════════════════════════════════════════════
+
+    // Logo (esquina superior izquierda, pequeño)
     const logoData = localStorage.getItem('helechos_logo');
+    let logoH = 0;
     if (logoData) {
       try {
         const props = doc.getImageProperties(logoData);
-        const lw=24, lh=lw*(props.height/props.width);
-        doc.addImage(logoData, props.fileType||'PNG', ml, y, lw, lh); y+=lh+4;
+        const lw = 18, lh = lw * (props.height / props.width);
+        doc.addImage(logoData, props.fileType || 'PNG', ml, y, lw, lh);
+        logoH = lh;
       } catch(e) {}
     }
-    doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(40,20,5);
-    doc.text(nombre.toUpperCase(), PW/2, y, {align:'center'}); y+=7;
-    doc.setFontSize(11); doc.setFont('helvetica','normal'); doc.setTextColor(120,80,30);
-    doc.text((skin.nombre||'Menú Especial')+'  ·  '+fecha, PW/2, y, {align:'center'}); y+=5;
-    doc.setDrawColor(200,150,50); doc.setLineWidth(0.8); doc.line(ml,y,PW-mr,y); y+=8;
+
+    // Nombre del restaurante — junto al logo
+    const textX = logoData && logoH > 0 ? ml + 21 : ml;
+    const titleMaxW = PW - textX - mr;
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(18);
+    doc.setTextColor(25, 12, 3);
+    const titleLines = doc.splitTextToSize(nombre.toUpperCase(), titleMaxW);
+    doc.text(titleLines, textX, y + 6);
+    const headerH = Math.max(logoH, titleLines.length * 7 + 6);
+
+    y += headerH + 2;
+
+    // Sub-cabecera: skin + fecha — estilo monospace ligero
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(130,90,30);
+    // Letra espaciada tipo "D i a   d e   l a   M a d r e"
+    const subText = (skin.nombre || 'Menú Especial') + '   ·   ' + fecha;
+    // Simular espaciado con espacios entre letras
+    const spacedSub = subText.split('').join('\u200A'); // hair space entre cada letra
+    doc.text(subText, ml, y, { charSpace: 1.2 });
+    y += 5;
+
+    // Línea dorada separadora
+    doc.setDrawColor(ar, ag, ab);
+    doc.setLineWidth(0.7);
+    doc.line(ml, y, PW - mr, y);
+    y += 8;
+
+    // ════════════════════════════════════════════════════════════════
+    // RENDER DE CATEGORÍAS
+    // ════════════════════════════════════════════════════════════════
     const renderGroup = (catName, groupItems) => {
-      if (y>270) { doc.addPage(); y=mTop; }
-      doc.setFillColor(55,30,8); doc.roundedRect(ml,y,cw,8,2,2,'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(245,220,130);
-      doc.text(catName.toUpperCase(), ml+5, y+5.5); y+=12;
-      groupItems.forEach(item => {
-        if (y>270) { doc.addPage(); y=mTop; }
-        const precio=fmtP(item.precio??item.precioLocal??0), nombreItem=item.nombre||'', desc=item.descripcion||'';
-        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(35,15,5);
-        const priceW=precio?doc.getTextWidth(precio)+4:0, nameW=cw-priceW;
-        const nameParts=doc.splitTextToSize(nombreItem,nameW);
-        doc.text(nameParts,ml+3,y);
-        if (precio) { doc.setTextColor(180,90,0); doc.text(precio,PW-mr-2,y,{align:'right'}); }
-        y+=nameParts.length*5;
-        if (desc) {
-          doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,80,60);
-          const dp=doc.splitTextToSize(desc,cw-6); doc.text(dp,ml+3,y); y+=dp.length*4;
+      checkY(14);
+
+      // Cabecera categoría — rectángulo oscuro con texto en color acento
+      doc.setFillColor(cr, cg, cb);
+      doc.rect(ml, y, cw, 7.5, 'F');
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(9);
+      doc.setTextColor(ar, ag, ab);
+      doc.text(catName.toUpperCase(), ml + 5, y + 5.2);
+      y += 11;
+
+      // Ítems de la categoría
+      groupItems.forEach((item, idx) => {
+        checkY(10);
+        const precio     = fmtP(item.precio ?? item.precioLocal ?? 0);
+        const nombreItem = item.nombre || '';
+        const desc       = item.descripcion || '';
+
+        // Calcular ancho del precio para reservar espacio
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(10);
+        const priceW = precio ? doc.getTextWidth(precio) + 3 : 0;
+        const nameW  = cw - priceW - 4;
+
+        // Nombre del plato
+        doc.setTextColor(20, 10, 3);
+        const nameParts = doc.splitTextToSize(nombreItem, nameW);
+        doc.text(nameParts, ml + 3, y);
+
+        // Precio — color acento (naranja/dorado/rosa según skin)
+        if (precio) {
+          doc.setFont('helvetica','bold');
+          doc.setFontSize(10);
+          doc.setTextColor(cr, cg, cb);
+          doc.text(precio, PW - mr - 2, y, { align:'right' });
         }
-        doc.setDrawColor(220,200,170); doc.setLineWidth(0.3); doc.line(ml+3,y+1,PW-mr-3,y+1); y+=5;
+
+        y += nameParts.length * 5.5;
+
+        // Descripción opcional
+        if (desc) {
+          checkY(6);
+          doc.setFont('helvetica','normal');
+          doc.setFontSize(7.5);
+          doc.setTextColor(110, 85, 60);
+          const descParts = doc.splitTextToSize(desc, nameW + priceW - 2);
+          doc.text(descParts, ml + 3, y);
+          y += descParts.length * 4;
+        }
+
+        // Separador sutil entre ítems
+        doc.setDrawColor(215, 195, 165);
+        doc.setLineWidth(0.25);
+        doc.line(ml + 3, y + 1.5, PW - mr - 3, y + 1.5);
+        y += 5.5;
       });
-      y+=3;
+
+      y += 4; // espacio entre grupos
     };
-    cats.forEach(cat => { const gi=items.filter(i=>i.categoria===cat); if(gi.length) renderGroup(cat,gi); });
-    if (sinCat.length) renderGroup('Otros',sinCat);
+
+    // Renderizar todas las categorías
+    cats.forEach(cat => {
+      const gi = items.filter(i => i.categoria === cat);
+      if (gi.length) renderGroup(cat, gi);
+    });
+    if (sinCat.length) renderGroup('Otros', sinCat);
+
     if (!items.length) {
-      doc.setFont('helvetica','italic'); doc.setFontSize(12); doc.setTextColor(150);
-      doc.text('Sin platos disponibles',PW/2,y+20,{align:'center'});
+      doc.setFont('helvetica','italic');
+      doc.setFontSize(12);
+      doc.setTextColor(160);
+      doc.text('Sin platos disponibles', PW/2, y + 20, { align:'center' });
     }
-    const totalPages=doc.getNumberOfPages();
-    for(let p=1;p<=totalPages;p++) {
-      doc.setPage(p); doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(160,120,60);
-      doc.text('❦ Gracias por visitarnos ❦',PW/2,290,{align:'center'});
-      doc.setTextColor(180); doc.text('Pág '+p+' de '+totalPages,PW-mr,290,{align:'right'});
+
+    // ════════════════════════════════════════════════════════════════
+    // PIE DE PÁGINA EN CADA PÁGINA
+    // ════════════════════════════════════════════════════════════════
+    const totalPages = doc.getNumberOfPages();
+    const footer = skin.footer || '❦ Gracias por visitarnos ❦';
+    // Limpiar emojis del footer para jsPDF (no renderiza emojis bien)
+    const footerClean = footer.replace(/[\u{1F300}-\u{1FFFF}]|[❦✦✧♦♥❤💕🌷🌸👔🎃🎄]/gu, '').trim()
+      || '* Gracias por visitarnos *';
+
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      // Línea pie
+      doc.setDrawColor(200, 170, 120);
+      doc.setLineWidth(0.4);
+      doc.line(ml, PH - 13, PW - mr, PH - 13);
+      // Texto pie izquierda/centro
+      doc.setFont('helvetica','italic');
+      doc.setFontSize(7.5);
+      doc.setTextColor(160, 120, 60);
+      doc.text(footerClean, PW/2, PH - 9, { align:'center' });
+      // Número de página derecha
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(170, 150, 120);
+      doc.text('Pág ' + p + ' de ' + totalPages, PW - mr, PH - 9, { align:'right' });
     }
-    const fechaFile=new Date().toLocaleDateString('es-CO').replace(/\//g,'-');
-    doc.save('MenuEspecial_'+skinKey+'_'+fechaFile+'.pdf');
+
+    // ── Guardar ───────────────────────────────────────────────────────
+    const fechaFile = new Date().toLocaleDateString('es-CO').replace(/\//g,'-');
+    doc.save('MenuEspecial_' + skinKey + '_' + fechaFile + '.pdf');
     showToast('📄 Menú Especial PDF descargado');
-    if (statusEl) { statusEl.textContent='✅ PDF generado correctamente'; statusEl.style.color='var(--verde-ok)'; statusEl.style.display='block'; setTimeout(()=>{statusEl.style.display='none';},3500); }
+    if (statusEl) {
+      statusEl.textContent = '✅ PDF generado correctamente';
+      statusEl.style.color = 'var(--verde-ok)';
+      statusEl.style.display = 'block';
+      setTimeout(()=>{ statusEl.style.display='none'; }, 3500);
+    }
   } catch(err) {
-    showToast('❌ Error generando PDF: '+err.message);
-    if (statusEl) { statusEl.textContent='❌ Error: '+err.message; statusEl.style.color='var(--rojo)'; statusEl.style.display='block'; }
+    showToast('❌ Error generando PDF: ' + err.message);
+    if (statusEl) {
+      statusEl.textContent = '❌ Error: ' + err.message;
+      statusEl.style.color = 'var(--rojo)';
+      statusEl.style.display = 'block';
+    }
+    console.error('descargarMenuEspecialPDF:', err);
   }
 }
 
