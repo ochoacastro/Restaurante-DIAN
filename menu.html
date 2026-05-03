@@ -211,6 +211,52 @@
     font-size:11px; font-weight:800; color:var(--gris);
     text-transform:uppercase; letter-spacing:.8px;
   }
+
+  /* ── BANNER PUBLICITARIO ────────────────────────────────── */
+  #adBannerWrap {
+    display: none;
+    margin: 0 0 0 0;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    border-radius: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #adBannerWrap.visible { display: block; }
+  #adBannerImg {
+    width: 100%;
+    display: block;
+    max-height: 220px;
+    object-fit: cover;
+    object-position: center top;
+  }
+  #adBannerBadge {
+    position: absolute;
+    bottom: 10px;
+    right: 12px;
+    background: rgba(0,0,0,0.62);
+    backdrop-filter: blur(6px);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 999px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+  }
+  #adBannerRipple {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.18s;
+  }
+  #adBannerWrap:active #adBannerRipple {
+    background: rgba(255,255,255,0.12);
+  }
+
   .hero{
     background:linear-gradient(135deg,#1A1108,#2B1A10);
     color:#fff;
@@ -1754,32 +1800,6 @@
     text-transform: uppercase;
   }
 
-  /* ── Capa decorativa del skin ── */
-  .mc-deco {
-    position: fixed;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    overflow: hidden;
-  }
-  .mc-deco-item {
-    position: absolute;
-    animation: mcDecoFloat linear infinite;
-    opacity: 0;
-    user-select: none;
-    line-height: 1;
-  }
-  @keyframes mcDecoFloat {
-    0%   { transform: translateY(110vh) rotate(0deg);   opacity: 0; }
-    5%   { opacity: 1; }
-    90%  { opacity: .9; }
-    100% { transform: translateY(-15vh) rotate(360deg); opacity: 0; }
-  }
-  @keyframes mcDecoSway {
-    0%,100% { margin-left: 0; }
-    50%      { margin-left: 18px; }
-  }
-
 </style>
 </head>
 <body>
@@ -1913,6 +1933,14 @@
   </div>
 
   <main id="panel" class="panel active">
+
+    <!-- BANNER PUBLICITARIO — se muestra si hay anuncio activo -->
+    <div id="adBannerWrap">
+      <img id="adBannerImg" src="" alt="Anuncio especial">
+      <div id="adBannerRipple"></div>
+      <div id="adBannerBadge"><span id="adBannerEmoji">🌷</span><span id="adBannerLabel">Ver menú especial</span></div>
+    </div>
+
     <section class="hero" id="heroSection">
       <h1 id="heroTitle">Menú del restaurante</h1>
       <p id="heroText">Consulta platos, fotos y precios.</p>
@@ -1954,7 +1982,6 @@
 <div id="menuClasicoView">
   <div class="mc-bg" id="mcBg"></div>
   <div class="mc-bg-overlay"></div>
-  <div id="mcDeco" class="mc-deco"></div>
   <button class="mc-close-btn" id="mcCloseBtn" type="button">✕ Cerrar</button>
   <div class="mc-content">
     <div class="mc-header">
@@ -5476,6 +5503,72 @@ window.renderCategoryGridSafe = function() {
 })();
 
 // ══════════════════════════════════════════════════════
+// BANNER PUBLICITARIO
+// ══════════════════════════════════════════════════════
+(function initAdBanner() {
+  const SETTINGS_KEY_AD = 'helechos_menu_settings_v1';
+
+  // Emojis por skin para el badge
+  const SKIN_BADGE = {
+    clasico:     { emoji: '📋', label: 'Ver menú clásico'      },
+    madre:       { emoji: '🌷', label: 'Ver menú especial'      },
+    padre:       { emoji: '👔', label: 'Ver menú especial'      },
+    halloween:   { emoji: '🎃', label: 'Ver menú especial'      },
+    navidad:     { emoji: '🎄', label: 'Ver menú especial'      },
+    sanvalentin: { emoji: '💕', label: 'Ver menú especial'      },
+  };
+
+  function getAdData() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY_AD);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      // adBanners es un objeto { skinKey: base64img }
+      const skinKey = s.classicSkin || 'clasico';
+      const img = s.adBanners && s.adBanners[skinKey];
+      return img ? { img, skinKey } : null;
+    } catch(e) { return null; }
+  }
+
+  function renderAdBanner() {
+    const wrap  = document.getElementById('adBannerWrap');
+    const imgEl = document.getElementById('adBannerImg');
+    const emoji = document.getElementById('adBannerEmoji');
+    const label = document.getElementById('adBannerLabel');
+    if (!wrap) return;
+
+    const data = getAdData();
+    if (data && data.img) {
+      imgEl.src = data.img;
+      const badge = SKIN_BADGE[data.skinKey] || SKIN_BADGE.clasico;
+      if (emoji) emoji.textContent = badge.emoji;
+      if (label) label.textContent = badge.label;
+      wrap.classList.add('visible');
+    } else {
+      wrap.classList.remove('visible');
+      imgEl.src = '';
+    }
+  }
+
+  // Click abre el menú clásico
+  const wrap = document.getElementById('adBannerWrap');
+  if (wrap) {
+    wrap.addEventListener('click', () => {
+      if (typeof openMenuClasicoGlobal === 'function') openMenuClasicoGlobal();
+    });
+  }
+
+  // Escuchar cambios desde index.html
+  window.addEventListener('storage', e => {
+    if (e.key === SETTINGS_KEY_AD) renderAdBanner();
+  });
+
+  // Render inicial
+  renderAdBanner();
+  window.renderAdBanner = renderAdBanner;
+})();
+
+// ══════════════════════════════════════════════════════
 // MENÚ CLÁSICO
 // ══════════════════════════════════════════════════════
 (function initMenuClasico() {
@@ -5483,8 +5576,7 @@ window.renderCategoryGridSafe = function() {
   // ── Definición de skins predefinidos ──────────────────────────
   const SKINS = {
     clasico: {
-      nombre:    'Clásico',
-      btnLabel:  '📋 Menú Clásico',
+      nombre: 'Clásico',
       acento: '#f5dc82', acentoRgb: '245,220,130',
       catGrad: 'linear-gradient(135deg,#c8620a,#e07a12)',
       overlay: 'rgba(8,6,2,0.82)',
@@ -5492,99 +5584,59 @@ window.renderCategoryGridSafe = function() {
       fuente: "'Georgia', serif",
       footer: '❦ Gracias por visitarnos ❦',
       itemColor: '#f0e8d0',
-      deco: [],
     },
     madre: {
-      nombre:    'Día de la Madre',
-      btnLabel:  '🌷 Menú Día de la Madre',
+      nombre: 'Día de la Madre 🌸',
       acento: '#ffb3d9', acentoRgb: '255,179,217',
       catGrad: 'linear-gradient(135deg,#c2185b,#e91e8c)',
-      overlay: 'rgba(10,2,8,0.78)',
+      overlay: 'rgba(10,2,8,0.80)',
       bgDefault: 'linear-gradient(160deg,#1a0010,#2d0020)',
       fuente: "'Georgia', serif",
-      footer: '🌷 Con todo el amor para mamá 🌷',
+      footer: '🌷 Con amor para mamá 🌷',
       itemColor: '#ffe8f4',
-      deco: [
-        { e:'🌹', count:8,  sizeMin:22, sizeMax:36, dur:[12,20], sway:true  },
-        { e:'🌸', count:10, sizeMin:18, sizeMax:30, dur:[15,25], sway:true  },
-        { e:'💐', count:4,  sizeMin:28, sizeMax:42, dur:[18,28], sway:false },
-        { e:'🦋', count:5,  sizeMin:16, sizeMax:26, dur:[10,18], sway:true  },
-        { e:'💕', count:6,  sizeMin:14, sizeMax:22, dur:[8,15],  sway:false },
-      ],
     },
     padre: {
-      nombre:    'Día del Padre',
-      btnLabel:  '👔 Menú Día del Padre',
+      nombre: 'Día del Padre 👔',
       acento: '#90caf9', acentoRgb: '144,202,249',
       catGrad: 'linear-gradient(135deg,#1565c0,#1976d2)',
-      overlay: 'rgba(2,6,18,0.83)',
+      overlay: 'rgba(2,6,18,0.85)',
       bgDefault: 'linear-gradient(160deg,#020612,#041228)',
       fuente: "'Georgia', serif",
       footer: '👔 Para el mejor papá del mundo 👔',
       itemColor: '#e3f2fd',
-      deco: [
-        { e:'⭐', count:12, sizeMin:12, sizeMax:22, dur:[14,24], sway:false },
-        { e:'🏆', count:4,  sizeMin:24, sizeMax:38, dur:[18,26], sway:false },
-        { e:'👔', count:5,  sizeMin:20, sizeMax:32, dur:[16,22], sway:true  },
-        { e:'🎖️', count:4,  sizeMin:18, sizeMax:28, dur:[12,20], sway:false },
-      ],
     },
     halloween: {
-      nombre:    'Halloween',
-      btnLabel:  '🎃 Menú Halloween',
+      nombre: 'Halloween 🎃',
       acento: '#ff9800', acentoRgb: '255,152,0',
       catGrad: 'linear-gradient(135deg,#4a0080,#6a0dad)',
-      overlay: 'rgba(4,0,8,0.86)',
+      overlay: 'rgba(4,0,8,0.88)',
       bgDefault: 'linear-gradient(160deg,#0a0010,#1a000a)',
       fuente: "'Georgia', serif",
       footer: '🕷️ ¡Trick or treat! 🎃',
       itemColor: '#ffe0b2',
-      deco: [
-        { e:'🎃', count:6,  sizeMin:22, sizeMax:38, dur:[15,22], sway:true  },
-        { e:'🦇', count:10, sizeMin:16, sizeMax:28, dur:[8,14],  sway:true  },
-        { e:'🕷️', count:5,  sizeMin:18, sizeMax:30, dur:[12,20], sway:false },
-        { e:'💀', count:4,  sizeMin:20, sizeMax:32, dur:[14,22], sway:false },
-        { e:'🌙', count:4,  sizeMin:16, sizeMax:26, dur:[18,28], sway:false },
-      ],
     },
     navidad: {
-      nombre:    'Navidad',
-      btnLabel:  '🎄 Menú Navidad',
+      nombre: 'Navidad 🎄',
       acento: '#ffeb3b', acentoRgb: '255,235,59',
       catGrad: 'linear-gradient(135deg,#b71c1c,#c62828)',
-      overlay: 'rgba(2,8,2,0.82)',
+      overlay: 'rgba(2,8,2,0.84)',
       bgDefault: 'linear-gradient(160deg,#020802,#0a1a0a)',
       fuente: "'Georgia', serif",
       footer: '🎄 ¡Feliz Navidad y Próspero Año Nuevo! 🎅',
       itemColor: '#fff9e6',
-      deco: [
-        { e:'❄️', count:14, sizeMin:14, sizeMax:24, dur:[10,18], sway:true  },
-        { e:'⛄', count:4,  sizeMin:24, sizeMax:38, dur:[18,26], sway:false },
-        { e:'🎅', count:3,  sizeMin:26, sizeMax:40, dur:[20,30], sway:true  },
-        { e:'🎁', count:6,  sizeMin:18, sizeMax:30, dur:[14,22], sway:false },
-        { e:'✨', count:8,  sizeMin:12, sizeMax:20, dur:[8,15],  sway:false },
-      ],
     },
     sanvalentin: {
-      nombre:    'San Valentín',
-      btnLabel:  '💕 Menú San Valentín',
+      nombre: 'San Valentín ❤️',
       acento: '#ff6b9d', acentoRgb: '255,107,157',
       catGrad: 'linear-gradient(135deg,#880e4f,#ad1457)',
-      overlay: 'rgba(12,2,6,0.80)',
+      overlay: 'rgba(12,2,6,0.82)',
       bgDefault: 'linear-gradient(160deg,#120006,#200010)',
       fuente: "'Georgia', serif",
       footer: '💕 Una noche especial para dos 💕',
       itemColor: '#fce4ec',
-      deco: [
-        { e:'❤️',  count:10, sizeMin:16, sizeMax:30, dur:[12,20], sway:true  },
-        { e:'💕',  count:8,  sizeMin:14, sizeMax:24, dur:[10,18], sway:true  },
-        { e:'🌹',  count:5,  sizeMin:22, sizeMax:34, dur:[15,24], sway:true  },
-        { e:'💝',  count:5,  sizeMin:18, sizeMax:28, dur:[14,22], sway:false },
-        { e:'✨',  count:6,  sizeMin:10, sizeMax:18, dur:[8,14],  sway:false },
-      ],
     },
   };
-  window._MC_SKINS = SKINS;
+  window._MC_SKINS = SKINS; // exponer para index.html
 
   function getSkinKey() {
     try {
@@ -5592,43 +5644,6 @@ window.renderCategoryGridSafe = function() {
       if (raw) return JSON.parse(raw).classicSkin || 'clasico';
     } catch(e) {}
     return 'clasico';
-  }
-
-  // ── Actualiza el botón flotante con nombre del skin ──────────
-  function updateBtn(skinKey) {
-    const skin = SKINS[skinKey] || SKINS.clasico;
-    const btn = document.getElementById('btnMenuClasico');
-    if (btn) btn.textContent = skin.btnLabel;
-  }
-
-  // ── Genera partículas decorativas flotantes ───────────────────
-  function renderDeco(skinKey) {
-    const deco = document.getElementById('mcDeco');
-    if (!deco) return;
-    deco.innerHTML = '';
-    const skin = SKINS[skinKey] || SKINS.clasico;
-    if (!skin.deco || !skin.deco.length) return;
-
-    skin.deco.forEach(layer => {
-      for (let i = 0; i < layer.count; i++) {
-        const el = document.createElement('span');
-        el.className = 'mc-deco-item';
-        el.textContent = layer.e;
-        const size = layer.sizeMin + Math.random() * (layer.sizeMax - layer.sizeMin);
-        const left = Math.random() * 95;
-        const dur  = layer.dur[0] + Math.random() * (layer.dur[1] - layer.dur[0]);
-        const delay = -(Math.random() * dur); // empezar en punto aleatorio del ciclo
-        el.style.cssText = `
-          font-size:${size}px;
-          left:${left}%;
-          bottom:-10%;
-          animation-duration:${dur}s;
-          animation-delay:${delay}s;
-          ${layer.sway ? `animation-name:mcDecoFloat,mcDecoSway;animation-duration:${dur}s,${(dur*0.4).toFixed(1)}s;animation-timing-function:linear,ease-in-out;animation-iteration-count:infinite,infinite;` : ''}
-        `;
-        deco.appendChild(el);
-      }
-    });
   }
 
   function applySkin(skinKey) {
@@ -5644,8 +5659,6 @@ window.renderCategoryGridSafe = function() {
     view.style.setProperty('--mc-item-color', skin.itemColor);
     const footer = document.getElementById('mcFooter');
     if (footer) footer.textContent = skin.footer;
-    renderDeco(skinKey);
-    updateBtn(skinKey);
   }
 
   function getClassicBg() {
@@ -5738,6 +5751,7 @@ window.renderCategoryGridSafe = function() {
     document.body.style.overflow = 'hidden';
     try { localStorage.setItem('helechos_last_mode', 'clasico'); } catch(e) {}
   }
+  window.openMenuClasicoGlobal = openMenuClasico; // para el banner
 
   function closeMenuClasico() {
     const view = document.getElementById('menuClasicoView');
@@ -5754,19 +5768,15 @@ window.renderCategoryGridSafe = function() {
   const closeBtn = document.getElementById('mcCloseBtn');
   if (closeBtn) closeBtn.addEventListener('click', closeMenuClasico);
 
-  // Actualizar botón al cargar según skin guardado
-  updateBtn(getSkinKey());
-
   // Actualizar fondo y skin cuando cambia desde index.html (storage sync)
   window.renderMenuClasico = renderMenuClasico; // exponer globalmente
   window.addEventListener('storage', e => {
     if (e.key === 'helechos_menu_settings_v1') {
       try {
         const parsed = JSON.parse(e.newValue || '{}');
-        if (parsed.classicSkin !== undefined) {
-          applySkin(parsed.classicSkin || 'clasico');
-          updateBtn(parsed.classicSkin || 'clasico');
-        }
+        // Actualizar skin en tiempo real
+        if (parsed.classicSkin !== undefined) applySkin(parsed.classicSkin || 'clasico');
+        // Actualizar fondo
         const mcBg = document.getElementById('mcBg');
         if (mcBg && parsed.classicMenuBg !== undefined) {
           const skin = SKINS[parsed.classicSkin || 'clasico'] || SKINS.clasico;
