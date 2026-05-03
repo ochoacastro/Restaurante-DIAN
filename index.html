@@ -3810,6 +3810,20 @@
           <div class="qr-note" style="margin-top:8px;">Cada skin tiene su propio banner. Cambia el skin arriba para gestionar los demás banners.</div>
         </div>
 
+        <div style="height:1px;background:var(--borde);margin:4px 0;"></div>
+
+        <!-- DESCARGA PDF MENÚ ESPECIAL -->
+        <div>
+          <div class="form-label form-label-small" style="margin-bottom:4px;">📄 Descargar Menú Especial en PDF</div>
+          <div style="font-size:11px;color:var(--gris);margin-bottom:12px;line-height:1.5;">
+            Genera un PDF del menú clásico con el skin activo para guardarlo e imprimirlo.
+          </div>
+          <button onclick="descargarMenuEspecialPDF()" class="btn-save-config" style="width:100%;padding:12px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;">
+            ⬇️ Descargar Menú Especial PDF
+          </button>
+          <div id="menuEspecialPdfStatus" style="margin-top:8px;font-size:12px;color:var(--gris);text-align:center;display:none;"></div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -6255,6 +6269,89 @@ function quitarAdBanner() {
   renderAdBannerPreview();
   showToast('🗑️ Banner quitado');
 }
+
+// ── DESCARGAR MENÚ ESPECIAL EN PDF ──────────────────────────────────────
+function descargarMenuEspecialPDF() {
+  const statusEl = document.getElementById('menuEspecialPdfStatus');
+  try {
+    if (!window.jspdf) throw new Error('jsPDF no disponible');
+    const { jsPDF } = window.jspdf;
+    const skinKey = getSkinKey();
+    const skin = (MENU_SKINS && MENU_SKINS[skinKey]) || { nombre: 'Menú Especial' };
+    let menuItems = [];
+    try { const raw = localStorage.getItem('helechos_menu'); if (raw) menuItems = JSON.parse(raw); } catch(e) {}
+    const nombre = config.nombre || 'Mi Restaurante';
+    const fecha  = new Date().toLocaleDateString('es-CO');
+    const hidden = [];
+    try {
+      const raw2 = localStorage.getItem(MENU_SETTINGS_KEY);
+      const ms2  = raw2 ? JSON.parse(raw2) : {};
+      if (Array.isArray(ms2.hiddenCats)) hidden.push(...ms2.hiddenCats);
+    } catch(e) {}
+    const items = menuItems.filter(i => i.disponible !== false && !hidden.includes(i.categoria));
+    const cats  = [...new Set(items.map(i => i.categoria).filter(Boolean))].sort((a,b) => a.localeCompare(b,'es'));
+    const sinCat = items.filter(i => !i.categoria);
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const PW=210, ml=18, mr=18, mTop=20, cw=PW-ml-mr;
+    let y = mTop;
+    const fmtP = v => { const n=Number(v); if(!n&&n!==0) return ''; return '$ '+n.toLocaleString('es-CO'); };
+    const logoData = localStorage.getItem('helechos_logo');
+    if (logoData) {
+      try {
+        const props = doc.getImageProperties(logoData);
+        const lw=24, lh=lw*(props.height/props.width);
+        doc.addImage(logoData, props.fileType||'PNG', ml, y, lw, lh); y+=lh+4;
+      } catch(e) {}
+    }
+    doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(40,20,5);
+    doc.text(nombre.toUpperCase(), PW/2, y, {align:'center'}); y+=7;
+    doc.setFontSize(11); doc.setFont('helvetica','normal'); doc.setTextColor(120,80,30);
+    doc.text((skin.nombre||'Menú Especial')+'  ·  '+fecha, PW/2, y, {align:'center'}); y+=5;
+    doc.setDrawColor(200,150,50); doc.setLineWidth(0.8); doc.line(ml,y,PW-mr,y); y+=8;
+    const renderGroup = (catName, groupItems) => {
+      if (y>270) { doc.addPage(); y=mTop; }
+      doc.setFillColor(55,30,8); doc.roundedRect(ml,y,cw,8,2,2,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(245,220,130);
+      doc.text(catName.toUpperCase(), ml+5, y+5.5); y+=12;
+      groupItems.forEach(item => {
+        if (y>270) { doc.addPage(); y=mTop; }
+        const precio=fmtP(item.precio??item.precioLocal??0), nombreItem=item.nombre||'', desc=item.descripcion||'';
+        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(35,15,5);
+        const priceW=precio?doc.getTextWidth(precio)+4:0, nameW=cw-priceW;
+        const nameParts=doc.splitTextToSize(nombreItem,nameW);
+        doc.text(nameParts,ml+3,y);
+        if (precio) { doc.setTextColor(180,90,0); doc.text(precio,PW-mr-2,y,{align:'right'}); }
+        y+=nameParts.length*5;
+        if (desc) {
+          doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,80,60);
+          const dp=doc.splitTextToSize(desc,cw-6); doc.text(dp,ml+3,y); y+=dp.length*4;
+        }
+        doc.setDrawColor(220,200,170); doc.setLineWidth(0.3); doc.line(ml+3,y+1,PW-mr-3,y+1); y+=5;
+      });
+      y+=3;
+    };
+    cats.forEach(cat => { const gi=items.filter(i=>i.categoria===cat); if(gi.length) renderGroup(cat,gi); });
+    if (sinCat.length) renderGroup('Otros',sinCat);
+    if (!items.length) {
+      doc.setFont('helvetica','italic'); doc.setFontSize(12); doc.setTextColor(150);
+      doc.text('Sin platos disponibles',PW/2,y+20,{align:'center'});
+    }
+    const totalPages=doc.getNumberOfPages();
+    for(let p=1;p<=totalPages;p++) {
+      doc.setPage(p); doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(160,120,60);
+      doc.text('❦ Gracias por visitarnos ❦',PW/2,290,{align:'center'});
+      doc.setTextColor(180); doc.text('Pág '+p+' de '+totalPages,PW-mr,290,{align:'right'});
+    }
+    const fechaFile=new Date().toLocaleDateString('es-CO').replace(/\//g,'-');
+    doc.save('MenuEspecial_'+skinKey+'_'+fechaFile+'.pdf');
+    showToast('📄 Menú Especial PDF descargado');
+    if (statusEl) { statusEl.textContent='✅ PDF generado correctamente'; statusEl.style.color='var(--verde-ok)'; statusEl.style.display='block'; setTimeout(()=>{statusEl.style.display='none';},3500); }
+  } catch(err) {
+    showToast('❌ Error generando PDF: '+err.message);
+    if (statusEl) { statusEl.textContent='❌ Error: '+err.message; statusEl.style.color='var(--rojo)'; statusEl.style.display='block'; }
+  }
+}
+
 
 function saveConfig() {
   const cfgNombre = document.getElementById('cfgNombre').value.trim();
