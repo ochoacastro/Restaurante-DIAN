@@ -8127,9 +8127,29 @@ function renderCarrito() {
           <div style="font-size:11px;color:var(--gris);text-align:center;">Marca el ✓ de cada plato al entregarlo · el botón de pago aparecerá al completar todos</div>
         </div>`;
       }
-      return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
+      // Admin/cajero: también requiere que todos los ítems estén entregados
+      const totalUnidadesAdm = carrito.reduce((s, i) => s + i.cantidad, 0);
+      const totalServidosAdm = carrito.reduce((s, i) => {
+        if (!Array.isArray(i.servido)) return s;
+        return s + i.servido.filter(Boolean).length;
+      }, 0);
+      const todosServidosAdm = totalUnidadesAdm > 0 && totalServidosAdm >= totalUnidadesAdm;
+      if (todosServidosAdm) {
+        return `<button onclick="abrirDrawer('pago')" style="width:100%;padding:18px;margin-top:8px;background:linear-gradient(135deg,#1B5E20,#2E7D32);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(46,125,50,0.40);-webkit-tap-highlight-color:rgba(255,255,255,0.1);">
           💳 Pagar Cuenta
         </button>`;
+      }
+      const pctAdm = totalUnidadesAdm > 0 ? Math.round(totalServidosAdm / totalUnidadesAdm * 100) : 0;
+      return `<div style="width:100%;padding:14px 16px;margin-top:8px;background:var(--fondo);border:2px dashed var(--borde);border-radius:var(--r);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;font-weight:700;color:var(--gris);">${totalServidosAdm===0?'⏳ En preparación':'🍽️ Entregando…'}</span>
+          <span style="font-size:13px;font-weight:800;color:var(--rappi);font-family:var(--font-num);">${totalServidosAdm}/${totalUnidadesAdm}</span>
+        </div>
+        <div style="width:100%;height:7px;background:var(--borde);border-radius:999px;overflow:hidden;margin-bottom:8px;">
+          <div style="height:100%;width:${pctAdm}%;background:linear-gradient(90deg,#1B5E20,#4CAF50);border-radius:999px;transition:width 0.4s ease;"></div>
+        </div>
+        <div style="font-size:11px;color:var(--gris);text-align:center;">Marca el ✓ de cada plato al entregarlo · el botón de pago aparecerá al completar todos</div>
+      </div>`;
     })()}
     <div style="height:24px"></div>`;
 }
@@ -14051,21 +14071,20 @@ function renderModalCobro(total, subtotal, descMonto) {
       </div>
     </div>
 
-    <!-- Factura electrónica toggle (cajero/admin) — solo si FE está habilitada -->
-    ${(typeof feEsHabilitada === 'function' ? feEsHabilitada() : false) ? `
+    <!-- Factura electrónica toggle (cajero/admin) — siempre visible para registro en historial -->
     <div class="fe-toggle-wrap ${esFacturaElectronica?'active':''}" id="cobFeToggle" onclick="toggleFECobro();renderModalCobro(${total},${subtotal},${descMonto});" style="margin-bottom:10px;">
       <div class="fe-toggle-label">
         <span class="fe-toggle-icon">🧾</span>
         <div>
           <span class="fe-toggle-title">Factura Electrónica</span>
-          <span class="fe-toggle-sub">${esFacturaElectronica ? 'Activa — datos del receptor requeridos' : 'Toca para activar'}</span>
+          <span class="fe-toggle-sub">${esFacturaElectronica ? 'Activa — completa los datos del receptor' : 'Toca para registrar como factura electrónica'}</span>
         </div>
       </div>
       <div class="fe-switch" style="${esFacturaElectronica?'background:#1565C0;':''}"></div>
     </div>
     ${esFacturaElectronica ? `
     <div class="fe-fields" style="margin-bottom:12px;">
-      <label class="fe-field-label">Tipo de documento *</label>
+      <label class="fe-field-label">Tipo de documento</label>
       <select class="fe-input" style="appearance:auto;" onchange="feTipoDoc=this.value">
         <option value="CC" ${feTipoDoc==='CC'?'selected':''}>CC — Cédula de Ciudadanía</option>
         <option value="NIT" ${feTipoDoc==='NIT'?'selected':''}>NIT — Empresa / Persona Jurídica</option>
@@ -14073,10 +14092,10 @@ function renderModalCobro(total, subtotal, descMonto) {
         <option value="PA" ${feTipoDoc==='PA'?'selected':''}>PA — Pasaporte</option>
         <option value="TI" ${feTipoDoc==='TI'?'selected':''}>TI — Tarjeta de Identidad</option>
       </select>
-      <label class="fe-field-label">Razón social / Nombre completo *</label>
+      <label class="fe-field-label">Razón social / Nombre completo</label>
       <input class="fe-input" type="text" placeholder="Empresa S.A.S. o Nombre Apellido"
         value="${esc(feNombre)}" oninput="feNombre=this.value" autocomplete="off">
-      <label class="fe-field-label">NIT o Número de documento *</label>
+      <label class="fe-field-label">NIT o Número de documento</label>
       <input class="fe-input" type="text" inputmode="numeric" placeholder="900123456-7"
         value="${esc(feNit)}" oninput="feNit=this.value" autocomplete="off">
       <label class="fe-field-label">Dirección</label>
@@ -14096,7 +14115,6 @@ function renderModalCobro(total, subtotal, descMonto) {
       ${_cobroActual.feNit ? `<div style="font-size:12px;color:var(--gris);">NIT: ${esc(_cobroActual.feNit)}</div>` : ''}
       ${_cobroActual.feCorreo ? `<div style="font-size:12px;color:var(--gris);">✉️ ${esc(_cobroActual.feCorreo)}</div>` : ''}
     </div>` : ''}
-    ` : ''}
 
     <!-- Formas de pago -->
     <div style="font-size:11px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">💳 Forma de pago</div>
