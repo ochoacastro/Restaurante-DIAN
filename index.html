@@ -3884,9 +3884,9 @@
 
         <!-- DESCARGA PDF MENÚ ESPECIAL -->
         <div>
-          <div class="form-label form-label-small" style="margin-bottom:4px;">📄 Descargar Menú en PDF</div>
+          <div class="form-label form-label-small" style="margin-bottom:4px;">🖼️ Descargar Menú como Imagen</div>
           <div style="font-size:11px;color:var(--gris);margin-bottom:12px;line-height:1.5;">
-            Genera el menú actualizado con precios reales. Cada diseño descarga su propio PDF.
+            Genera una imagen del menú con el diseño visual del skin activo, lista para compartir o imprimir.
           </div>
           <div id="menuPdfSkinGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
           <div id="menuEspecialPdfStatus" style="margin-top:8px;font-size:12px;color:var(--gris);text-align:center;display:none;"></div>
@@ -6445,7 +6445,7 @@ function renderMenuPdfGrid() {
       ">${sk.emoji}</span>
       <div style="min-width:0;flex:1;position:relative;z-index:1;">
         <div style="font-size:14px;font-weight:900;color:${sk.acento};line-height:1.2;">${sk.nombre}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.75);font-weight:600;margin-top:2px;">⬇ Descargar PDF del menú</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.75);font-weight:600;margin-top:2px;">🖼️ Descargar imagen del menú</div>
       </div>
       <span style="font-size:20px;position:relative;z-index:1;opacity:0.8;">📄</span>
     </button>`;
@@ -6463,63 +6463,36 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMenuPdfGrid();
 });
 
-// ── DESCARGAR MENÚ ESPECIAL EN PDF ──────────────────────────────────────
-function descargarMenuEspecialPDF(forceSkinKey) {
+// ── GENERAR IMAGEN DEL MENÚ ──────────────────────────────────────────────
+async function descargarMenuEspecialPDF(forceSkinKey) {
   const statusEl = document.getElementById('menuEspecialPdfStatus');
-  const btnId  = 'pdfBtn_' + (forceSkinKey || getSkinKey());
-  const btnEl  = document.getElementById(btnId);
+  const skinKey  = forceSkinKey || getSkinKey();
+  const btnId    = 'pdfBtn_' + skinKey;
+  const btnEl    = document.getElementById(btnId);
+
   if (btnEl) {
     const orig = btnEl.innerHTML;
-    btnEl.innerHTML = `<span style="font-size:20px;position:relative;z-index:1;">⏳</span><div style="flex:1;font-size:13px;font-weight:800;position:relative;z-index:1;">Generando…</div>`;
+    btnEl.innerHTML = `<span style="font-size:20px;position:relative;z-index:1;">⏳</span><div style="flex:1;font-size:13px;font-weight:800;position:relative;z-index:1;">Generando imagen…</div>`;
     btnEl.disabled = true;
-    setTimeout(() => { btnEl.innerHTML = orig; btnEl.disabled = false; }, 4000);
+    setTimeout(() => { btnEl.innerHTML = orig; btnEl.disabled = false; }, 5000);
   }
-  try {
-    if (!window.jspdf) throw new Error('jsPDF no disponible');
-    const { jsPDF } = window.jspdf;
 
-    // ── Skin activo ──────────────────────────────────────────────────
-    const skinKey = forceSkinKey || getSkinKey();
+  try {
+    // ── Skin ─────────────────────────────────────────────────────────
     const skin = (MENU_SKINS && MENU_SKINS[skinKey]) || {
       nombre:'Menú', acento:'#f5dc82', acentoRgb:'245,220,130',
       catGrad:'linear-gradient(135deg,#c8620a,#e07a12)',
-      overlay:'rgba(8,6,2,0.82)', bgDefault:'', footer:'Gracias por visitarnos', itemColor:'#f0e8d0'
+      overlay:'rgba(8,6,2,0.82)', bgDefault:'linear-gradient(160deg,#0d0a04,#1a1204)',
+      footer:'Gracias por visitarnos', itemColor:'#f0e8d0'
     };
 
-    // Parsear colores
-    const parseHex = hex => {
-      const h = hex.replace('#','');
-      return h.length===6 ? [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)] : [245,220,130];
-    };
-    const parseRgb = str => { const p=str.split(',').map(Number); return [p[0]||245,p[1]||220,p[2]||130]; };
-    const [ar,ag,ab] = skin.acentoRgb ? parseRgb(skin.acentoRgb) : parseHex(skin.acento||'#f5dc82');
-
-    // Color oscuro de fondo de página (extraído del overlay/bgDefault)
-    // Usamos colores fijos por skin para el fondo
-    const BG_COLORS = {
-      clasico:     [13,10,4],
-      madre:       [26,0,16],
-      padre:       [2,6,18],
-      halloween:   [10,0,16],
-      navidad:     [2,8,2],
-      sanvalentin: [18,0,6],
-    };
-    const [bgR,bgG,bgB] = BG_COLORS[skinKey] || [13,10,4];
-
-    // Color de la cabecera de categoría (primer color del catGrad)
-    const parseCatColor = grad => {
-      const m = (grad||'').match(/#([0-9a-fA-F]{6})/g);
-      return m && m.length ? parseHex(m[0]) : [55,30,8];
-    };
-    const [cr,cg,cb] = parseCatColor(skin.catGrad);
-
-    // Mensajes especiales por skin (mismos que menu.html)
+    // Mensajes especiales (iguales al menú digital)
     const MC_GREETINGS = {
-      madre:       { emoji:'🌸', title:'¡Feliz Día de la Madre!',  msg:'Hoy celebramos a la mujer más especial de nuestra vida.\nGracias por tu amor infinito, mamá. ¡Este menú es para ti!' },
-      padre:       { emoji:'👔', title:'¡Feliz Día del Padre!',    msg:'Para el superhéroe de casa, el mejor papá del mundo.\n¡Disfruta este día tan especial con toda la familia!' },
-      halloween:   { emoji:'🎃', title:'¡Feliz Halloween!',         msg:'Una noche de misterio, sustos y mucho sabor.\n¡Aquí siempre te tratamos muy bien!' },
-      navidad:     { emoji:'🎄', title:'¡Feliz Navidad!',           msg:'Que esta temporada esté llena de amor, alegría y sabores únicos.\n¡De parte de todo el equipo, Felices Fiestas!' },
-      sanvalentin: { emoji:'❤',  title:'¡Feliz San Valentín!',     msg:'Una noche especial para compartir con quien más amas.\nGracias por elegirnos para celebrar el amor.' },
+      madre:       { emoji:'🌸', title:'¡Feliz Día de la Madre!',  msg:'Hoy celebramos a la mujer más especial de nuestra vida.\nGracias por tu amor infinito, mamá. ¡Este menú es para ti! 💕' },
+      padre:       { emoji:'👔', title:'¡Feliz Día del Padre!',    msg:'Para el superhéroe de casa, el mejor papá del mundo.\n¡Disfruta este día tan especial con toda la familia! 🌟' },
+      halloween:   { emoji:'🎃', title:'¡Feliz Halloween!',         msg:'Una noche de misterio, sustos y mucho sabor.\n¿Truco o trato? ¡Aquí siempre te tratamos muy bien! 🦇' },
+      navidad:     { emoji:'🎄', title:'¡Feliz Navidad!',           msg:'Que esta temporada esté llena de amor, alegría y sabores únicos.\n¡De parte de todo el equipo, Felices Fiestas! ⭐' },
+      sanvalentin: { emoji:'❤️', title:'¡Feliz San Valentín!',     msg:'Una noche especial para compartir con quien más amas.\nGracias por elegirnos para celebrar el amor. 💝' },
     };
     const greet = MC_GREETINGS[skinKey] || null;
 
@@ -6527,9 +6500,7 @@ function descargarMenuEspecialPDF(forceSkinKey) {
     let menuItems = [];
     try { const raw = localStorage.getItem('helechos_menu'); if (raw) menuItems = JSON.parse(raw); } catch(e) {}
     const nombre = config.nombre || 'Mi Restaurante';
-    const fecha  = new Date().toLocaleDateString('es-CO');
 
-    // Categorías ocultas
     const hidden = [];
     try {
       const ms2 = JSON.parse(localStorage.getItem(MENU_SETTINGS_KEY)||'{}');
@@ -6539,220 +6510,326 @@ function descargarMenuEspecialPDF(forceSkinKey) {
     const cats   = [...new Set(items.map(i=>i.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
     const sinCat = items.filter(i => !i.categoria);
 
-    // ── Crear documento A4 ────────────────────────────────────────────
-    const doc = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
-    const PW=210, PH=297, ml=14, mr=14, mTop=14;
-    const cw = PW - ml - mr;
-    let y = mTop;
+    const fmtP = v => { const n=Number(v); return (!n&&n!==0)?'':'$ '+n.toLocaleString('es-CO'); };
 
-    // ── Helper: rellenar página con fondo oscuro ──────────────────────
-    const fillBg = () => {
-      doc.setFillColor(bgR, bgG, bgB);
-      doc.rect(0, 0, PW, PH, 'F');
+    // ── Canvas setup (ancho fijo 540px, altura dinámica) ─────────────
+    const W    = 540;
+    const PAD  = 24;
+    const IW   = W - PAD * 2;   // inner width
+    const DPR  = 2;              // retina
+
+    // Primero: calcular altura total necesaria con canvas dummy
+    const measureCanvas = document.createElement('canvas');
+    measureCanvas.width  = W * DPR;
+    measureCanvas.height = 100;
+    const mctx = measureCanvas.getContext('2d');
+    mctx.scale(DPR, DPR);
+
+    // Helper: medir texto multilínea
+    function wrapText(ctx, text, maxW, fontSize, weight='normal') {
+      ctx.font = `${weight} ${fontSize}px 'Inter',sans-serif`;
+      const words = String(text).split(' ');
+      const lines = [];
+      let line = '';
+      words.forEach(w => {
+        const test = line ? line+' '+w : w;
+        if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
+        else line = test;
+      });
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    // Calcular altura total
+    let totalH = PAD; // top padding
+
+    // Logo
+    const logoData = localStorage.getItem('helechos_logo');
+    if (logoData) totalH += 75;
+
+    // Header
+    totalH += 16 + 12 + 10 + 8 + 1 + 16; // nombre + sub + sep + gap
+
+    // Greeting card
+    if (greet) {
+      totalH += 16; // emoji
+      totalH += 24; // title
+      const msgLines = greet.msg.split('\n');
+      msgLines.forEach(line => {
+        const parts = wrapText(mctx, line, IW - 48, 13);
+        totalH += parts.length * 18;
+      });
+      totalH += 32 + 20; // padding top+bottom + gap
+    }
+
+    // Categories
+    const allGroups = [...cats.map(c=>({cat:c, gi:items.filter(i=>i.categoria===c)})), ...(sinCat.length?[{cat:'Otros',gi:sinCat}]:[])];
+    allGroups.forEach(({cat, gi}) => {
+      totalH += 24 + 36 + 8; // divider label + cat header + gap
+      gi.forEach(item => {
+        const nameLines = wrapText(mctx, item.nombre||'', IW - 110, 14, 'bold');
+        totalH += Math.max(nameLines.length * 20, 24);
+        if (item.descripcion) {
+          const descLines = wrapText(mctx, item.descripcion, IW - 110, 11);
+          totalH += descLines.length * 16;
+        }
+        totalH += 1 + 8; // separator + gap
+      });
+      totalH += 12; // group gap
+    });
+
+    totalH += 48 + PAD; // footer + bottom padding
+
+    // ── Crear canvas real ─────────────────────────────────────────────
+    const canvas = document.createElement('canvas');
+    canvas.width  = W * DPR;
+    canvas.height = totalH * DPR;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    // ── Fondo degradado del skin ──────────────────────────────────────
+    // Convertir bgDefault a colores para createLinearGradient
+    const BG_STOPS = {
+      clasico:     ['#0d0a04','#1a1204'],
+      madre:       ['#1a0010','#2d0020'],
+      padre:       ['#020612','#041228'],
+      halloween:   ['#0a0010','#1a000a'],
+      navidad:     ['#020802','#0a1a0a'],
+      sanvalentin: ['#120006','#200010'],
     };
+    const [bg1, bg2] = BG_STOPS[skinKey] || ['#0d0a04','#1a1204'];
+    const bgGrad = ctx.createLinearGradient(0, 0, W * 0.4, totalH);
+    bgGrad.addColorStop(0, bg1);
+    bgGrad.addColorStop(1, bg2);
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, totalH);
 
-    // ── Helper: nueva página ──────────────────────────────────────────
-    const addPage = () => {
-      doc.addPage();
-      fillBg();
-      y = mTop;
+    // ── Color del skin ────────────────────────────────────────────────
+    const ac = skin.acento || '#f5dc82';
+    const CAT_GRAD_COLORS = {
+      clasico:     ['#c8620a','#e07a12'],
+      madre:       ['#c2185b','#e91e8c'],
+      padre:       ['#1565c0','#1976d2'],
+      halloween:   ['#4a0080','#6a0dad'],
+      navidad:     ['#b71c1c','#c62828'],
+      sanvalentin: ['#880e4f','#ad1457'],
     };
+    const [cat1, cat2] = CAT_GRAD_COLORS[skinKey] || ['#c8620a','#e07a12'];
 
-    // ── Helper: espacio disponible ────────────────────────────────────
-    const checkY = needed => { if (y + needed > PH - 18) addPage(); };
-
-    // ── Fondo página 1 ────────────────────────────────────────────────
-    fillBg();
+    let y = PAD;
 
     // ── LOGO ──────────────────────────────────────────────────────────
-    const logoData = localStorage.getItem('helechos_logo');
-    let logoH = 0;
     if (logoData) {
-      try {
-        const props = doc.getImageProperties(logoData);
-        const lw = 20, lh = lw * (props.height / props.width);
-        // Centrar logo
-        doc.addImage(logoData, props.fileType||'PNG', (PW-lw)/2, y, lw, lh);
-        logoH = lh + 4;
-      } catch(e) {}
-    }
-    y += logoH;
-
-    // ── NOMBRE DEL RESTAURANTE ────────────────────────────────────────
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(20);
-    doc.setTextColor(ar, ag, ab);
-    const titleLines = doc.splitTextToSize(nombre.toUpperCase(), cw);
-    doc.text(titleLines, PW/2, y + 7, { align:'center' });
-    y += titleLines.length * 8 + 2;
-
-    // Sub-línea: RESTAURANTE
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(8);
-    doc.setTextColor(ar, ag, ab);
-    doc.setCharSpace(3);
-    doc.text('RESTAURANTE', PW/2, y, { align:'center' });
-    doc.setCharSpace(0);
-    y += 6;
-
-    // Línea separadora color acento
-    doc.setDrawColor(ar, ag, ab);
-    doc.setLineWidth(0.6);
-    doc.line(ml + 20, y, PW - mr - 20, y);
-    y += 7;
-
-    // ── TARJETA DE BIENVENIDA (solo skins especiales) ─────────────────
-    if (greet) {
-      const cardH = 28;
-      // Fondo de la tarjeta: un rectángulo semitransparente (simulado con color levemente más claro)
-      const [cR,cG,cB] = [Math.min(bgR+30,80), Math.min(bgG+15,50), Math.min(bgB+30,80)];
-      doc.setFillColor(cR, cG, cB);
-      doc.roundedRect(ml, y, cw, cardH, 4, 4, 'F');
-      // Borde color acento
-      doc.setDrawColor(ar, ag, ab);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(ml, y, cw, cardH, 4, 4, 'S');
-
-      // Título del mensaje
-      doc.setFont('helvetica','bold');
-      doc.setFontSize(12);
-      doc.setTextColor(ar, ag, ab);
-      doc.text(greet.title, PW/2, y + 8, { align:'center' });
-
-      // Cuerpo del mensaje
-      doc.setFont('helvetica','normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(ar, ag, ab);
-      const msgLines = greet.msg.split('\n');
-      let my = y + 14;
-      msgLines.forEach(line => {
-        const parts = doc.splitTextToSize(line, cw - 12);
-        parts.forEach(part => {
-          doc.text(part, PW/2, my, { align:'center' });
-          my += 4.5;
-        });
+      await new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          const lh = 60, lw = lh * (img.width / img.height);
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(W/2, y + lh/2, lh/2 + 4, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(0,0,0,0.4)';
+          ctx.fill();
+          ctx.clip();
+          ctx.drawImage(img, W/2 - lw/2, y, lw, lh);
+          ctx.restore();
+          resolve();
+        };
+        img.onerror = resolve;
+        img.src = logoData;
       });
-
-      y += cardH + 8;
+      y += 75;
     }
 
-    // ── RENDER DE CATEGORÍAS ──────────────────────────────────────────
-    const fmtP = v => {
-      const n = Number(v);
-      if (!n && n!==0) return '';
-      return '$ ' + n.toLocaleString('es-CO');
-    };
+    // ── NOMBRE ────────────────────────────────────────────────────────
+    ctx.textAlign = 'center';
+    ctx.fillStyle = ac;
+    ctx.font = `900 22px 'Inter',Georgia,sans-serif`;
+    ctx.letterSpacing = '1px';
+    const titleLines2 = wrapText(ctx, nombre.toUpperCase(), IW, 22, '900');
+    titleLines2.forEach(line => { ctx.fillText(line, W/2, y + 22); y += 28; });
+    y -= 4;
 
-    // Texto tenue del nombre de categoría encima de la barra (estilo menu.html)
-    const renderGroup = (catName, groupItems) => {
-      checkY(18);
+    // Sub-texto RESTAURANTE
+    ctx.font = `400 10px 'Inter',sans-serif`;
+    ctx.fillStyle = ac + '99';
+    ctx.letterSpacing = '4px';
+    ctx.fillText('RESTAURANTE', W/2, y + 14);
+    ctx.letterSpacing = '0px';
+    y += 22;
 
-      // Etiqueta pequeña encima — letra espaciada color acento tenue
-      doc.setFont('helvetica','normal');
-      doc.setFontSize(7);
-      doc.setTextColor(ar, ag, ab);
-      doc.setCharSpace(2);
-      doc.text(catName.toUpperCase(), PW/2, y + 4, { align:'center' });
-      doc.setCharSpace(0);
-      y += 6;
+    // Línea separadora
+    const sepGrad = ctx.createLinearGradient(PAD, y, W-PAD, y);
+    sepGrad.addColorStop(0,   'transparent');
+    sepGrad.addColorStop(0.5, ac);
+    sepGrad.addColorStop(1,   'transparent');
+    ctx.strokeStyle = sepGrad;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD+30, y); ctx.lineTo(W-PAD-30, y); ctx.stroke();
+    y += 16;
 
-      // Barra de categoría — degradado simulado con rectángulo sólido del color catGrad
-      doc.setFillColor(cr, cg, cb);
-      doc.roundedRect(ml, y, cw, 8, 2, 2, 'F');
-      doc.setFont('helvetica','bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(255, 255, 255);
-      doc.setCharSpace(1.5);
-      doc.text(catName.toUpperCase(), PW/2, y + 5.5, { align:'center' });
-      doc.setCharSpace(0);
-      y += 12;
+    // ── TARJETA DE BIENVENIDA ─────────────────────────────────────────
+    if (greet) {
+      // Medir altura de la tarjeta
+      let cardH = 16;
+      cardH += 20; // emoji
+      cardH += 28; // title
+      const msgLinesAll = [];
+      greet.msg.split('\n').forEach(line => {
+        const parts = wrapText(ctx, line, IW - 48, 13);
+        msgLinesAll.push(...parts);
+        cardH += parts.length * 18;
+      });
+      cardH += 16; // bottom padding
+
+      // Fondo de tarjeta
+      ctx.save();
+      roundRect(ctx, PAD, y, IW, cardH, 14);
+      ctx.fillStyle = ac + '18';
+      ctx.fill();
+      ctx.strokeStyle = ac + '55';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+
+      let cy = y + 16;
+
+      // Emoji
+      ctx.font = '28px serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = ac;
+      ctx.fillText(greet.emoji, W/2, cy + 20);
+      cy += 32;
+
+      // Título
+      ctx.font = `900 17px 'Inter',Georgia,sans-serif`;
+      ctx.fillStyle = ac;
+      ctx.fillText(greet.title, W/2, cy);
+      cy += 26;
+
+      // Mensaje
+      ctx.font = `400 13px 'Inter',sans-serif`;
+      ctx.fillStyle = ac + 'BB';
+      msgLinesAll.forEach(line => { ctx.fillText(line, W/2, cy); cy += 18; });
+
+      y += cardH + 20;
+    }
+
+    // ── CATEGORÍAS ────────────────────────────────────────────────────
+    allGroups.forEach(({cat, gi}) => {
+      // Etiqueta pequeña con líneas laterales
+      ctx.textAlign = 'center';
+      ctx.font = `600 9px 'Inter',sans-serif`;
+      ctx.letterSpacing = '3px';
+      ctx.fillStyle = ac + '66';
+      const labelW = ctx.measureText(cat.toUpperCase()).width;
+      const lx = (W - labelW) / 2;
+      ctx.fillText(cat.toUpperCase(), W/2, y + 12);
+      // Líneas laterales del divider
+      const divGrad1 = ctx.createLinearGradient(PAD, y, lx - 10, y);
+      divGrad1.addColorStop(0,'transparent'); divGrad1.addColorStop(1, ac+'44');
+      ctx.strokeStyle = divGrad1; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(PAD, y+8); ctx.lineTo(lx-10, y+8); ctx.stroke();
+      const divGrad2 = ctx.createLinearGradient(lx+labelW+10, y, W-PAD, y);
+      divGrad2.addColorStop(0, ac+'44'); divGrad2.addColorStop(1,'transparent');
+      ctx.strokeStyle = divGrad2;
+      ctx.beginPath(); ctx.moveTo(lx+labelW+10, y+8); ctx.lineTo(W-PAD, y+8); ctx.stroke();
+      ctx.letterSpacing = '0px';
+      y += 24;
+
+      // Barra de categoría con degradado
+      const catGrad = ctx.createLinearGradient(PAD, y, W-PAD, y+36);
+      catGrad.addColorStop(0, cat1);
+      catGrad.addColorStop(1, cat2);
+      ctx.save();
+      roundRect(ctx, PAD, y, IW, 36, 8);
+      ctx.fillStyle = catGrad;
+      ctx.fill();
+      ctx.restore();
+
+      ctx.textAlign = 'center';
+      ctx.font = `900 12px 'Inter',sans-serif`;
+      ctx.letterSpacing = '2.5px';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(cat.toUpperCase(), W/2, y + 23);
+      ctx.letterSpacing = '0px';
+      y += 44;
 
       // Ítems
-      groupItems.forEach(item => {
-        checkY(9);
-        const precio    = fmtP(item.precio ?? item.precioLocal ?? 0);
-        const nombreIt  = item.nombre || '';
-        const desc      = item.descripcion || '';
+      gi.forEach((item, idx) => {
+        const nameLines2 = wrapText(ctx, item.nombre||'', IW - 110, 14, 'bold');
+        const precio = fmtP(item.precio ?? item.precioLocal ?? 0);
+        const lineH  = Math.max(nameLines2.length * 20, 24);
 
-        doc.setFont('helvetica','bold');
-        doc.setFontSize(10);
-        const priceW = precio ? doc.getTextWidth(precio) + 4 : 0;
-        const nameW  = cw - priceW - 4;
+        // Nombre
+        ctx.textAlign = 'left';
+        ctx.font = `700 14px 'Inter',sans-serif`;
+        ctx.fillStyle = skin.itemColor || '#f0e8d0';
+        nameLines2.forEach((line,i) => ctx.fillText(line, PAD+4, y + 16 + i*20));
 
-        // Nombre del plato — color claro del skin (itemColor simulado con blanco suavizado)
-        doc.setTextColor(240, 235, 225);
-        const nameParts = doc.splitTextToSize(nombreIt, nameW);
-        doc.text(nameParts, ml + 3, y);
-
-        // Precio — color acento
+        // Precio
         if (precio) {
-          doc.setFont('helvetica','bold');
-          doc.setFontSize(10);
-          doc.setTextColor(ar, ag, ab);
-          doc.text(precio, PW - mr - 2, y, { align:'right' });
+          ctx.textAlign = 'right';
+          ctx.font = `900 15px 'DM Mono','Courier New',monospace`;
+          ctx.fillStyle = ac;
+          ctx.fillText(precio, W-PAD-4, y + 16);
         }
-        y += nameParts.length * 5.5;
+
+        y += lineH;
 
         // Descripción
-        if (desc) {
-          checkY(5);
-          doc.setFont('helvetica','normal');
-          doc.setFontSize(7.5);
-          doc.setTextColor(180, 160, 140);
-          const descParts = doc.splitTextToSize(desc, cw - 6);
-          doc.text(descParts, ml + 3, y);
-          y += descParts.length * 4;
+        if (item.descripcion) {
+          const descL = wrapText(ctx, item.descripcion, IW - 110, 11);
+          ctx.textAlign = 'left';
+          ctx.font = `400 11px 'Inter',sans-serif`;
+          ctx.fillStyle = 'rgba(240,232,208,0.45)';
+          descL.forEach((l,i) => ctx.fillText(l, PAD+4, y + 13 + i*16));
+          y += descL.length * 16;
         }
 
-        // Separador tenue
-        doc.setDrawColor(ar, ag, ab);
-        doc.setLineWidth(0.15);
-        doc.setLineDashPattern([1,2], 0);
-        doc.line(ml + 3, y + 1.5, PW - mr - 3, y + 1.5);
-        doc.setLineDashPattern([], 0);
-        y += 5.5;
+        // Separador
+        if (idx < gi.length - 1) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(PAD+4, y+4); ctx.lineTo(W-PAD-4, y+4); ctx.stroke();
+        }
+        y += 9;
       });
-      y += 5;
-    };
-
-    cats.forEach(cat => { const gi=items.filter(i=>i.categoria===cat); if(gi.length) renderGroup(cat,gi); });
-    if (sinCat.length) renderGroup('Otros', sinCat);
+      y += 12;
+    });
 
     if (!items.length) {
-      doc.setFont('helvetica','italic');
-      doc.setFontSize(12);
-      doc.setTextColor(ar, ag, ab);
-      doc.text('Sin platos disponibles', PW/2, y+20, { align:'center' });
+      ctx.textAlign = 'center';
+      ctx.font = `italic 14px 'Inter',sans-serif`;
+      ctx.fillStyle = ac + '88';
+      ctx.fillText('Sin platos disponibles', W/2, y+30);
+      y += 50;
     }
 
-    // ── PIE DE PÁGINA EN CADA PÁGINA ─────────────────────────────────
-    const footerClean = (skin.footer||'Gracias por visitarnos')
-      .replace(/[\u{1F300}-\u{1FFFF}]|[❦✦✧♦♥❤💕🌷🌸👔🎃🎄]/gu,'').trim()
-      || 'Gracias por visitarnos';
+    // ── PIE DE PÁGINA ─────────────────────────────────────────────────
+    const footerGrad = ctx.createLinearGradient(PAD, y, W-PAD, y);
+    footerGrad.addColorStop(0,'transparent'); footerGrad.addColorStop(0.5,ac+'44'); footerGrad.addColorStop(1,'transparent');
+    ctx.strokeStyle = footerGrad; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W-PAD, y); ctx.stroke();
+    y += 16;
 
-    const totalPages = doc.getNumberOfPages();
-    for (let p=1; p<=totalPages; p++) {
-      doc.setPage(p);
-      doc.setDrawColor(ar, ag, ab);
-      doc.setLineWidth(0.4);
-      doc.line(ml, PH-13, PW-mr, PH-13);
-      doc.setFont('helvetica','italic');
-      doc.setFontSize(7.5);
-      doc.setTextColor(ar, ag, ab);
-      doc.text(footerClean, PW/2, PH-9, { align:'center' });
-      doc.setFont('helvetica','normal');
-      doc.setFontSize(7);
-      doc.setTextColor(ar, ag, ab);
-      doc.text('Pág '+p+' de '+totalPages, PW-mr, PH-9, { align:'right' });
-    }
+    ctx.textAlign = 'center';
+    ctx.font = `400 10px 'Inter',sans-serif`;
+    ctx.letterSpacing = '2px';
+    ctx.fillStyle = ac + '55';
+    ctx.fillText((skin.footer||'Gracias por visitarnos').toUpperCase(), W/2, y+10);
+    ctx.letterSpacing = '0px';
 
-    // ── Guardar ───────────────────────────────────────────────────────
+    // ── Descargar imagen ──────────────────────────────────────────────
     const fechaFile = new Date().toLocaleDateString('es-CO').replace(/\//g,'-');
-    doc.save('Menu_' + skinKey + '_' + fechaFile + '.pdf');
+    const link = document.createElement('a');
+    link.download = 'Menu_' + skinKey + '_' + fechaFile + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
     const skinNombre = (MENU_SKINS[skinKey]?.nombre||skinKey).replace(/[^\w\s]/gu,'').trim();
-    showToast('📄 ' + skinNombre + ' — PDF descargado');
+    showToast('🖼️ ' + skinNombre + ' — imagen descargada');
     if (statusEl) {
-      statusEl.textContent = '✅ PDF "' + skinNombre + '" generado';
+      statusEl.textContent = '✅ Imagen "' + skinNombre + '" generada';
       statusEl.style.color = 'var(--verde-ok)';
       statusEl.style.display = 'block';
       setTimeout(()=>{ statusEl.style.display='none'; }, 3500);
@@ -6761,8 +6838,9 @@ function descargarMenuEspecialPDF(forceSkinKey) {
       clearTimeout(btnEl._pdfTimer);
       btnEl._pdfTimer = setTimeout(() => { renderMenuPdfGrid(); }, 2000);
     }
+
   } catch(err) {
-    showToast('❌ Error generando PDF: ' + err.message);
+    showToast('❌ Error generando imagen: ' + err.message);
     if (statusEl) {
       statusEl.textContent = '❌ Error: ' + err.message;
       statusEl.style.color = 'var(--rojo)';
@@ -6770,6 +6848,21 @@ function descargarMenuEspecialPDF(forceSkinKey) {
     }
     console.error('descargarMenuEspecialPDF:', err);
   }
+}
+
+// ── Helper: rounded rect path ─────────────────────────────────────────────
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
 }
 
 
