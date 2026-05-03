@@ -3672,6 +3672,45 @@
 
         <div style="height:1px;background:var(--borde);margin:4px 0;"></div>
 
+        <!-- Texto de la cabecera (hero) -->
+        <div>
+          <div class="form-label form-label-small" style="margin-bottom:4px;">✏️ Texto de la cabecera</div>
+          <div style="font-size:11px;color:var(--gris);margin-bottom:12px;line-height:1.5;">
+            Edita el título y la descripción que aparecen en el bloque naranja del menú digital.
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:5px;">Título (restaurante)</div>
+            <input type="text" id="cfgHeroTitleRestInput" class="config-input"
+              placeholder="Menú del restaurante"
+              style="width:100%;box-sizing:border-box;"
+              oninput="cfgSaveHeroText()">
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:5px;">Descripción (restaurante)</div>
+            <input type="text" id="cfgHeroTextRestInput" class="config-input"
+              placeholder="Consulta platos, fotos y precios."
+              style="width:100%;box-sizing:border-box;"
+              oninput="cfgSaveHeroText()">
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:5px;">Título (domicilio)</div>
+            <input type="text" id="cfgHeroTitleDomInput" class="config-input"
+              placeholder="Menú de domicilio"
+              style="width:100%;box-sizing:border-box;"
+              oninput="cfgSaveHeroText()">
+          </div>
+          <div style="margin-bottom:4px;">
+            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:5px;">Descripción (domicilio)</div>
+            <input type="text" id="cfgHeroTextDomInput" class="config-input"
+              placeholder="Toca un plato para agregarlo al pedido."
+              style="width:100%;box-sizing:border-box;"
+              oninput="cfgSaveHeroText()">
+          </div>
+          <div class="qr-note" style="margin-top:8px;">Los cambios se reflejan inmediatamente en el menú digital.</div>
+        </div>
+
+        <div style="height:1px;background:var(--borde);margin:4px 0;"></div>
+
         <!-- Imagen fondo aviso cerrado -->
         <div>
           <div class="form-label form-label-small" style="margin-bottom:8px;">🌙 Imagen de fondo — aviso "Cerrado"</div>
@@ -12617,6 +12656,38 @@ function cfgRenderDiseno() {
       heroEmpty.style.display = 'flex';
     }
   }
+
+  // ── Textos del hero ─────────────────
+  const tR = document.getElementById('cfgHeroTitleRestInput');
+  const dR = document.getElementById('cfgHeroTextRestInput');
+  const tD = document.getElementById('cfgHeroTitleDomInput');
+  const dD = document.getElementById('cfgHeroTextDomInput');
+  if (tR) tR.value = s.heroTitleRest || '';
+  if (dR) dR.value = s.heroTextRest  || '';
+  if (tD) tD.value = s.heroTitleDom  || '';
+  if (dD) dD.value = s.heroTextDom   || '';
+}
+
+function cfgSaveHeroText() {
+  const tR = document.getElementById('cfgHeroTitleRestInput');
+  const dR = document.getElementById('cfgHeroTextRestInput');
+  const tD = document.getElementById('cfgHeroTitleDomInput');
+  const dD = document.getElementById('cfgHeroTextDomInput');
+  try {
+    const raw = localStorage.getItem(MENU_SETTINGS_KEY);
+    const ms  = raw ? JSON.parse(raw) : {};
+    ms.heroTitleRest = tR ? tR.value : (ms.heroTitleRest || '');
+    ms.heroTextRest  = dR ? dR.value : (ms.heroTextRest  || '');
+    ms.heroTitleDom  = tD ? tD.value : (ms.heroTitleDom  || '');
+    ms.heroTextDom   = dD ? dD.value : (ms.heroTextDom   || '');
+    localStorage.setItem(MENU_SETTINGS_KEY, JSON.stringify(ms));
+    if (window.fbSync) {
+      fbSync('menuSettings/heroTitleRest', ms.heroTitleRest || null);
+      fbSync('menuSettings/heroTextRest',  ms.heroTextRest  || null);
+      fbSync('menuSettings/heroTitleDom',  ms.heroTitleDom  || null);
+      fbSync('menuSettings/heroTextDom',   ms.heroTextDom   || null);
+    }
+  } catch(e) { showToast('⚠️ No se pudo guardar'); }
 }
 
 function cfgMenuImgToDataUrl(file) {
