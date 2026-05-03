@@ -12359,18 +12359,8 @@ function feApplyHabilitado() {
     ? (esMaster ? 'Habilitada — toca para configurar' : 'Habilitada')
     : 'Deshabilitada';
 
-  // Abrir/cerrar el accordion usando la clase estándar del sistema
-  if (hab && visible) {
-    // Si está habilitada y visible: abrir automáticamente y cargar el panel
-    if (!acc.classList.contains('open')) {
-      acc.classList.add('open');
-      const inner = document.getElementById('feConfigInner');
-      if (inner && !inner.innerHTML.trim()) inner.innerHTML = feRenderConfigPanel();
-    }
-  } else {
-    // Si está deshabilitada: cerrar
-    acc.classList.remove('open');
-  }
+  // Si está deshabilitada: cerrar
+  if (!hab) acc.classList.remove('open');
 }
 
 // Abrir/cerrar el accordion FE al tocar el header
