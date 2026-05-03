@@ -215,12 +215,13 @@
   /* ── BANNER PUBLICITARIO ────────────────────────────────── */
   #adBannerWrap {
     display: none;
-    margin: 0 0 0 0;
+    margin: 0 0 14px 0;
     position: relative;
     cursor: pointer;
     overflow: hidden;
-    border-radius: 0;
+    border-radius: 16px;
     -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.18);
   }
   #adBannerWrap.visible { display: block; }
   #adBannerImg {
@@ -231,21 +232,7 @@
     object-position: center top;
   }
   #adBannerBadge {
-    position: absolute;
-    bottom: 10px;
-    right: 12px;
-    background: rgba(0,0,0,0.62);
-    backdrop-filter: blur(6px);
-    border: 1.5px solid rgba(255,255,255,0.25);
-    border-radius: 999px;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 800;
-    padding: 6px 14px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    pointer-events: none;
+    display: none !important;
   }
   #adBannerRipple {
     position: absolute;
@@ -1617,7 +1604,7 @@
     position: fixed;
     bottom: 24px;
     right: 20px;
-    z-index: 60;
+    z-index: 55;
     background: linear-gradient(135deg,#1a1a0a,#2d2208);
     color: #f5e6c0;
     border: 1.5px solid rgba(245,230,170,0.35);
@@ -1636,7 +1623,7 @@
   #btnMenuClasico:active { transform: scale(.94); }
   body.mode-restaurante #btnMenuClasico { display: flex; }
   body.show-cat-detail  #btnMenuClasico { display: none !important; }
-  #app.hidden #btnMenuClasico           { display: none !important; }
+  #app.hidden ~ #btnMenuClasico         { display: none !important; }
 
   /* ── VISTA MENÚ CLÁSICO ─────────────────────────────── */
   /* ── MENÚ CLÁSICO: variables de skin ───────────────────────── */
