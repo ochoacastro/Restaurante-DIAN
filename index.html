@@ -3843,7 +3843,7 @@
     <div class="cfg-acc-body">
       <div class="cfg-acc-inner">
         <div class="qr-url-row">
-          <input id="qrUrlInput" class="qr-url-input" type="url" placeholder="https://tudominio.com/menu.html" autocomplete="off" spellcheck="false">
+          <input id="qrUrlInput" class="qr-url-input" type="url" placeholder="https://ochoacastro.github.io/Restaurante-DIAN/menu.html" autocomplete="off" spellcheck="false" readonly title="URL permanente del menú — no modificar">
           <button class="btn-save-config" style="white-space:nowrap;padding:10px 14px;" onclick="cfgGenerateQR()">Generar</button>
         </div>
         <div id="qrCanvasWrap" class="qr-canvas-wrap" style="display:none;"></div>
@@ -12366,6 +12366,13 @@ function onCfgAccOpen(id) {
   if (id === 'cfgacc-precios')  { renderPreciosConfig(); }
   if (id === 'cfgacc-diseno')   { cfgRenderDiseno(); renderClosedBgPreview(); renderClassicBgPreview(); renderSkinGrid(); renderAdBannerPreview(); }
   if (id === 'cfgacc-restaurante') { renderHorarios(); renderFestivos(); }
+  // ── QR: siempre pre-llenar con la URL permanente y generar automáticamente ──
+  if (id === 'cfgacc-qr') {
+    const inp = document.getElementById('qrUrlInput');
+    if (inp) { inp.value = MENU_DIGITAL_URL; }
+    // Generar el QR automáticamente al abrir la sección
+    setTimeout(cfgGenerateQR, 80);
+  }
   if (id === 'cfgAccFE') {
     // Handled by toggleCfgAccFE()
   }
@@ -12881,8 +12888,17 @@ let _qrCurrentUrl = '';
   document.head.appendChild(s);
 })();
 
+// ══════════════════════════════════════════════════════════════════════
+// URL PERMANENTE DEL MENÚ DIGITAL — NO MODIFICAR
+// Esta constante es la dirección canónica del menú digital.
+// Se usa para el QR y se rellena automáticamente al abrir esa sección.
+// ══════════════════════════════════════════════════════════════════════
+const MENU_DIGITAL_URL = 'https://ochoacastro.github.io/Restaurante-DIAN/menu.html';
+
 function cfgGenerateQR() {
   const urlInput = document.getElementById('qrUrlInput');
+  // Siempre usar la URL permanente si el campo está vacío o tiene la URL anterior
+  if (!urlInput.value || urlInput.value.includes('github.io')) urlInput.value = MENU_DIGITAL_URL;
   const url = (urlInput?.value || '').trim();
   if (!url) { showToast('⚠️ Escribe la URL del menú primero'); urlInput?.focus(); return; }
   _qrCurrentUrl = url;
@@ -12924,8 +12940,7 @@ async function cfgQrShare() {
   cfgQrCopy();
 }
 
-// Prellenar URL con la del propio archivo
-(function(){ const inp = document.getElementById('qrUrlInput'); if (inp && !inp.value) inp.value = 'https://ochoacastro.github.io/Restaurante-los-helechos/menu.html'; })();
+// URL del menú: ver constante MENU_DIGITAL_URL arriba
 
 // ══════════════════════════════════════════════════════════════════════
 // MÓDULO FACTURA ELECTRÓNICA — CLIENTE
