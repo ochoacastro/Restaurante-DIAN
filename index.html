@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Mi Restaurante · POS</title>
-<meta name="theme-color" content="#FF441A">
+<meta name="theme-color" content="#0D0D0D">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -65,18 +65,19 @@
 </script>
 <style>
   :root {
-    --rappi:      #FF441A;
-    --rappi-dark: #E03310;
-    --rappi-soft: #FFF0ED;
-    --rappi-mid:  #FF7A5C;
-    --negro:      #1A1A1A;
-    --gris-osc:   #555555;
+    /* ── Paleta KDS: negro profundo + amarillo neón ─────── */
+    --rappi:      #FFD600;
+    --rappi-dark: #E6C000;
+    --rappi-soft: rgba(255,214,0,0.10);
+    --rappi-mid:  #FFE033;
+    --negro:      #F0F0F0;
+    --gris-osc:   #BBBBBB;
     --gris:       #888888;
-    --gris-cl:    #F0F0F0;
-    --fondo:      #F5F5F5;
-    --blanco:     #FFFFFF;
-    --rojo:       #D32F2F;
-    --verde-ok:   #2E7D32;
+    --gris-cl:    #2A2A2A;
+    --fondo:      #111111;
+    --blanco:     #1A1A1A;
+    --rojo:       #E53935;
+    --verde-ok:   #00C853;
     --tierra:     #8b6535;
     --tostado:    #c8a96e;
     --font-num:   'DM Mono', monospace;
@@ -84,26 +85,25 @@
     --r:    16px;
     --r-lg: 20px;
     --r-xl: 28px;
-    --sombra-s: 0 2px 8px rgba(0,0,0,0.08);
-    --sombra-m: 0 4px 16px rgba(0,0,0,0.12);
-    --sombra-l: 0 8px 32px rgba(0,0,0,0.16);
-    --borde:    #E0E0E0;
+    --sombra-s: 0 2px 8px rgba(0,0,0,0.5);
+    --sombra-m: 0 4px 16px rgba(0,0,0,0.6);
+    --sombra-l: 0 8px 32px rgba(0,0,0,0.7);
+    --borde:    #2A2A2A;
   }
 
-
-  /* ── DARK MODE ───────────────────────────────────────── */
+  /* ── El tema base YA es oscuro — dark mode refuerza levemente ── */
   body.dark {
     --negro:    #F0F0F0;
     --gris-osc: #BBBBBB;
     --gris:     #888888;
-    --gris-cl:  #2A2A2A;
-    --fondo:    #121212;
-    --blanco:   #1E1E1E;
-    --rappi-soft: rgba(255,68,26,0.12);
-    --borde:    #333333;
-    --sombra-s: 0 2px 8px rgba(0,0,0,0.4);
-    --sombra-m: 0 4px 16px rgba(0,0,0,0.5);
-    --sombra-l: 0 8px 32px rgba(0,0,0,0.6);
+    --gris-cl:  #222222;
+    --fondo:    #0D0D0D;
+    --blanco:   #161616;
+    --rappi-soft: rgba(255,214,0,0.10);
+    --borde:    #222222;
+    --sombra-s: 0 2px 8px rgba(0,0,0,0.6);
+    --sombra-m: 0 4px 16px rgba(0,0,0,0.7);
+    --sombra-l: 0 8px 32px rgba(0,0,0,0.8);
   }
 
   body { transition: background 0.25s ease, color 0.25s ease; }
@@ -116,10 +116,10 @@
     transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
   }
 
-  body.dark .header { background: #1E1E1E; border-bottom: 1px solid #2A2A2A; box-shadow: 0 1px 0 #2A2A2A; }
+  body.dark .header { background: #161616; border-bottom: 1px solid #2A2A2A; box-shadow: 0 1px 0 #2A2A2A; }
   body.dark .tabs   { background: #111111; border-bottom-color: #222; }
   body.dark .tab    { color: rgba(255,255,255,0.45); }
-  body.dark .tab.active { background: rgba(255,68,26,0.15); color: var(--rappi); }
+  body.dark .tab.active { background: rgba(255,214,0,0.12); color: var(--rappi); }
   body.dark .menu-item  { background: #1E1E1E; border-color: #2A2A2A; }
   body.dark .menu-item.in-cart { border-color: var(--rappi); background: var(--rappi); }
   body.dark .item-name  { color: #F0F0F0; }
@@ -129,18 +129,18 @@
   body.dark .config-section { background: #1E1E1E; border-color: #2A2A2A; }
   body.dark .config-section h4, body.dark .card-section-title { color: #DDD; }
   body.dark .hist-item  { background: #1E1E1E; border-color: #2A2A2A; }
-  body.dark .hist-item:active { background: rgba(255,68,26,0.12); }
+  body.dark .hist-item:active { background: rgba(255,214,0,0.08); }
   body.dark .hist-num   { color: #F0F0F0; }
   body.dark .cat-btn    { background: #1E1E1E; border-color: #2A2A2A; color: #CCC; box-shadow: none; }
   body.dark .cat-btn.active {
     background: var(--rappi);
-    color: #fff;
+    color: #111;
     border-color: var(--rappi);
-    box-shadow: 0 4px 14px rgba(255,68,26,0.55);
+    box-shadow: 0 4px 14px rgba(255,214,0,0.45);
     transform: scale(1.06);
   }
   body.dark .pago-btn   { background: #1E1E1E; border-color: #2A2A2A; color: #CCC; }
-  body.dark .pago-btn.active { background: rgba(255,68,26,0.15); border-color: var(--rappi); color: var(--rappi); }
+  body.dark .pago-btn.active { background: rgba(255,214,0,0.12); border-color: var(--rappi); color: var(--rappi); }
   body.dark .config-input, body.dark .form-input { background: #252525; border-color: #333; color: #F0F0F0; }
   body.dark .config-input:focus, body.dark .form-input:focus { background: #2A2A2A; border-color: var(--rappi); }
   body.dark .modal       { background: #1E1E1E; }
@@ -149,23 +149,23 @@
   body.dark .modal-btn-cancel { background: #2A2A2A; color: #CCC; }
   body.dark .btn-modal-close  { background: #2A2A2A; color: #CCC; }
   body.dark .pin-key     { background: #2A2A2A; border-color: #333; color: #F0F0F0; }
-  body.dark .pin-key:active { background: rgba(255,68,26,0.2); }
+  body.dark .pin-key:active { background: rgba(255,214,0,0.15); }
   body.dark .user-card   { background: #252525; border-color: #333; }
   body.dark .role-master { background: rgba(123,31,162,0.2); color: #CE93D8; border-color: rgba(123,31,162,0.4); }
-  body.dark .user-card:active, body.dark .user-card.selected { background: rgba(255,68,26,0.15); border-color: var(--rappi); }
+  body.dark .user-card:active, body.dark .user-card.selected { background: rgba(255,214,0,0.12); border-color: var(--rappi); }
   body.dark .user-name   { color: #F0F0F0; }
-  body.dark #loginScreen { background: #121212; }
+  body.dark #loginScreen { background: #0D0D0D; }
   body.dark .login-brand { color: #F0F0F0; }
   body.dark .login-sub   { color: #888; }
   body.dark .login-line  { background: linear-gradient(90deg, transparent, #333, transparent); }
-  body.dark .factura-chip { background: rgba(255,68,26,0.15); border-color: rgba(255,68,26,0.3); }
+  body.dark .factura-chip { background: rgba(255,214,0,0.10); border-color: rgba(255,214,0,0.25); }
   body.dark .header-title { color: #F0F0F0; }
   body.dark .header-fecha { color: #CCCCCC; }
   body.dark .consecutivo-display { background: #252525; border-color: #333; }
-  body.dark .printer-saved { background: rgba(255,68,26,0.1); border-color: rgba(255,68,26,0.25); }
+  body.dark .printer-saved { background: rgba(255,214,0,0.08); border-color: rgba(255,214,0,0.2); }
   body.dark .ticket-preview { background: #1E1E1E; border-color: #2A2A2A; color: #CCC; }
   body.dark .device-item { background: #252525; border-color: #333; }
-  body.dark .device-item:active { background: rgba(255,68,26,0.15); }
+  body.dark .device-item:active { background: rgba(255,214,0,0.10); }
   body.dark .seccion-label { color: #DDD; }
   body.dark .seccion-label::after { background: linear-gradient(90deg, #333, transparent); }
   body.dark .qty-btn, body.dark .menu-qty-btn:not(.plus) { border-color: #444; background: #252525; color: #DDD; }
@@ -177,7 +177,7 @@
   body.dark .user-mgmt-item { border-bottom-color: #2A2A2A; }
   body.dark .user-mgmt-name { color: #F0F0F0; }
   body.dark .role-opt { background: #252525; border-color: #333; color: #CCC; }
-  body.dark .role-opt.active-admin  { background: rgba(255,68,26,0.18); border-color: var(--rappi); color: var(--rappi); }
+  body.dark .role-opt.active-admin  { background: rgba(255,214,0,0.12); border-color: var(--rappi); color: var(--rappi); }
   body.dark .role-opt.active-mesero { background: rgba(46,125,50,0.2);  border-color: #4CAF50; color: #4CAF50; }
   body.dark .role-opt.active-cocina  { background: rgba(255,152,0,0.18); border-color: #FF9800; color: #FF9800; }
   body.dark .role-opt.active-cajero  { background: rgba(21,101,192,0.2);  border-color: #1976D2; color: #64B5F6; }
@@ -195,7 +195,7 @@
   body.dark .printer-status-btn { background: #252525; border-color: #333; }
   body.dark .toast { background: #333; border-color: #444; }
   body.dark { --fe-bg: #0D1E2E; --fe-text: #E8F4FF; --fe-sub: #9DC8EE; }
-  body.dark .btn-scan { background: rgba(255,68,26,0.1); }
+  body.dark .btn-scan { background: rgba(255,214,0,0.08); }
   body.dark .offline-bar { background: #8B0000; }
   body.dark .btn-ver-carrito {
     background: linear-gradient(135deg, #FFFFFF 0%, #F0F0F0 100%);
@@ -242,7 +242,7 @@
   }
   body.dark .stats-barra-track { background: #2A2A2A; }
   .stats-barra-fill {
-    height: 100%; background: linear-gradient(90deg, #FF441A, #FF7A5C);
+    height: 100%; background: linear-gradient(90deg, #FFD600, #FFE033);
     border-radius: 6px; transition: width 0.4s ease;
     display: flex; align-items: center; padding-left: 6px;
   }
@@ -355,12 +355,13 @@
   }
   .header-icon {
     width: 36px; height: 36px;
-    background: var(--rappi);
+    background: #111;
     border-radius: 10px;
+    border: 2px solid #FFD600;
     display: flex; align-items: center; justify-content: center;
     font-size: 18px;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(255,68,26,0.35);
+    box-shadow: 0 2px 8px rgba(255,214,0,0.20);
   }
   .header-title {
     font-family: 'Inter', sans-serif;
@@ -384,7 +385,7 @@
     align-items: center;
     gap: 4px;
     background: var(--rappi-soft);
-    border: 1.5px solid rgba(255,68,26,0.2);
+    border: 1.5px solid rgba(255,214,0,0.15);
     border-radius: var(--r-sm);
     padding: 6px 12px;
     white-space: nowrap;
@@ -432,7 +433,7 @@
     -webkit-tap-highlight-color: transparent; user-select: none;
   }
   .printer-status-btn:active { background: #EBEBEB; }
-  .printer-status-btn.connected { border-color: rgba(255,68,26,0.4); background: var(--rappi-soft); }
+  .printer-status-btn.connected { border-color: rgba(255,214,0,0.35); background: var(--rappi-soft); }
   .printer-status-icon { font-size: 15px; line-height: 1; transition: transform 0.2s; }
   .printer-status-btn.connecting .printer-status-icon { animation: printerPulse 0.8s ease-in-out infinite alternate; }
   @keyframes printerPulse {
@@ -468,7 +469,7 @@
   .tab.active {
     color: var(--rappi);
     border-bottom-color: var(--rappi);
-    background: rgba(255,68,26,0.12);
+    background: rgba(255,214,0,0.08);
   }
   .tab-icon { font-size: 20px; display: block; margin-bottom: 2px; }
 
@@ -507,7 +508,8 @@
   #sidebarPanel {
     position: absolute; top: 0; left: 0; bottom: 0;
     width: 75%; max-width: 300px;
-    background: var(--rappi);
+    background: #111111;
+    border-right: 2px solid #2A2A2A;
     display: flex; flex-direction: column;
     transform: translateX(-100%);
     transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
@@ -518,12 +520,12 @@
   .sidebar-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 52px 20px 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 1px solid #2A2A2A;
   }
   .sidebar-close {
     width: 36px; height: 36px; border-radius: 50%;
-    background: rgba(255,255,255,0.15); border: none;
-    color: white; font-size: 18px; cursor: pointer;
+    background: #2A2A2A; border: none;
+    color: #F0F0F0; font-size: 18px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     touch-action: manipulation; -webkit-tap-highlight-color: transparent;
     flex-shrink: 0;
@@ -534,33 +536,33 @@
   }
   .sidebar-avatar {
     width: 44px; height: 44px; border-radius: 50%;
-    background: rgba(255,255,255,0.25);
+    background: #2A2A2A;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 800; color: white;
-    flex-shrink: 0; border: 2px solid rgba(255,255,255,0.4);
+    font-size: 18px; font-weight: 800; color: var(--rappi);
+    flex-shrink: 0; border: 2px solid #FFD600;
   }
   .sidebar-username {
-    font-size: 15px; font-weight: 800; color: white;
+    font-size: 15px; font-weight: 800; color: #FFD600;
     letter-spacing: -0.2px;
   }
   .sidebar-role {
-    font-size: 11px; color: rgba(255,255,255,0.7);
+    font-size: 11px; color: #888;
     font-weight: 500; margin-top: 1px; text-transform: capitalize;
   }
   .sidebar-nav { padding: 12px 0; flex: 1; }
   .sidebar-item {
     display: flex; align-items: center; gap: 16px;
     padding: 16px 24px;
-    color: white; font-size: 16px; font-weight: 600;
+    color: #F0F0F0; font-size: 16px; font-weight: 600;
     cursor: pointer; border: none; background: transparent;
     width: 100%; text-align: left; font-family: inherit;
     touch-action: manipulation; -webkit-tap-highlight-color: transparent;
     transition: background 0.15s;
   }
-  .sidebar-item:active { background: rgba(255,255,255,0.12); }
+  .sidebar-item:active { background: rgba(255,214,0,0.10); }
   .sidebar-item-icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
-  .sidebar-divider { height: 1px; background: rgba(255,255,255,0.15); margin: 6px 24px; }
-  .sidebar-item.danger { color: rgba(255,255,255,0.7); }
+  .sidebar-divider { height: 1px; background: #2A2A2A; margin: 6px 24px; }
+  .sidebar-item.danger { color: #888; }
 
   /* Ocultar items según rol */
   body.rol-mesero .sidebar-admin-only { display: none !important; }
@@ -873,7 +875,7 @@
     background: var(--rappi);
     color: var(--blanco);
     border-color: var(--rappi);
-    box-shadow: 0 4px 12px rgba(255,68,26,0.35);
+    box-shadow: 0 4px 12px rgba(255,214,0,0.30);
     transform: scale(1.06);
   }
   /* Estado activo cuando hay búsqueda en curso */
@@ -904,23 +906,23 @@
   .menu-item.in-cart {
     border-color: var(--rappi);
     background: var(--rappi);
-    box-shadow: 0 4px 16px rgba(255,68,26,0.35);
+    box-shadow: 0 4px 16px rgba(255,214,0,0.30);
   }
-  .menu-item.in-cart .item-name  { color: #fff; }
-  .menu-item.in-cart .item-cat   { color: rgba(255,255,255,0.75); }
-  .menu-item.in-cart .item-price { color: #fff; }
-  .menu-item.in-cart .edit-price-btn { color: #fff; opacity: 0.6; }
-  .menu-item.in-cart .menu-qty-num { color: #fff; }
+  .menu-item.in-cart .item-name  { color: #111; }
+  .menu-item.in-cart .item-cat   { color: rgba(0,0,0,0.55); }
+  .menu-item.in-cart .item-price { color: #111; }
+  .menu-item.in-cart .edit-price-btn { color: #111; opacity: 0.6; }
+  .menu-item.in-cart .menu-qty-num { color: #111; }
   .menu-item.in-cart .menu-qty-btn:not(.plus) {
-    background: rgba(255,255,255,0.2);
-    border-color: rgba(255,255,255,0.4);
-    color: #fff;
+    background: rgba(0,0,0,0.12);
+    border-color: rgba(0,0,0,0.25);
+    color: #111;
   }
   .menu-item.in-cart .menu-qty-btn.plus {
-    background: #fff;
-    border-color: #fff;
+    background: #111;
+    border-color: #111;
     color: var(--rappi);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
 
   /* ── DESPLEGABLE DE UNIDADES EN MENÚ ─────────────────── */
@@ -1004,7 +1006,7 @@
   .menu-qty-btn.plus {
     background: var(--rappi); color: var(--blanco);
     border-color: var(--rappi);
-    box-shadow: 0 3px 10px rgba(255,68,26,0.4);
+    box-shadow: 0 3px 10px rgba(255,214,0,0.35);
   }
   .menu-qty-btn:active { opacity: 0.7; transform: scale(0.92); }
   .menu-qty-num {
@@ -1015,7 +1017,7 @@
 
   /* ── BADGE ───────────────────────────────────────────── */
   .badge {
-    background: var(--rappi); color: white; border-radius: 50%;
+    background: var(--rappi); color: #111; border-radius: 50%;
     width: 17px; height: 17px; font-size: 10px; font-weight: 700;
     display: inline-flex; align-items: center; justify-content: center;
     margin-left: 3px; vertical-align: middle;
@@ -1044,7 +1046,7 @@
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; font-weight: 700; transition: all 0.15s; line-height: 1;
   }
-  .qty-btn:active { background: var(--rappi); color: white; border-color: var(--rappi); }
+  .qty-btn:active { background: var(--rappi); color: #111; border-color: var(--rappi); }
   .qty-num { font-size: 20px; font-weight: 800; min-width: 28px; text-align: center; font-family: var(--font-num); }
   .cart-subtotal {
     font-size: 17px; font-weight: 800; color: var(--rappi);
@@ -1085,7 +1087,7 @@
   .pago-btn.active {
     background: var(--rappi-soft);
     color: var(--rappi); border-color: var(--rappi);
-    box-shadow: 0 3px 10px rgba(255,68,26,0.2);
+    box-shadow: 0 3px 10px rgba(255,214,0,0.15);
   }
   .pago-btn span { display: block; font-size: 22px; margin-bottom: 3px; }
 
@@ -1385,7 +1387,7 @@
     color: var(--rappi); font-size: 14px; font-weight: 700;
     cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.18s;
   }
-  .btn-scan:active { background: rgba(255,68,26,0.15); }
+  .btn-scan:active { background: rgba(255,214,0,0.10); }
 
   /* ── CONFIG ──────────────────────────────────────────── */
   .config-section {
@@ -1417,17 +1419,17 @@
   }
   .config-input:focus {
     border-color: var(--rappi);
-    box-shadow: 0 0 0 3px rgba(255,68,26,0.12);
+    box-shadow: 0 0 0 3px rgba(255,214,0,0.08);
     background: var(--blanco);
   }
   .btn-save-config {
     width: 100%; padding: 13px;
-    background: var(--rappi); color: white;
+    background: var(--rappi); color: #111;
     border: none; border-radius: var(--r-sm);
     font-size: 15px; font-weight: 700;
     font-family: 'Inter', sans-serif; cursor: pointer;
     transition: all 0.2s; letter-spacing: -0.2px;
-    box-shadow: 0 4px 14px rgba(255,68,26,0.4);
+    box-shadow: 0 4px 14px rgba(255,214,0,0.35);
   }
   .btn-save-config:active { opacity: 0.85; transform: scale(0.99); }
   .consecutivo-display {
@@ -1458,7 +1460,7 @@
   }
   .precio-input:focus {
     border-color: var(--rappi);
-    box-shadow: 0 0 0 3px rgba(255,68,26,0.12); background: var(--blanco);
+    box-shadow: 0 0 0 3px rgba(255,214,0,0.08); background: var(--blanco);
   }
 
   /* ── MODAL TIPO ORDEN ───────────────────────────────────── */
@@ -1477,7 +1479,7 @@
   .orden-tipo-card .ot-sub   { font-size: 11px; color: var(--gris); font-weight: 500; text-align:center; }
   body.dark .orden-tipo-card { background: #1E1E1E; border-color: #333; }
   body.dark .orden-tipo-card.mesa { background: rgba(123,31,162,0.15); border-color: #7B1FA2; }
-  body.dark .orden-tipo-card.dom  { background: rgba(255,68,26,0.12); border-color: var(--rappi); }
+  body.dark .orden-tipo-card.dom  { background: rgba(255,214,0,0.08); border-color: var(--rappi); }
 
   /* ── ÓRDENES GUARDADAS (MESA) ───────────────────────────── */
   .ordenes-guardadas-wrap { margin-top: 12px; }
@@ -1548,7 +1550,7 @@
     font-weight: 700;
     color: var(--rappi);
     background: var(--rappi-soft);
-    border: 1.5px solid rgba(255,68,26,0.2);
+    border: 1.5px solid rgba(255,214,0,0.15);
     border-radius: 999px;
     padding: 3px 10px;
     animation: arrowPulse 1.8s ease-in-out 3;
@@ -1802,7 +1804,7 @@
   }
   .precio-modal-input:focus {
     border-color: var(--rappi);
-    box-shadow: 0 0 0 3px rgba(255,68,26,0.12); background: var(--blanco);
+    box-shadow: 0 0 0 3px rgba(255,214,0,0.08); background: var(--blanco);
   }
   .modal-btns { display: flex; gap: 10px; }
   .modal-btn-cancel {
@@ -1816,7 +1818,7 @@
     border: none; border-radius: var(--r-sm);
     font-size: 14px; font-weight: 700; cursor: pointer;
     font-family: 'Inter', sans-serif; color: white;
-    box-shadow: 0 4px 14px rgba(255,68,26,0.4);
+    box-shadow: 0 4px 14px rgba(255,214,0,0.35);
   }
 
   /* ── OBS INPUT (carrito: cliente, dirección, observaciones) ─── */
@@ -1830,7 +1832,7 @@
   }
   .obs-input:focus {
     border-color: var(--rappi);
-    box-shadow: 0 0 0 3px rgba(255,68,26,0.12);
+    box-shadow: 0 0 0 3px rgba(255,214,0,0.08);
     background: var(--blanco);
   }
   body.dark .obs-input {
@@ -1843,14 +1845,14 @@
   /* ── IMPRESORA GUARDADA ──────────────────────────────── */
   .printer-saved {
     display: flex; align-items: center; gap: 12px;
-    background: var(--rappi-soft); border: 1.5px solid rgba(255,68,26,0.25);
+    background: var(--rappi-soft); border: 1.5px solid rgba(255,214,0,0.20);
     border-radius: var(--r-sm); padding: 12px 14px; margin-bottom: 10px;
   }
   .printer-saved-info { flex: 1; }
   .printer-saved-name { font-size: 14px; font-weight: 700; color: var(--rappi); }
   .printer-saved-sub { font-size: 11px; color: var(--gris); margin-top: 2px; }
   .printer-connect-btn {
-    background: var(--rappi); color: white; border: none;
+    background: var(--rappi); color: #111; border: none;
     border-radius: 8px; padding: 8px 14px; font-size: 13px;
     font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif;
     white-space: nowrap; transition: opacity 0.18s;
@@ -1913,7 +1915,7 @@
     color: var(--rappi); font-weight: 700; font-size: 13px;
     cursor: pointer; transition: all 0.18s; font-family: 'Inter', sans-serif;
   }
-  .logo-upload-btn:active { background: rgba(255,68,26,0.15); }
+  .logo-upload-btn:active { background: rgba(255,214,0,0.10); }
 
   @keyframes masterFadeIn {
     from { opacity: 0; transform: translateY(-8px) scale(0.97); }
@@ -1947,20 +1949,20 @@
   #loginScreen::before {
     content: ''; position: absolute;
     width: 400px; height: 400px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,68,26,0.08), transparent 70%);
+    background: radial-gradient(circle, rgba(255,214,0,0.06), transparent 70%);
     top: -120px; right: -120px; pointer-events: none;
   }
   #loginScreen::after {
     content: ''; position: absolute;
     width: 300px; height: 300px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,68,26,0.05), transparent 70%);
+    background: radial-gradient(circle, rgba(255,214,0,0.04), transparent 70%);
     bottom: -80px; left: -80px; pointer-events: none;
   }
   .login-logo {
     width: 72px; height: 72px; background: var(--rappi);
     border-radius: 22px; display: flex; align-items: center;
     justify-content: center; font-size: 36px; margin-bottom: 20px;
-    box-shadow: 0 10px 32px rgba(255,68,26,0.4); flex-shrink: 0;
+    box-shadow: 0 10px 32px rgba(255,214,0,0.35); flex-shrink: 0;
   }
   .login-brand {
     font-family: 'Inter', sans-serif; font-size: 28px;
@@ -2004,7 +2006,7 @@
   .login-rol-card.rol-admin  { border-left: 4px solid var(--rappi); }
   .login-rol-card.rol-mesero { border-left: 4px solid var(--verde-ok); }
   .login-rol-card.rol-cocina { border-left: 4px solid #FF9800; }
-  .login-rol-card.rol-admin:active  { background: rgba(255,68,26,0.06); border-color: var(--rappi); }
+  .login-rol-card.rol-admin:active  { background: rgba(255,214,0,0.05); border-color: var(--rappi); }
   .login-rol-card.rol-mesero:active { background: rgba(46,125,50,0.06); border-color: var(--verde-ok); }
   .login-rol-card.rol-cocina:active { background: rgba(255,152,0,0.06); border-color: #FF9800; }
   .login-rol-icon {
@@ -2012,7 +2014,7 @@
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
-  .rol-admin  .login-rol-icon { background: rgba(255,68,26,0.1); }
+  .rol-admin  .login-rol-icon { background: rgba(255,214,0,0.08); }
   .rol-mesero .login-rol-icon { background: rgba(46,125,50,0.1); }
   .rol-cocina .login-rol-icon { background: rgba(255,152,0,0.1); }
   .login-rol-info { flex: 1; }
@@ -2050,7 +2052,7 @@
     padding: 2px 9px; border-radius: 50px;
     font-weight: 700; letter-spacing: 0.3px; margin-top: 3px;
   }
-  .role-admin  { background: rgba(255,68,26,0.12); color: var(--rappi); }
+  .role-admin  { background: rgba(255,214,0,0.08); color: var(--rappi); }
   .role-mesero { background: rgba(46,125,50,0.12); color: var(--verde-ok); }
   .role-cocina { background: rgba(255,152,0,0.12); color: #FF9800; border: 1px solid rgba(255,152,0,0.3); }
   .role-cajero { background: rgba(21,101,192,0.1); color: #1565C0; border: 1px solid rgba(21,101,192,0.3); }
@@ -2087,7 +2089,7 @@
     width: 14px; height: 14px; border-radius: 50%;
     border: 2px solid #DDDDDD; background: transparent; transition: all 0.15s;
   }
-  .pin-dot.filled { background: var(--rappi); border-color: var(--rappi); box-shadow: 0 0 10px rgba(255,68,26,0.4); }
+  .pin-dot.filled { background: var(--rappi); border-color: var(--rappi); box-shadow: 0 0 10px rgba(255,214,0,0.35); }
   .pin-dot.error  { background: var(--rojo); border-color: var(--rojo); }
   .pin-pad {
     display: grid; grid-template-columns: repeat(3, 1fr);
@@ -2105,7 +2107,7 @@
   .pin-key.del { font-size: 20px; opacity: 0.6; }
   .pin-key.enter {
     background: var(--rappi); border-color: var(--rappi);
-    color: white; box-shadow: 0 4px 14px rgba(255,68,26,0.4);
+    color: #111; box-shadow: 0 4px 14px rgba(255,214,0,0.35);
     transition: all 0.2s;
   }
   .pin-key.enter:active { opacity: 0.85; transform: scale(0.95); }
@@ -2182,7 +2184,7 @@
     outline: none; transition: all 0.2s; background: var(--fondo); font-weight: 500;
   }
   .form-input:focus {
-    border-color: var(--rappi); box-shadow: 0 0 0 3px rgba(255,68,26,0.12); background: var(--blanco);
+    border-color: var(--rappi); box-shadow: 0 0 0 3px rgba(255,214,0,0.08); background: var(--blanco);
   }
   .role-selector { display: flex; gap: 8px; }
   .role-opt {
@@ -2195,7 +2197,7 @@
     position: relative;
   }
   .role-opt:active { transform: scale(0.96); }
-  .role-opt.active-admin  { background: var(--rappi-soft); border-color: var(--rappi); color: var(--rappi); box-shadow: 0 2px 10px rgba(255,68,26,0.25); }
+  .role-opt.active-admin  { background: var(--rappi-soft); border-color: var(--rappi); color: var(--rappi); box-shadow: 0 2px 10px rgba(255,214,0,0.20); }
   .role-opt.active-mesero { background: rgba(46,125,50,0.1); border-color: var(--verde-ok); color: var(--verde-ok); box-shadow: 0 2px 10px rgba(46,125,50,0.2); }
   .role-opt.active-cocina { background: rgba(255,152,0,0.1); border-color: #FF9800; color: #FF9800; box-shadow: 0 2px 10px rgba(255,152,0,0.2); }
   .color-picker-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -2245,7 +2247,7 @@
   .pwa-banner-text strong { font-size: 14px; font-weight: 700; display: block; }
   .pwa-banner-text span   { font-size: 11px; opacity: 0.7; }
   .pwa-banner-btn {
-    background: var(--rappi); border: none; color: white;
+    background: var(--rappi); border: none; color: #111;
     border-radius: 8px; padding: 9px 16px; font-size: 12px;
     font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif;
     white-space: nowrap; flex-shrink: 0;
@@ -2291,7 +2293,7 @@
     background: var(--rappi-soft); border-color: var(--rappi); color: var(--rappi);
   }
   body.dark .tipo-orden-btn { background: #252525; border-color: #333; color: #CCC; }
-  body.dark .tipo-orden-btn.active { background: rgba(255,68,26,0.15); border-color: var(--rappi); color: var(--rappi); }
+  body.dark .tipo-orden-btn.active { background: rgba(255,214,0,0.10); border-color: var(--rappi); color: var(--rappi); }
 
   /* ── DESCUENTO ───────────────────────────────────────── */
   .descuento-row {
@@ -2308,7 +2310,7 @@
     background: var(--rappi-soft); border-color: var(--rappi); color: var(--rappi);
   }
   body.dark .descuento-tipo-btn { background: #252525; border-color: #333; color: #CCC; }
-  body.dark .descuento-tipo-btn.active { background: rgba(255,68,26,0.15); border-color: var(--rappi); color: var(--rappi); }
+  body.dark .descuento-tipo-btn.active { background: rgba(255,214,0,0.10); border-color: var(--rappi); color: var(--rappi); }
 
   /* ── CONTADOR SESIÓN ─────────────────────────────────── */
   .sesion-stats {
@@ -2335,7 +2337,7 @@
     font-weight: 600; outline: none; background: var(--fondo); color: var(--negro);
     transition: all 0.2s;
   }
-  .cierre-fecha-sel select:focus { border-color: var(--rappi); box-shadow: 0 0 0 3px rgba(255,68,26,0.12); }
+  .cierre-fecha-sel select:focus { border-color: var(--rappi); box-shadow: 0 0 0 3px rgba(255,214,0,0.08); }
   body.dark .cierre-fecha-sel select { background: #252525; border-color: #333; color: #F0F0F0; }
 
   /* ── FACTURA ELECTRÓNICA ─────────────────────────────── */
@@ -2409,7 +2411,7 @@
     position: relative; width: 100%; border-radius: 16px; overflow: hidden;
   }
   .edit-photo-wrap:not(.has-photo) {
-    border: 2px dashed var(--rappi); background: rgba(255,68,26,.06);
+    border: 2px dashed var(--rappi); background: rgba(255,214,0,.06);
   }
   .edit-photo-preview { width: 100%; display: none; }
   .edit-photo-preview img {
@@ -2451,7 +2453,7 @@
   /* FIX: quitar overflow:hidden cuando está abierto — si no, el file picker no se puede abrir en iOS/Android */
   .cfg-acc.open .cfg-acc-body { max-height: 9999px; overflow: visible; }
   .cfg-acc-inner { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; }
-  .cfg-acc.open .cfg-acc-header { background: rgba(255,68,26,.06); }
+  .cfg-acc.open .cfg-acc-header { background: rgba(255,214,0,.06); }
   .cfg-acc.open .cfg-acc-title { color: var(--rappi); }
   .cfg-acc.open .cfg-acc-arrow { color: var(--rappi); }
 
@@ -2484,7 +2486,7 @@
   .qr-canvas-wrap { display: flex; justify-content: center; margin: 12px 0 8px; }
   .qr-link-box { display: flex; align-items: center; gap: 8px; background: var(--blanco); border: 1.5px solid var(--borde); border-radius: 12px; padding: 10px 12px; word-break: break-all; }
   .qr-link-text { flex: 1; font-size: 12px; color: var(--gris-osc); word-break: break-all; line-height: 1.4; }
-  .qr-copy-btn { flex-shrink: 0; border: none; background: var(--rappi); color: #fff; border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 900; font-family: inherit; cursor: pointer; white-space: nowrap; }
+  .qr-copy-btn { flex-shrink: 0; border: none; background: var(--rappi); color: #111; border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 900; font-family: inherit; cursor: pointer; white-space: nowrap; }
   .qr-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   .qr-note { font-size: 11px; color: var(--gris); margin-top: 8px; line-height: 1.4; }
   .qr-action-btn { border: none; border-radius: 12px; padding: 12px 14px; font-weight: 900; font-size: 13px; background: var(--fondo); color: var(--negro); border: 1.5px solid var(--borde); cursor: pointer; font-family: inherit; }
@@ -2505,7 +2507,7 @@
   .skin-card:active { transform: scale(.97); }
   .skin-card.active {
     border-color: var(--rappi);
-    box-shadow: 0 0 0 3px rgba(255,68,26,.18);
+    box-shadow: 0 0 0 3px rgba(255,214,0,.18);
   }
   .skin-card-check {
     position: absolute; top: 7px; right: 8px;
@@ -2598,28 +2600,28 @@
   .recibo-card:active { transform: scale(0.98); }
   .recibo-card.urgente { border-color: var(--rappi); background: var(--rappi-soft); }
   body.dark .recibo-card { background: #1E1E1E; border-color: #2A2A2A; }
-  body.dark .recibo-card.urgente { border-color: var(--rappi); background: rgba(255,68,26,0.1); }
+  body.dark .recibo-card.urgente { border-color: var(--rappi); background: rgba(255,214,0,0.08); }
   .recibo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .recibo-mesa { font-size: 16px; font-weight: 900; color: var(--negro); }
   .recibo-total { font-size: 16px; font-weight: 900; color: var(--rappi); font-family: var(--font-num); }
   .recibo-meta { font-size: 11px; color: var(--gris); font-weight: 600; }
   .recibo-items-preview { font-size: 12px; color: var(--gris-osc); margin-top: 4px; }
-  .badge-cajero { background: var(--rappi); color: #fff; border-radius: 50%; min-width: 18px; height: 18px; font-size: 10px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; padding: 0 3px; }
+  .badge-cajero { background: var(--rappi); color: #111; border-radius: 50%; min-width: 18px; height: 18px; font-size: 10px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; padding: 0 3px; }
 
   /* ── PAGO COMBINADO ── */
   .pago-combinado-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
   .pago-combinado-item { background: var(--fondo); border: 1.5px solid var(--borde); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 0; }
   .pago-combinado-item.activo { border-color: var(--rappi); background: var(--rappi-soft); }
   body.dark .pago-combinado-item { background: #252525; border-color: #333; }
-  body.dark .pago-combinado-item.activo { border-color: var(--rappi); background: rgba(255,68,26,0.1); }
+  body.dark .pago-combinado-item.activo { border-color: var(--rappi); background: rgba(255,214,0,0.08); }
   .cob-exacto-btn { border: 1.5px solid var(--rappi); background: transparent; color: var(--rappi); border-radius: 8px; padding: 5px 9px; font-size: 11px; font-weight: 800; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; }
-  .cob-exacto-btn:active { background: var(--rappi); color: #fff; }
+  .cob-exacto-btn:active { background: var(--rappi); color: #111; }
   body.dark .cob-exacto-btn { border-color: var(--rappi); color: var(--rappi); }
   .cob-chips-row { display: none; flex-wrap: wrap; gap: 6px; padding-top: 8px; margin-top: 4px; border-top: 1px solid rgba(0,0,0,0.06); }
   body.dark .cob-chips-row { border-top-color: rgba(255,255,255,0.06); }
   .cob-chip { border: 1.5px solid var(--borde); background: var(--blanco); color: var(--negro); border-radius: 20px; padding: 5px 10px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font-num); transition: all 0.15s; }
-  .cob-chip:active { background: var(--rappi); color: #fff; border-color: var(--rappi); transform: scale(0.96); }
-  .cob-chip-exacto { background: rgba(255,68,26,0.08); border-color: rgba(255,68,26,0.3); color: var(--rappi); }
+  .cob-chip:active { background: var(--rappi); color: #111; border-color: var(--rappi); transform: scale(0.96); }
+  .cob-chip-exacto { background: rgba(255,214,0,0.06); border-color: rgba(255,214,0,0.25); color: var(--rappi); }
   body.dark .cob-chip { background: #1A1A1A; border-color: #444; color: #EEE; }
   .pago-comb-label { flex: 1; font-size: 13px; font-weight: 700; color: var(--negro); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pago-comb-input { width: 110px; padding: 8px 10px; border: 1.5px solid var(--borde); border-radius: 10px; font-size: 14px; font-family: var(--font-num); font-weight: 700; text-align: right; background: var(--blanco); color: var(--negro); outline: none; flex-shrink: 0; }
@@ -2685,7 +2687,7 @@
     </div>
     <!-- PASO 2: Datos -->
     <div id="nuevaOrdenPaso2" style="display:none;">
-      <div id="nuevaOrdenTipoIndicador" style="display:flex;align-items:center;gap:8px;background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.2);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:13px;font-weight:700;color:var(--rappi);cursor:pointer;" onclick="volverPaso1NuevaOrden()">
+      <div id="nuevaOrdenTipoIndicador" style="display:flex;align-items:center;gap:8px;background:var(--rappi-soft);border:1.5px solid rgba(255,214,0,0.15);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:13px;font-weight:700;color:var(--rappi);cursor:pointer;" onclick="volverPaso1NuevaOrden()">
         <span id="nuevaOrdenTipoIcon">🍽️</span>
         <span id="nuevaOrdenTipoLabel">Restaurante</span>
         <span style="margin-left:auto;font-size:11px;opacity:0.7;">✏️ Cambiar</span>
@@ -2707,7 +2709,7 @@
         <!-- fix #11: nuevaOrdenTelefonoWrap eliminado — era código muerto.
              El teléfono en domicilio se captura reutilizando #nuevaOrdenCliente. -->
       </div>
-      <div id="nuevaOrdenError" style="display:none;background:#FFF0ED;border:1.5px solid #FF441A;border-radius:12px;padding:11px 14px;margin-bottom:12px;font-size:13px;font-weight:600;color:#C0340E;line-height:1.45;"></div>
+      <div id="nuevaOrdenError" style="display:none;background:#1A1A0D;border:1.5px solid #FFD600;border-radius:12px;padding:11px 14px;margin-bottom:12px;font-size:13px;font-weight:600;color:#C0340E;line-height:1.45;"></div>
       <div class="nueva-orden-actions">
         <button class="btn-cancelar-orden" onclick="cerrarModalNuevaOrden()">Cancelar</button>
         <button class="btn-confirmar-orden" onclick="confirmarNuevaOrden()">✅ Crear orden</button>
@@ -2728,7 +2730,7 @@
       Este usuario ya está activo en otro dispositivo.
     </div>
     <button onclick="forzarAccesoSesion()"
-      style="width:100%;padding:14px;background:linear-gradient(135deg,var(--rappi),var(--rappi-dark));color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;">
+      style="width:100%;padding:14px;background:linear-gradient(135deg,var(--rappi),var(--rappi-dark));color:#111;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;">
       🔓 Soy yo — Forzar acceso
     </button>
     <button onclick="document.getElementById('modalSesionOcupada').style.display='none';volverSelectorUsuarios();"
@@ -2768,14 +2770,14 @@
       📌 Ve a <strong>console.firebase.google.com</strong> → tu proyecto → ⚙️ Configuración → Aplicaciones web → Mostrar config
     </p>
     <button onclick="guardarConfigFirebase()"
-      style="width:100%;margin-top:18px;padding:14px;background:linear-gradient(135deg,#FF441A,#E03310);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">
+      style="width:100%;margin-top:18px;padding:14px;background:linear-gradient(135deg,#FFD600,#E6C000);color:#111;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">
       ✅ Conectar Firebase
     </button>
     <button onclick="document.getElementById('modalFirebaseSetup').style.display='none';"
       style="width:100%;margin-top:10px;padding:12px;background:var(--gris-cl);color:var(--gris-osc);border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">
       Cancelar
     </button>
-    <p id="fbSetupError" style="color:#E03310;font-size:12px;text-align:center;margin-top:10px;display:none;"></p>
+    <p id="fbSetupError" style="color:#E6C000;font-size:12px;text-align:center;margin-top:10px;display:none;"></p>
   </div>
 </div>
 
@@ -2789,7 +2791,7 @@
   <div class="login-brand" id="loginBrandText">Mi Restaurante</div>
   <div class="login-sub" id="loginSubText">Sistema POS</div>
   <!-- Banner de primer uso -->
-  <div id="firstRunBanner" style="display:none;margin:10px 20px 0;padding:10px 14px;background:rgba(255,68,26,0.1);border:1.5px solid rgba(255,68,26,0.3);border-radius:12px;text-align:center;font-size:12px;color:var(--rappi);font-weight:600;line-height:1.5;">
+  <div id="firstRunBanner" style="display:none;margin:10px 20px 0;padding:10px 14px;background:rgba(255,214,0,0.08);border:1.5px solid rgba(255,214,0,0.25);border-radius:12px;text-align:center;font-size:12px;color:var(--rappi);font-weight:600;line-height:1.5;">
     ⚙️ Personaliza el nombre y logo del restaurante<br>
     <span style="font-weight:400;color:var(--gris);font-size:11px;">Inicia sesión como <b>Master</b> → Configuración → Datos del restaurante</span>
   </div>
@@ -3427,7 +3429,7 @@
       color:white;border:none;border-radius:20px;
       font-size:18px;font-weight:900;font-family:inherit;
       cursor:pointer;display:flex;align-items:center;justify-content:center;
-      gap:12px;box-shadow:0 6px 24px rgba(255,68,26,0.35);
+      gap:12px;box-shadow:0 6px 24px rgba(255,214,0,0.30);
       touch-action:manipulation;-webkit-tap-highlight-color:transparent;
       transition:transform 0.15s,opacity 0.15s;
     " ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform=''">
@@ -3991,7 +3993,7 @@
             Configura los días y horas en que el menú digital está disponible. Fuera de este horario los clientes verán un aviso de "Cerrado".
           </div>
           <div id="horariosWrap" style="display:flex;flex-direction:column;gap:6px;"></div>
-          <div style="margin-top:10px;padding:10px 12px;background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.18);border-radius:var(--r-sm);font-size:12px;color:var(--rappi);font-weight:600;">
+          <div style="margin-top:10px;padding:10px 12px;background:var(--rappi-soft);border:1.5px solid rgba(255,214,0,0.12);border-radius:var(--r-sm);font-size:12px;color:var(--rappi);font-weight:600;">
             💡 Deja "Cerrado" los días que no atiendes. El menú digital mostrará el aviso automáticamente.
           </div>
         </div>
@@ -4073,7 +4075,7 @@
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;flex-shrink:0;">
             <button id="btnEditConsec" onclick="editarConsec()" style="background:var(--blanco);border:1.5px solid #1976D2;color:#1976D2;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ Editar</button>
-            <button id="btnGuardarConsec" onclick="guardarConsec()" style="display:none;background:var(--rappi);border:none;color:white;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✅ Guardar</button>
+            <button id="btnGuardarConsec" onclick="guardarConsec()" style="display:none;background:var(--rappi);border:none;color:#111;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✅ Guardar</button>
             <button onclick="resetConsec()" style="background:white;border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">Reiniciar</button>
           </div>
         </div>
@@ -4085,7 +4087,7 @@
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;flex-shrink:0;">
             <button id="btnEditConsecFE" onclick="editarConsecFE()" style="background:var(--blanco);border:1.5px solid #1976D2;color:#1976D2;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ Editar</button>
-            <button id="btnGuardarConsecFE" onclick="guardarConsecFE()" style="display:none;background:var(--rappi);border:none;color:white;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✅ Guardar</button>
+            <button id="btnGuardarConsecFE" onclick="guardarConsecFE()" style="display:none;background:var(--rappi);border:none;color:#111;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✅ Guardar</button>
             <button onclick="resetConsecFE()" style="background:var(--blanco);border:1.5px solid var(--rappi);color:var(--rappi);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">Reiniciar</button>
           </div>
         </div>
@@ -4149,7 +4151,7 @@
     <div class="cfg-acc-body">
       <div class="cfg-acc-inner">
         <p style="font-size:12px;color:var(--gris);margin-bottom:12px;line-height:1.5;">Sincroniza menú, historial, usuarios y logo en tiempo real entre todos los dispositivos.</p>
-        <button class="btn-save-config" onclick="abrirConfigFirebase()" style="background:linear-gradient(135deg,#E34A22,#FF441A);box-shadow:0 4px 14px rgba(255,68,26,0.35);">⚙️ Configurar Firebase</button>
+        <button class="btn-save-config" onclick="abrirConfigFirebase()" style="background:linear-gradient(135deg,#FFD600,#E6C000);box-shadow:0 4px 14px rgba(255,214,0,0.30);">⚙️ Configurar Firebase</button>
       </div>
     </div>
   </div>
@@ -4286,7 +4288,7 @@
 
       <button class="sidebar-item" onclick="cerrarSidebar();abrirDrawer('carrito')">
         <span class="sidebar-item-icon">🛒</span>Carrito
-        <span id="sidebarBadgeCarrito" style="display:none;background:var(--rappi);color:white;border-radius:50%;min-width:20px;height:20px;font-size:11px;font-weight:800;align-items:center;justify-content:center;margin-left:auto;padding:0 4px;">0</span>
+        <span id="sidebarBadgeCarrito" style="display:none;background:var(--rappi);color:#111;border-radius:50%;min-width:20px;height:20px;font-size:11px;font-weight:800;align-items:center;justify-content:center;margin-left:auto;padding:0 4px;">0</span>
       </button>
 
       <button class="sidebar-item" onclick="cerrarSidebar();showTab('pedidos')">
@@ -4307,7 +4309,7 @@
 <div class="panel" id="panel-menu">
   <!-- Indicador de tipo de orden activo -->
   <div id="tipoOrdenBar" style="display:none;align-items:center;gap:8px;margin-bottom:10px;padding:8px 10px;
-       background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.2);border-radius:var(--r-sm);">
+       background:var(--rappi-soft);border:1.5px solid rgba(255,214,0,0.15);border-radius:var(--r-sm);">
     <span id="tipoOrdenBarIcon" style="font-size:18px;"></span>
     <span id="tipoOrdenBarLabel" style="font-size:13px;font-weight:700;color:var(--rappi);flex:1;"></span>
   </div>
@@ -4342,12 +4344,12 @@
   ">
     <button onclick="showTab('home')" style="
       width:100%;padding:14px;
-      background:var(--rappi);color:white;
+      background:var(--rappi);color:#111;
       border:none;border-radius:var(--r);
       font-size:16px;font-weight:700;font-family:inherit;
       cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
       touch-action:manipulation;-webkit-tap-highlight-color:transparent;
-      box-shadow:0 4px 16px rgba(255,68,26,0.3);
+      box-shadow:0 4px 16px rgba(255,214,0,0.25);
     ">
       ← Volver al inicio
     </button>
@@ -4803,11 +4805,11 @@ let editPrecioIdx = -1;
 
 // ── SISTEMA DE USUARIOS ───────────────────────────────────────────────
 
-const AVATAR_COLORS = ['#FF441A','#E53935','#8E24AA','#1E88E5','#00897B','#F4511E','#3949AB','#43A047'];
+const AVATAR_COLORS = ['#FFD600','#E53935','#8E24AA','#1E88E5','#00897B','#F4511E','#3949AB','#43A047'];
 
 const USUARIOS_DEFAULT = [
   { id: 0, nombre: 'Master',        pin: '999999', rol: 'master', color: '#7B1FA2' },
-  { id: 1, nombre: 'Administrador', pin: '1234',   rol: 'admin',  color: '#FF441A' },
+  { id: 1, nombre: 'Administrador', pin: '1234',   rol: 'admin',  color: '#FFD600' },
   { id: 2, nombre: 'Mesero',        pin: '0000',   rol: 'mesero', color: '#8b6535' },
   { id: 3, nombre: 'Cocina',        pin: '1111',   rol: 'cocina', color: '#FF9800' },
 ];
@@ -7224,7 +7226,7 @@ function abrirDrawer(key) {
     if (!badge && key === 'carrito') {
       badge = document.createElement('span');
       badge.id = 'hamburguesaBadge';
-      badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:var(--rappi);color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 2px;pointer-events:none;';
+      badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:var(--rappi);color:#111;border-radius:50%;min-width:16px;height:16px;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 2px;pointer-events:none;';
       btnNuevaOrden.style.position = 'relative';
       btnNuevaOrden.appendChild(badge);
     }
@@ -7290,7 +7292,7 @@ function abrirPedidosPanel() {
         return typeof o.timestamp === 'string' ? o.timestamp : '';
       })();
       const usuarioDueno = usuarios.find(u => u.id === o.usuarioId);
-      const userColor = ensureVibrante((usuarioDueno && usuarioDueno.color) || (o.usuarioColor && o.usuarioColor !== '#888888' ? o.usuarioColor : null) || usuarioActivo?.color || '#FF441A');
+      const userColor = ensureVibrante((usuarioDueno && usuarioDueno.color) || (o.usuarioColor && o.usuarioColor !== '#888888' ? o.usuarioColor : null) || usuarioActivo?.color || '#FFD600');
 
       const itemsPreview = o.items.slice(0, 3).map(i =>
         `<span style="display:inline-block;background:rgba(255,255,255,0.22);color:#fff;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-right:4px;margin-top:4px;">${i.cantidad}× ${i.nombre}</span>`
@@ -7547,7 +7549,7 @@ function renderPedidos() {
     // ── Color del usuario propietario ──────────────────────────────────
     // Buscar el color ACTUAL del usuario por ID (evita colores desactualizados en la orden)
     const usuarioDueno = usuarios.find(u => u.id === o.usuarioId);
-    const userColor = ensureVibrante((usuarioDueno && usuarioDueno.color) || (o.usuarioColor && o.usuarioColor !== '#888888' ? o.usuarioColor : null) || usuarioActivo?.color || '#FF441A');
+    const userColor = ensureVibrante((usuarioDueno && usuarioDueno.color) || (o.usuarioColor && o.usuarioColor !== '#888888' ? o.usuarioColor : null) || usuarioActivo?.color || '#FFD600');
 
     const itemsPreview = o.items.slice(0, 3).map(i =>
       `<span style="display:inline-block;background:rgba(255,255,255,0.22);color:#fff;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-right:4px;margin-top:4px;">${i.cantidad}× ${i.nombre}</span>`
@@ -7604,7 +7606,7 @@ function renderPedidos() {
 
   wrap.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div style="font-size:16px;font-weight:800;color:var(--negro);">📑 Pedidos activos <span style="background:var(--rappi);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-left:4px;">${ordenesFiltradas.length}</span></div>
+      <div style="font-size:16px;font-weight:800;color:var(--negro);">📑 Pedidos activos <span style="background:var(--rappi);color:#111;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-left:4px;">${ordenesFiltradas.length}</span></div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button onclick="abrirModalNuevaOrden()" style="display:flex;align-items:center;gap:5px;padding:8px 12px;background:linear-gradient(135deg,#7B1FA2,#9C27B0);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">➕ Nueva</button>
         <button onclick="showTab('home')" title="Cerrar" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--gris-cl);border:none;border-radius:50%;font-size:18px;font-weight:700;color:var(--gris-osc);cursor:pointer;font-family:inherit;touch-action:manipulation;line-height:1;">✕</button>
@@ -8154,7 +8156,7 @@ function renderCarrito() {
       <div class="cart-empty">
         <div class="icon">🛒</div>
         <p>${ordenes.length === 0 ? 'Crea una orden y agrega productos.' : 'Esta orden está vacía.<br>Agrega productos desde el menú.'}</p>
-        ${ordenes.length > 0 ? `<button onclick="irAlMenuConOrden()" style="margin-top:14px;padding:14px 28px;background:var(--rappi);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">🍽️ Ir al menú</button>` : ''}
+        ${ordenes.length > 0 ? `<button onclick="irAlMenuConOrden()" style="margin-top:14px;padding:14px 28px;background:var(--rappi);color:#111;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">🍽️ Ir al menú</button>` : ''}
       </div>`;
     document.getElementById('btnImprimir').style.display = 'none';
     return;
@@ -8172,7 +8174,7 @@ function renderCarrito() {
 
   // Color del DUEÑO de la orden activa (no del usuario logueado)
   const ucDueno = usuarios.find(u => u.id === ordenActiva?.usuarioId);
-  const uc = ensureVibrante((ucDueno && ucDueno.color) || ordenActiva?.usuarioColor || usuarioActivo?.color || '#FF441A');
+  const uc = ensureVibrante((ucDueno && ucDueno.color) || ordenActiva?.usuarioColor || usuarioActivo?.color || '#FFD600');
   const ucSoft = uc + '18';
   const ucMid  = uc + '33';
 
@@ -8326,7 +8328,7 @@ function renderCarrito() {
             <span style="font-size:13px;font-weight:800;color:var(--rappi);font-family:var(--font-num);">${totalServidos}/${totalUnidades}</span>
           </div>
           <div style="width:100%;height:7px;background:var(--borde);border-radius:999px;overflow:hidden;margin-bottom:8px;">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--rappi),#FF7A5C);border-radius:999px;transition:width 0.4s ease;"></div>
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--rappi),#FFE033);border-radius:999px;transition:width 0.4s ease;"></div>
           </div>
           <div style="font-size:11px;color:var(--gris);text-align:center;">Marca el ✓ de cada plato al entregarlo · el botón de pago aparecerá al completar todos</div>
         </div>`;
@@ -8371,7 +8373,7 @@ function renderPago() {
 
   const esAdmin = usuarioActivo?.rol === 'admin' || usuarioActivo?.rol === 'master';
   const ucDueno = usuarios.find(u => u.id === ordenActiva?.usuarioId);
-  const uc = ensureVibrante((ucDueno && ucDueno.color) || ordenActiva?.usuarioColor || usuarioActivo?.color || '#FF441A');
+  const uc = ensureVibrante((ucDueno && ucDueno.color) || ordenActiva?.usuarioColor || usuarioActivo?.color || '#FFD600');
   const ucSoft = uc + '18';
 
   const subtotal = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
@@ -8860,8 +8862,8 @@ function confirmarNuevaOrden() {
       errEl.style.display = 'block';
     }
     if (inputEl) {
-      inputEl.style.borderColor = '#FF441A';
-      inputEl.style.background = 'rgba(255,68,26,0.06)';
+      inputEl.style.borderColor = '#FFD600';
+      inputEl.style.background = 'rgba(255,214,0,0.05)';
       inputEl.focus();
       inputEl.select();
       inputEl.style.animation = 'none';
@@ -8893,7 +8895,7 @@ function crearNuevaOrden(mesa, cliente, tipo, telefono, direccion) {
     descuentoValor: 0,
     usuarioId: usuarioActivo?.id ?? null,
     usuarioNombre: usuarioActivo?.nombre ?? '',
-    usuarioColor: usuarioActivo?.color ?? '#FF441A'
+    usuarioColor: usuarioActivo?.color ?? '#FFD600'
   };
   ordenes.push(nuevaOrden);
   ordenActivaId = nuevaOrden.id;
@@ -9250,7 +9252,7 @@ function renderHistorial() {
 
         return `
         <!-- Encabezado colapsable del día -->
-        <div onclick="histToggleDia('${grupo.fecha}')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:linear-gradient(135deg,var(--rappi-soft),rgba(255,68,26,0.03));border:1.5px solid rgba(255,68,26,0.25);border-radius:var(--r-sm);margin-bottom:${colapsado?'6':'8'}px;margin-top:4px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;">
+        <div onclick="histToggleDia('${grupo.fecha}')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:linear-gradient(135deg,var(--rappi-soft),rgba(255,214,0,0.03));border:1.5px solid rgba(255,214,0,0.20);border-radius:var(--r-sm);margin-bottom:${colapsado?'6':'8'}px;margin-top:4px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;">
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:16px;">📅</span>
             <div>
@@ -9274,10 +9276,10 @@ function renderHistorial() {
       <button onclick="showTab('home')" title="Cerrar" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--gris-cl);border:none;border-radius:50%;font-size:18px;font-weight:700;color:var(--gris-osc);cursor:pointer;font-family:inherit;touch-action:manipulation;line-height:1;">✕</button>
     </div>
     ${!esCajero && !esMeseroHist && historialVisible.length > 0 ? `
-    <button onclick="abrirCierreDia()" style="width:100%;padding:14px;margin-bottom:14px;background:linear-gradient(135deg,#cc3300,var(--rappi));color:white;border:none;border-radius:var(--r);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(255,68,26,0.3);display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.3px;">
+    <button onclick="abrirCierreDia()" style="width:100%;padding:14px;margin-bottom:14px;background:linear-gradient(135deg,var(--rappi),var(--rappi-dark));color:#111;border:none;border-radius:var(--r);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(255,214,0,0.25);display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.3px;">
       📊 Cierre del Día · ${hoyCount > 0 ? hoyCount + ' factura' + (hoyCount>1?'s':'') + ' hoy' : 'ver por fecha'}
     </button>` : esCajero && historialVisible.length > 0 ? `
-    <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.2);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--rappi);font-weight:600;">
+    <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,214,0,0.15);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--rappi);font-weight:600;">
       🧾 Mostrando tus ${historialVisible.length} factura${historialVisible.length>1?'s':''} · ${hoyCount > 0 ? hoyCount + ' hoy' : 'ninguna hoy'}
     </div>` : esMeseroHist && historialVisible.length > 0 ? `
     <div style="background:rgba(46,125,50,0.08);border:1.5px solid rgba(46,125,50,0.25);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:14px;">
@@ -9296,10 +9298,10 @@ function renderHistorial() {
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:15px;">🔍</span>
           <span style="font-size:13px;font-weight:700;color:var(--negro);">Filtros</span>
-          ${hayFiltroActivo ? '<span style=\"background:var(--rappi);color:white;font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px;letter-spacing:0.3px;\">ACTIVO</span>' : ''}
+          ${hayFiltroActivo ? '<span style=\"background:var(--rappi);color:#111;font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px;letter-spacing:0.3px;\">ACTIVO</span>' : ''}
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          ${hayFiltroActivo ? `<button onclick="event.stopPropagation();histLimpiarFiltros()" style="font-size:11px;font-weight:700;color:var(--rappi);background:var(--rappi-soft);border:1px solid rgba(255,68,26,0.25);border-radius:20px;padding:3px 10px;cursor:pointer;font-family:inherit;">✕ Limpiar</button>` : ''}
+          ${hayFiltroActivo ? `<button onclick="event.stopPropagation();histLimpiarFiltros()" style="font-size:11px;font-weight:700;color:var(--rappi);background:var(--rappi-soft);border:1px solid rgba(255,214,0,0.20);border-radius:20px;padding:3px 10px;cursor:pointer;font-family:inherit;">✕ Limpiar</button>` : ''}
           <span style="font-size:20px;color:var(--gris);transition:transform 0.25s;display:inline-block;transform:${window._histAcordeonAbierto?'rotate(180deg)':'rotate(0deg)'};">⌄</span>
         </div>
       </button>
@@ -9441,7 +9443,7 @@ function renderHistorial() {
 
     <!-- ── RESUMEN FILTRADO ─────────────────────────────────────── -->
     ${hayFiltroActivo ? `
-    <div style="background:linear-gradient(135deg,var(--rappi-soft),rgba(255,68,26,0.05));border:1.5px solid rgba(255,68,26,0.25);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="background:linear-gradient(135deg,var(--rappi-soft),rgba(255,214,0,0.04));border:1.5px solid rgba(255,214,0,0.20);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--rappi);margin-bottom:2px;">Resultado del filtro</div>
         <div style="font-size:13px;color:var(--negro);font-weight:600;">${filtradas.length} factura${filtradas.length!==1?'s':''} · <span style="color:var(--rappi);font-family:var(--font-num);">${fmt(totalFiltrado)}</span></div>
@@ -9694,7 +9696,7 @@ function abrirCierreDia(fechaFiltro) {
     <div class="detalle-items">${productosHtml}</div>
     <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gris);margin:12px 0 6px;">Facturas del día</div>
     <div class="detalle-items">${facturasHtml}</div>
-    <button onclick="imprimirCierreDia()" style="margin-top:16px;width:100%;padding:13px;background:linear-gradient(135deg,#cc3300,var(--rappi));color:white;border:none;border-radius:var(--r-sm);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.3px;box-shadow:0 3px 12px rgba(255,68,26,0.3);">
+    <button onclick="imprimirCierreDia()" style="margin-top:16px;width:100%;padding:13px;background:linear-gradient(135deg,var(--rappi),var(--rappi-dark));color:#111;border:none;border-radius:var(--r-sm);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.3px;box-shadow:0 3px 12px rgba(255,214,0,0.25);">
       🖨️ Imprimir cierre del día
     </button>`}`;
   document.getElementById('modalDetalle').classList.add('show');
@@ -9761,7 +9763,7 @@ function verDetalleFactura(numeroFactura) {
           ⏳ Pendiente de envío a la DIAN
         </div>
         <button onclick="feReintentarEnvio('${f.numero}')" style="width:100%;margin-top:6px;padding:8px;background:linear-gradient(135deg,#E65100,#F57C00);color:white;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🔄 Reintentar ahora</button>` : `
-        <div style="margin-top:8px;background:rgba(255,68,26,0.07);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--gris);font-style:italic;">
+        <div style="margin-top:8px;background:rgba(255,214,0,0.07);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--gris);font-style:italic;">
           Sin CUFE — backend no conectado aún
         </div>`}
     </div>` : ''}
@@ -9829,7 +9831,7 @@ function limpiarHistorial() {
     <p style="font-size:13px;color:var(--gris-osc);line-height:1.6;margin-bottom:14px;">
       Si borras el historial <strong>perderás todos los datos de ventas</strong> y los informes del módulo 📈 Stats quedarán vacíos. Esta acción <strong>no se puede deshacer</strong>.
     </p>
-    <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.25);border-radius:var(--r-sm);padding:12px;margin-bottom:16px;font-size:12px;line-height:1.7;font-family:var(--font-num);color:var(--negro);">
+    <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,214,0,0.20);border-radius:var(--r-sm);padding:12px;margin-bottom:16px;font-size:12px;line-height:1.7;font-family:var(--font-num);color:var(--negro);">
       <div style="font-weight:700;margin-bottom:4px;font-family:'Inter',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--rappi);">Datos que se perderán:</div>
       ${resumenMeses.split('\n').map(l=>`<div>📅 ${l}</div>`).join('')}
     </div>
@@ -10288,13 +10290,13 @@ function abrirModalImprimirPorNumero(numeroFactura) {
   const btGuardado  = !!savedPrinterName;
 
   const opcionBT = btConectado
-    ? `<div class="device-item" onclick="cerrarModal('modalBt');reimprimirBluetooth(historial.find(x=>x.numero==='${numeroFactura}'));" style="border-color:rgba(255,68,26,0.4);">
+    ? `<div class="device-item" onclick="cerrarModal('modalBt');reimprimirBluetooth(historial.find(x=>x.numero==='${numeroFactura}'));" style="border-color:rgba(255,214,0,0.35);">
         <span class="device-icon">🖨️</span>
         <div><div class="device-name">Impresora Bluetooth</div>
         <div class="device-mac">✅ ${savedPrinterName || 'Conectada'} — imprimir ahora</div></div>
        </div>`
     : btGuardado
-      ? `<div class="device-item" onclick="cerrarModal('modalBt');_btConectarParaImprimir().then(ok=>{if(ok)reimprimirBluetooth(historial.find(x=>x.numero==='${numeroFactura}'));});" style="border-color:rgba(255,68,26,0.35);">
+      ? `<div class="device-item" onclick="cerrarModal('modalBt');_btConectarParaImprimir().then(ok=>{if(ok)reimprimirBluetooth(historial.find(x=>x.numero==='${numeroFactura}'));});" style="border-color:rgba(255,214,0,0.30);">
           <span class="device-icon">🖨️</span>
           <div><div class="device-name">Impresora Bluetooth</div>
           <div class="device-mac">⚪ ${savedPrinterName} — reconectar e imprimir</div></div>
@@ -10627,13 +10629,13 @@ function abrirModalImprimir() {
   const btGuardado  = !!savedPrinterName;
 
   const opcionBT = btConectado
-    ? `<div class="device-item" onclick="cerrarModal('modalBt');imprimirBluetooth();" style="border-color:rgba(255,68,26,0.4);">
+    ? `<div class="device-item" onclick="cerrarModal('modalBt');imprimirBluetooth();" style="border-color:rgba(255,214,0,0.35);">
         <span class="device-icon">🖨️</span>
         <div><div class="device-name">Impresora Bluetooth</div>
         <div class="device-mac">✅ ${savedPrinterName || 'Conectada'} — imprimir ahora</div></div>
        </div>`
     : btGuardado
-      ? `<div class="device-item" onclick="cerrarModal('modalBt');reconectarEImprimir();" style="border-color:rgba(255,68,26,0.35);">
+      ? `<div class="device-item" onclick="cerrarModal('modalBt');reconectarEImprimir();" style="border-color:rgba(255,214,0,0.30);">
           <span class="device-icon">🖨️</span>
           <div><div class="device-name">Impresora Bluetooth</div>
           <div class="device-mac">⚪ ${savedPrinterName} — reconectar e imprimir</div></div>
@@ -11202,11 +11204,11 @@ function actualizarManifestConLogo(logoSrc) {
       start_url: './',
       display: 'standalone',
       background_color: '#FFFFFF',
-      theme_color: '#FF441A',
+      theme_color: '#FFD600',
       orientation: 'portrait',
       icons: [
-        { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23FF441A'/%3E%3Ctext x='50%25' y='55%25' font-size='110' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E", sizes: '192x192', type: 'image/svg+xml' },
-        { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23FF441A'/%3E%3Ctext x='50%25' y='55%25' font-size='300' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E", sizes: '512x512', type: 'image/svg+xml' }
+        { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%230D0D0D'/%3E%3Ctext x='50%25' y='55%25' font-size='110' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E", sizes: '192x192', type: 'image/svg+xml' },
+        { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%230D0D0D'/%3E%3Ctext x='50%25' y='55%25' font-size='300' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%8D%BD%3C/text%3E%3C/svg%3E", sizes: '512x512', type: 'image/svg+xml' }
       ]
     };
     const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -11359,7 +11361,7 @@ function renderProductosConfig() {
       <div class="user-mgmt-info" style="flex:1;min-width:0;">
         <div class="user-mgmt-name" style="font-size:14px;">${esc(item.nombre)}</div>
         <div class="user-mgmt-sub" style="display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap;">
-          <span style="background:#f0f8f1;color:var(--rappi);border:1px solid rgba(255,68,26,0.2);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;">${esc(item.categoria)}</span>
+          <span style="background:#f0f8f1;color:var(--rappi);border:1px solid rgba(255,214,0,0.15);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;">${esc(item.categoria)}</span>
           <span style="font-family:var(--font-num);font-size:12px;font-weight:700;color:var(--rappi);">${fmt(item.precio)}</span>
           ${item.descripcion ? `<span style="font-size:10px;color:var(--gris);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">${esc(item.descripcion)}</span>` : ''}
         </div>
@@ -12296,13 +12298,13 @@ function renderEstadoFirebase() {
   const saved = localStorage.getItem('helechos_fb_config');
 
   if (!saved) {
-    if (el)  el.innerHTML = '⚫ Sin configurar &nbsp;<button onclick="abrirConfigFirebase()" style="background:var(--rappi);color:white;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Configurar</button>';
+    if (el)  el.innerHTML = '⚫ Sin configurar &nbsp;<button onclick="abrirConfigFirebase()" style="background:var(--rappi);color:#111;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Configurar</button>';
     if (dot) { dot.style.background = '#888'; dot.title = 'Firebase: sin configurar'; }
   } else if (window._FB && window._FB.db) {
     if (el)  { el.innerHTML = '🟢 Conectado a Firebase'; el.style.color = 'var(--verde-ok)'; }
     if (dot) { dot.style.background = '#2E7D32'; dot.title = '🟢 Firebase conectado'; dot.style.boxShadow = '0 0 6px rgba(46,125,50,0.7)'; }
   } else {
-    if (el)  { el.innerHTML = '🟡 Config guardada, reconectando… &nbsp;<button onclick="abrirConfigFirebase()" style="background:var(--rappi);color:white;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Editar</button>'; el.style.color = 'orange'; }
+    if (el)  { el.innerHTML = '🟡 Config guardada, reconectando… &nbsp;<button onclick="abrirConfigFirebase()" style="background:var(--rappi);color:#111;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Editar</button>'; el.style.color = 'orange'; }
     if (dot) { dot.style.background = 'orange'; dot.title = '🟡 Firebase: reconectando…'; dot.style.boxShadow = '0 0 6px rgba(255,165,0,0.6)'; }
   }
 }
@@ -14254,8 +14256,8 @@ function renderModalCobro(total, subtotal, descMonto) {
     <div style="background:var(--fondo);border:1.5px solid var(--borde);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;">
       <div style="font-size:10px;font-weight:800;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">🏷️ Descuento</div>
       <div class="descuento-row">
-        <button class="descuento-tipo-btn ${descuentoTipo==='pct'?'active':''}" onclick="setDescuentoTipo('pct');abrirModalCobro();" style="${descuentoTipo==='pct'?'background:rgba(255,68,26,0.12);border-color:var(--rappi);color:var(--rappi);':''}">%</button>
-        <button class="descuento-tipo-btn ${descuentoTipo==='fijo'?'active':''}" onclick="setDescuentoTipo('fijo');abrirModalCobro();" style="${descuentoTipo==='fijo'?'background:rgba(255,68,26,0.12);border-color:var(--rappi);color:var(--rappi);':''}">$</button>
+        <button class="descuento-tipo-btn ${descuentoTipo==='pct'?'active':''}" onclick="setDescuentoTipo('pct');abrirModalCobro();" style="${descuentoTipo==='pct'?'background:rgba(255,214,0,0.08);border-color:var(--rappi);color:var(--rappi);':''}">%</button>
+        <button class="descuento-tipo-btn ${descuentoTipo==='fijo'?'active':''}" onclick="setDescuentoTipo('fijo');abrirModalCobro();" style="${descuentoTipo==='fijo'?'background:rgba(255,214,0,0.08);border-color:var(--rappi);color:var(--rappi);':''}">$</button>
         <input class="obs-input" type="number" inputmode="numeric"
           placeholder="${descuentoTipo==='pct'?'0 – 100':'Monto fijo'}"
           value="${descuentoValor > 0 ? descuentoValor : ''}"
@@ -14267,7 +14269,7 @@ function renderModalCobro(total, subtotal, descMonto) {
     </div>` : ''}
 
     <!-- Totales + IVA -->
-    <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,68,26,0.2);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;">
+    <div style="background:var(--rappi-soft);border:1.5px solid rgba(255,214,0,0.15);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;">
       ${descMonto > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--gris-osc);margin-bottom:3px;"><span>Subtotal</span><span style="font-family:var(--font-num);">${fmt(subtotal)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--rappi);margin-bottom:6px;"><span>Descuento</span><span style="font-family:var(--font-num);">-${fmt(descMonto)}</span></div>` : ''}
       ${ivaEntradas.map(([tasa, v]) => `
@@ -14278,7 +14280,7 @@ function renderModalCobro(total, subtotal, descMonto) {
         <span>${Number(tasa)===8?'Impoconsumo 8% (incl.)':'IVA '+tasa+'% (incl.)'}</span>
         <span style="font-family:var(--font-num);font-weight:700;">${fmt(v.imp)}</span>
       </div>`).join('')}
-      <div style="display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid rgba(255,68,26,0.2);padding-top:8px;margin-top:4px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid rgba(255,214,0,0.15);padding-top:8px;margin-top:4px;">
         <span style="font-size:14px;font-weight:800;color:var(--gris-osc);">TOTAL A PAGAR</span>
         <span style="font-size:30px;font-weight:900;color:var(--rappi);font-family:var(--font-num);">${fmt(total)}</span>
       </div>
@@ -14641,7 +14643,7 @@ function mostrarResumenCobro(factura, pagosEntries, totalRecibido, cambio) {
 
     ${cambio > 0 ? `<div class="cambio-box" style="margin-bottom:12px;"><span class="cambio-label">💵 Cambio para el cliente</span><span class="cambio-monto">${fmt(cambio)}</span></div>` : `<div class="cambio-box" style="background:linear-gradient(135deg,#1565C0,#1976D2);margin-bottom:12px;"><span class="cambio-label">✅ Pago exacto</span><span class="cambio-monto" style="font-size:16px;">Sin vuelto</span></div>`}
 
-    ${factura ? `<button onclick="cerrarModal('modalCobro');abrirModalImprimirPorNumero('${numFact}');" style="width:100%;padding:14px;background:var(--rappi);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;">
+    ${factura ? `<button onclick="cerrarModal('modalCobro');abrirModalImprimirPorNumero('${numFact}');" style="width:100%;padding:14px;background:var(--rappi);color:#111;border:none;border-radius:var(--r);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;">
       🖨️ Imprimir factura
     </button>` : ''}
     <button onclick="cerrarModal('modalCobro');" style="width:100%;padding:12px;background:var(--fondo);color:var(--negro);border:1.5px solid var(--borde);border-radius:var(--r);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;">
