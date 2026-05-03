@@ -8053,6 +8053,34 @@ function beepFactura() {
   } catch(_) {}
 }
 
+// ── HELPER: DESGLOSE DE PAGOS ────────────────────────────────────────
+// Devuelve un objeto { "Efectivo": 10000, "Nequi": 28000, ... }
+// Usa f.pagos (array guardado) si existe; si no, toma f.pago como un solo método con f.total.
+function desglosarPagosFactura(f) {
+  if (f.pagos && Array.isArray(f.pagos) && f.pagos.length > 0) {
+    const res = {};
+    f.pagos.forEach(p => {
+      const label = (p.label || '').trim();
+      if (!label) return;
+      res[label] = (res[label] || 0) + (p.monto || 0);
+    });
+    return res;
+  }
+  // Pago simple (sin desglose guardado): todo el total al método
+  const label = (f.pago || 'Efectivo').replace(/\$[\s]?[\d.,]+/g,'').replace(/\s{2,}/g,' ').trim().replace(/\+\s*$/,'').trim();
+  // Si es combinado sin montos guardados, no podemos saber cuánto fue cada uno — lo dejamos como está
+  return { [label]: f.total };
+}
+
+// Devuelve Set con los nombres de métodos individuales de una factura
+function metodosIndividualesFact(f) {
+  if (f.pagos && Array.isArray(f.pagos) && f.pagos.length > 0) {
+    return new Set(f.pagos.map(p => (p.label||'').trim()).filter(Boolean));
+  }
+  const label = (f.pago || 'Efectivo').replace(/\$[\s]?[\d.,]+/g,'').replace(/\s{2,}/g,' ').trim().replace(/\+\s*$/,'').trim();
+  return new Set([label]);
+}
+
 // ── HISTORIAL ─────────────────────────────────────────────────────────
 // Estado de filtros activos
 let _histFiltros = { tipos: new Set(), pagos: new Set(), fecha: '' };
@@ -8107,25 +8135,23 @@ function renderHistorial() {
     });
   }
 
-  // Filtro pago (multiselección — OR entre los seleccionados)
+  // Filtro pago (multiselección — OR entre los seleccionados, por método individual)
   if (_histFiltros.pagos.size > 0) {
-    filtradas = filtradas.filter(f => _histFiltros.pagos.has(pagoBaseName(f.pago)));
+    filtradas = filtradas.filter(f => {
+      const metodos = metodosIndividualesFact(f);
+      for (const m of _histFiltros.pagos) { if (metodos.has(m)) return true; }
+      return false;
+    });
   }
 
   if (_histFiltros.fecha) {
     filtradas = filtradas.filter(f => f.fecha === _histFiltros.fecha);
   }
 
-  // ── Opciones de pago disponibles (solo nombres base, sin montos) ─────
+  // ── Opciones de pago disponibles (métodos individuales, no combinaciones) ─────
   const pagosDisponibles = [...new Set(
-    historialVisible
-      .map(f => f.pago)
-      .filter(Boolean)
-      .map(p => {
-        // Extraer solo los nombres de los métodos (ej: "Efectivo + Nequi" de "Efectivo $10.000 + Nequi $28.000")
-        return p.replace(/\$[\s]?[\d.,]+/g, '').replace(/\s{2,}/g, ' ').replace(/\+\s*\+/g, '+').trim().replace(/\+\s*$/,'').trim();
-      })
-  )].sort();
+    historialVisible.flatMap(f => [...metodosIndividualesFact(f)])
+  )].filter(Boolean).sort();
   // ── Fechas disponibles ────────────────────────────────────────────────
   const fechasDisponibles = [...new Set(historialVisible.map(f => f.fecha))].sort().reverse();
 
@@ -8485,8 +8511,9 @@ function generarTextoResumenFiltrado(paraBluetooth) {
   }
   if (_histFiltros.pagos && _histFiltros.pagos.size > 0) {
     base = base.filter(function(f){
-      var pagoBase = (f.pago||'').replace(/\$[\s]?[\d.,]+/g,'').replace(/\s{2,}/g,' ').replace(/\+\s*\+/g,'+').trim().replace(/\+\s*$/,'').trim();
-      return _histFiltros.pagos.has(pagoBase);
+      var metodos = metodosIndividualesFact(f);
+      for (var m of _histFiltros.pagos) { if (metodos.has(m)) return true; }
+      return false;
     });
   }
   if (_histFiltros.fecha) base = base.filter(function(f){ return f.fecha === _histFiltros.fecha; });
@@ -8504,7 +8531,10 @@ function generarTextoResumenFiltrado(paraBluetooth) {
 
   var totalGen = base.reduce(function(s,f){ return s+f.total; }, 0);
   var porPago = {};
-  base.forEach(function(f){ porPago[f.pago] = (porPago[f.pago]||0) + f.total; });
+  base.forEach(function(f){
+    var desglose = desglosarPagosFactura(f);
+    Object.entries(desglose).forEach(function([label, monto]){ porPago[label] = (porPago[label]||0) + monto; });
+  });
   var porProducto = {};
   base.forEach(function(f){ f.items.forEach(function(it){
     if (!porProducto[it.nombre]) porProducto[it.nombre] = { cant:0, total:0 };
@@ -8598,7 +8628,16 @@ function abrirCierreDia(fechaFiltro) {
   const numFacturas = facturas.length;
   const numFE = facturas.filter(f => f.esFacturaElectronica).length;
   const porPago = {};
-  facturas.forEach(f => { porPago[f.pago] = (porPago[f.pago] || 0) + f.total; });
+  facturas.forEach(f => {
+    const desglose = desglosarPagosFactura(f);
+    Object.entries(desglose).forEach(([label, monto]) => { porPago[label] = (porPago[label] || 0) + monto; });
+  });
+  const iconosPagoC = {Efectivo:'💵',Nequi:'📱',Bancolombia:'🏦',Tarjeta:'💳','Tarjeta crédito':'💳','Tarjeta débito':'💳',Daviplata:'🟠'};
+  const pagosHtml = Object.entries(porPago).map(([p, v]) => `
+    <div class="detalle-item-row">
+      <span>${iconosPagoC[p]||'💰'} ${p}</span>
+      <span style="font-weight:700;color:var(--rappi)">${fmt(v)}</span>
+    </div>`).join('');
   const porProducto = {};
   facturas.forEach(f => {
     f.items.forEach(it => {
@@ -8607,11 +8646,6 @@ function abrirCierreDia(fechaFiltro) {
       porProducto[it.nombre].total += it.precio * it.cantidad;
     });
   });
-  const pagosHtml = Object.entries(porPago).map(([p, v]) => `
-    <div class="detalle-item-row">
-      <span>${{Efectivo:'💵',Nequi:'📱',Bancolombia:'🏦',Tarjeta:'💳',Daviplata:'🟠'}[p]||'💰'} ${p}</span>
-      <span style="font-weight:700;color:var(--rappi)">${fmt(v)}</span>
-    </div>`).join('');
   const productosHtml = Object.entries(porProducto)
     .sort((a,b) => b[1].total - a[1].total)
     .map(([nombre, d]) => `
@@ -9986,7 +10020,10 @@ function generarTextoCierre(paraBluetooth = false) {
   const linea   = '-'.repeat(ancho);
   const doble   = '='.repeat(ancho);
   const porPago = {};
-  facturas.forEach(f => { porPago[f.pago] = (porPago[f.pago] || 0) + f.total; });
+  facturas.forEach(f => {
+    const desglose = desglosarPagosFactura(f);
+    Object.entries(desglose).forEach(([label, monto]) => { porPago[label] = (porPago[label] || 0) + monto; });
+  });
   const porProducto = {};
   facturas.forEach(f => {
     f.items.forEach(it => {
@@ -11439,10 +11476,15 @@ function renderStats() {
       </div>`).join('');
   document.getElementById('statsTopProductos').innerHTML = topProdHtml || '<p style="color:var(--gris);font-size:13px;text-align:center;padding:12px 0;">Sin datos</p>';
 
-  // ── POR MÉTODO DE PAGO ──
-  const iconosPago = { Efectivo:'💵', Nequi:'📱', Bancolombia:'🏦', Tarjeta:'💳', Daviplata:'🟠' };
+  // ── POR MÉTODO DE PAGO (desglosado por método individual) ──
+  const iconosPago = { Efectivo:'💵', Nequi:'📱', Bancolombia:'🏦', Tarjeta:'💳', 'Tarjeta crédito':'💳', 'Tarjeta débito':'💳', Daviplata:'🟠' };
   const porPago = {};
-  facturas.forEach(f => { porPago[f.pago] = (porPago[f.pago] || 0) + f.total; });
+  facturas.forEach(f => {
+    const desglose = desglosarPagosFactura(f);
+    Object.entries(desglose).forEach(([label, monto]) => {
+      porPago[label] = (porPago[label] || 0) + monto;
+    });
+  });
   const pagosHtml = Object.entries(porPago)
     .sort((a, b) => b[1] - a[1])
     .map(([p, v]) => {
@@ -11500,8 +11542,10 @@ function abrirInformeMes() {
   const numDomicilios = facturas.filter(f => f.tipoOrden === 'domicilio').length;
 
   const porPago = {};
-  facturas.forEach(f => { porPago[f.pago] = (porPago[f.pago] || 0) + f.total; });
-
+  facturas.forEach(f => {
+    const desglose = desglosarPagosFactura(f);
+    Object.entries(desglose).forEach(([label, monto]) => { porPago[label] = (porPago[label] || 0) + monto; });
+  });
   const porProd = {};
   facturas.forEach(f => {
     f.items.forEach(it => {
@@ -11645,9 +11689,12 @@ function descargarExcelMes(yyyymm) {
   // ── Hoja 4: Por método de pago ────────────────────────────
   const porPago = {};
   facturas.forEach(f => {
-    if (!porPago[f.pago]) porPago[f.pago] = { cant:0, total:0 };
-    porPago[f.pago].cant++;
-    porPago[f.pago].total += f.total;
+    const desglose = desglosarPagosFactura(f);
+    Object.entries(desglose).forEach(([label, monto]) => {
+      if (!porPago[label]) porPago[label] = { cant:0, total:0 };
+      porPago[label].cant++;
+      porPago[label].total += monto;
+    });
   });
   const hoja4 = [];
   hoja4.push([`Métodos de pago — ${mesNombre}`]);
