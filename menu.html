@@ -1728,6 +1728,48 @@
     text-transform: uppercase;
     margin-top: 6px;
   }
+
+  /* ── Mensaje especial del día ── */
+  .mc-greeting {
+    margin: 20px auto 0;
+    max-width: 320px;
+    padding: 14px 20px;
+    border-radius: 16px;
+    border: 1.5px solid rgba(var(--mc-acento-rgb), 0.35);
+    background: rgba(var(--mc-acento-rgb), 0.10);
+    text-align: center;
+    animation: mcGreetingIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes mcGreetingIn {
+    from { opacity: 0; transform: scale(0.85) translateY(12px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0); }
+  }
+  .mc-greeting-emoji {
+    font-size: 36px;
+    display: block;
+    margin-bottom: 8px;
+    animation: mcGreetingBounce 2.4s ease-in-out infinite;
+  }
+  @keyframes mcGreetingBounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%       { transform: translateY(-6px) scale(1.12); }
+  }
+  .mc-greeting-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--mc-acento);
+    font-family: var(--mc-fuente);
+    line-height: 1.2;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    margin-bottom: 6px;
+  }
+  .mc-greeting-msg {
+    font-size: 12px;
+    color: rgba(var(--mc-acento-rgb), 0.75);
+    line-height: 1.55;
+    letter-spacing: 0.2px;
+  }
   .mc-divider {
     display: flex;
     align-items: center;
@@ -2142,6 +2184,7 @@
       <img class="mc-logo" id="mcLogo" src="" alt="" style="display:none;">
       <div class="mc-title" id="mcTitle">Menú</div>
       <div class="mc-subtitle" id="mcSubtitle">Carta del restaurante</div>
+      <div class="mc-greeting" id="mcGreeting" style="display:none;"></div>
     </div>
     <div id="mcBody"></div>
     <div class="mc-footer" id="mcFooter">❦ Gracias por visitarnos ❦</div>
@@ -6098,6 +6141,53 @@ window.renderCategoryGridSafe = function() {
     const _mcSub    = (() => { try { return localStorage.getItem('helechos_login_sub') || ''; } catch(e){ return ''; } })();
     if (mcTitle) mcTitle.textContent = (_mcNombre || 'Menú').toUpperCase();
     if (mcSub)   mcSub.textContent   = _mcSub || 'Carta del restaurante';
+
+    // ── Mensaje especial según skin ────────────────────────────
+    const MC_GREETINGS = {
+      madre: {
+        emoji: '🌸',
+        title: '¡Feliz Día de la Madre!',
+        msg:   'Hoy celebramos a la mujer más especial de nuestra vida.\nGracias por tu amor infinito, mamá. ¡Este menú es para ti! 💕'
+      },
+      padre: {
+        emoji: '👔',
+        title: '¡Feliz Día del Padre!',
+        msg:   'Para el superhéroe de casa, el mejor papá del mundo.\n¡Disfruta este día tan especial con toda la familia! 🌟'
+      },
+      halloween: {
+        emoji: '🎃',
+        title: '¡Feliz Halloween!',
+        msg:   'Una noche de misterio, sustos y mucho sabor.\n¿Truco o trato? ¡Aquí siempre te tratamos muy bien! 🦇'
+      },
+      navidad: {
+        emoji: '🎄',
+        title: '¡Feliz Navidad!',
+        msg:   'Que esta temporada esté llena de amor, alegría y sabores únicos.\n¡De parte de todo el equipo, Felices Fiestas! ⭐'
+      },
+      sanvalentin: {
+        emoji: '❤️',
+        title: '¡Feliz San Valentín!',
+        msg:   'Una noche especial para compartir con quien más amas.\nGracias por elegirnos para celebrar el amor. 💝'
+      },
+    };
+    const greetingEl = document.getElementById('mcGreeting');
+    const greet = MC_GREETINGS[skinKey];
+    if (greetingEl) {
+      if (greet) {
+        greetingEl.innerHTML =
+          `<span class="mc-greeting-emoji">${greet.emoji}</span>` +
+          `<div class="mc-greeting-title">${greet.title}</div>` +
+          `<div class="mc-greeting-msg">${greet.msg.replace(/\n/g,'<br>')}</div>`;
+        greetingEl.style.display = '';
+        // re-trigger animation
+        greetingEl.style.animation = 'none';
+        void greetingEl.offsetWidth;
+        greetingEl.style.animation = '';
+      } else {
+        greetingEl.style.display = 'none';
+        greetingEl.innerHTML = '';
+      }
+    }
 
     // Agrupar items disponibles por categoría (excluyendo categorías ocultas)
     const hidden = hiddenCats();
