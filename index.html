@@ -3779,35 +3779,47 @@
 
         <div style="height:1px;background:var(--borde);margin:4px 0;"></div>
 
-        <!-- BANNER PUBLICITARIO POR SKIN -->
+        <!-- BANNER PUBLICITARIO POR SKIN — CARRUSEL MÚLTIPLE -->
         <div>
-          <div class="form-label form-label-small" style="margin-bottom:4px;">📢 Banner publicitario</div>
+          <div class="form-label form-label-small" style="margin-bottom:4px;">📢 Banners publicitarios</div>
           <div style="font-size:11px;color:var(--gris);margin-bottom:14px;line-height:1.5;">
-            Sube un flyer para el skin activo. Aparece en la parte superior del menú digital y al tocarlo abre el menú especial.
+            Sube varios banners por skin. En el menú digital se desplazan automáticamente en carrusel.
           </div>
 
-          <!-- Skin selector compacto para el banner -->
-          <div style="font-size:11px;font-weight:800;color:var(--gris-osc);margin-bottom:8px;">Skin activo: <span id="adSkinNombre" style="color:var(--rappi);"></span></div>
+          <!-- Skin activo -->
+          <div style="font-size:11px;font-weight:800;color:var(--gris-osc);margin-bottom:12px;">Skin activo: <span id="adSkinNombre" style="color:var(--rappi);"></span></div>
 
-          <!-- Preview del banner -->
-          <div id="adBannerPreviewWrap" style="display:none;position:relative;border-radius:12px;overflow:hidden;margin-bottom:10px;border:1.5px solid var(--borde);">
-            <img id="adBannerPreviewImg" src="" alt="Banner" style="width:100%;display:block;max-height:160px;object-fit:cover;">
-            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.5),transparent);display:flex;align-items:flex-end;padding:8px 10px;">
-              <span style="font-size:11px;font-weight:800;color:#fff;">Banner activo para este skin</span>
+          <!-- Control de velocidad -->
+          <div style="background:var(--fondo);border:1.5px solid var(--borde);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="font-size:12px;font-weight:700;color:var(--gris-osc);">⏱ Velocidad del carrusel</span>
+              <span id="adBannerSpeedLabel" style="font-size:13px;font-weight:800;color:var(--rappi);font-family:var(--font-num);">4s</span>
+            </div>
+            <input type="range" id="adBannerSpeedRange" min="2" max="15" step="1" value="4"
+              style="width:100%;accent-color:var(--rappi);cursor:pointer;"
+              oninput="adBannerSpeedChange(this.value)">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gris);margin-top:4px;">
+              <span>2s (rápido)</span><span>15s (lento)</span>
             </div>
           </div>
-          <div id="adBannerEmptyWrap" style="width:100%;height:70px;border:1.5px dashed var(--borde);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;background:var(--fondo);">
-            <span style="font-size:12px;color:var(--gris);">Sin banner para este skin</span>
-          </div>
 
-          <div style="display:flex;gap:8px;">
-            <label style="flex:1;cursor:pointer;">
-              <div class="btn-save-config" style="text-align:center;padding:10px;font-size:13px;width:100%;">📷 Subir banner</div>
-              <input type="file" accept="image/*" hidden id="adBannerInput" onchange="cargarAdBanner(this)">
-            </label>
-            <button id="adBannerQuitarBtn" style="display:none;background:#D32F2F;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;padding:10px 14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;" onclick="quitarAdBanner()">✕ Quitar</button>
-          </div>
-          <div class="qr-note" style="margin-top:8px;">Cada skin tiene su propio banner. Cambia el skin arriba para gestionar los demás banners.</div>
+          <!-- Lista de banners subidos -->
+          <div id="adBannerListWrap" style="margin-bottom:10px;"></div>
+
+          <!-- Botón agregar -->
+          <label style="cursor:pointer;display:block;">
+            <div class="btn-save-config" style="text-align:center;padding:10px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;">
+              <span style="font-size:18px;font-weight:900;line-height:1;">+</span> Agregar banner
+            </div>
+            <input type="file" accept="image/*" hidden id="adBannerInput" onchange="cargarAdBanner(this)" multiple>
+          </label>
+          <div class="qr-note" style="margin-top:8px;">Cada skin tiene su propio conjunto de banners. Toca 🗑 para eliminar uno.</div>
+
+          <!-- compat: elemento legacy que renderAdBannerPreview() espera -->
+          <div id="adBannerPreviewWrap" style="display:none;"></div>
+          <div id="adBannerPreviewImg" style="display:none;"></div>
+          <div id="adBannerEmptyWrap"  style="display:none;"></div>
+          <div id="adBannerQuitarBtn"  style="display:none;"></div>
         </div>
 
         <div style="height:1px;background:var(--borde);margin:4px 0;"></div>
@@ -6188,86 +6200,160 @@ function selectSkin(key) {
   });
 })();
 
-// ── BANNER PUBLICITARIO ──────────────────────────────────────────────────
+// ── BANNER PUBLICITARIO — CARRUSEL MÚLTIPLE ─────────────────────────────
+
+// adBanners ahora es: { skinKey: [ imgBase64, ... ] }
+// adBannerSpeed: { skinKey: segundos }  (por skin, default 4s)
+
 function getAdBanners() {
   try {
     const raw = localStorage.getItem(MENU_SETTINGS_KEY);
-    return raw ? (JSON.parse(raw).adBanners || {}) : {};
+    if (!raw) return {};
+    const ms = JSON.parse(raw);
+    // migración: si adBanners[skin] es string (viejo), convertir a array
+    const obj = ms.adBanners || {};
+    Object.keys(obj).forEach(k => { if (typeof obj[k] === 'string') obj[k] = [obj[k]]; });
+    return obj;
   } catch(e) { return {}; }
 }
 
-function saveAdBanner(skinKey, imgData) {
+function getAdBannerSpeed(skinKey) {
+  try {
+    const raw = localStorage.getItem(MENU_SETTINGS_KEY);
+    if (!raw) return 4;
+    const ms = JSON.parse(raw);
+    return (ms.adBannerSpeed && ms.adBannerSpeed[skinKey]) || 4;
+  } catch(e) { return 4; }
+}
+
+function saveAdBannerSpeed(skinKey, secs) {
+  try {
+    const raw = localStorage.getItem(MENU_SETTINGS_KEY);
+    const ms = raw ? JSON.parse(raw) : {};
+    if (!ms.adBannerSpeed) ms.adBannerSpeed = {};
+    ms.adBannerSpeed[skinKey] = secs;
+    localStorage.setItem(MENU_SETTINGS_KEY, JSON.stringify(ms));
+    if (window.fbSync) fbSync('menuSettings/adBannerSpeed/' + skinKey, secs);
+  } catch(e) {}
+}
+
+function saveAdBannersArr(skinKey, arr) {
   try {
     const raw = localStorage.getItem(MENU_SETTINGS_KEY);
     const ms = raw ? JSON.parse(raw) : {};
     if (!ms.adBanners) ms.adBanners = {};
-    if (imgData) ms.adBanners[skinKey] = imgData;
+    if (arr && arr.length) ms.adBanners[skinKey] = arr;
     else delete ms.adBanners[skinKey];
     localStorage.setItem(MENU_SETTINGS_KEY, JSON.stringify(ms));
-    if (window.fbSync) fbSync('menuSettings/adBanners/' + skinKey, imgData || null);
+    if (window.fbSync) fbSync('menuSettings/adBanners/' + skinKey, arr && arr.length ? arr : null);
   } catch(e) { showToast('⚠️ No se pudo guardar el banner'); }
+}
+
+// compat legacy (llamado desde varias partes del código)
+function saveAdBanner(skinKey, imgData) {
+  const banners = getAdBanners();
+  const arr = banners[skinKey] || [];
+  if (imgData) { arr.push(imgData); saveAdBannersArr(skinKey, arr); }
+  else saveAdBannersArr(skinKey, null);
+}
+
+function adBannerSpeedChange(val) {
+  const secs = parseInt(val, 10);
+  const label = document.getElementById('adBannerSpeedLabel');
+  if (label) label.textContent = secs + 's';
+  const key = getSkinKey();
+  saveAdBannerSpeed(key, secs);
+  // propagar al menu.html vía storage event
+  showToast('⏱ Velocidad: ' + secs + 's por banner');
 }
 
 function renderAdBannerPreview() {
   const key     = getSkinKey();
-  const banners = getAdBanners();
-  const img     = banners[key] || '';
   const skinObj = MENU_SKINS[key] || MENU_SKINS.clasico;
+  const banners = getAdBanners();
+  const arr     = banners[key] || [];
+  const speed   = getAdBannerSpeed(key);
 
-  // Actualizar etiqueta del skin activo
+  // Etiqueta skin
   const nombreEl = document.getElementById('adSkinNombre');
   if (nombreEl) nombreEl.textContent = skinObj.nombre;
 
-  const previewWrap = document.getElementById('adBannerPreviewWrap');
-  const previewImg  = document.getElementById('adBannerPreviewImg');
-  const emptyWrap   = document.getElementById('adBannerEmptyWrap');
-  const quitarBtn   = document.getElementById('adBannerQuitarBtn');
+  // Control velocidad
+  const rangeEl = document.getElementById('adBannerSpeedRange');
+  const labelEl = document.getElementById('adBannerSpeedLabel');
+  if (rangeEl) rangeEl.value = speed;
+  if (labelEl) labelEl.textContent = speed + 's';
 
-  if (img) {
-    if (previewImg)  previewImg.src = img;
-    if (previewWrap) previewWrap.style.display = '';
-    if (emptyWrap)   emptyWrap.style.display   = 'none';
-    if (quitarBtn)   quitarBtn.style.display   = '';
-  } else {
-    if (previewImg)  previewImg.src = '';
-    if (previewWrap) previewWrap.style.display = 'none';
-    if (emptyWrap)   emptyWrap.style.display   = '';
-    if (quitarBtn)   quitarBtn.style.display   = 'none';
+  // Lista de banners
+  const listWrap = document.getElementById('adBannerListWrap');
+  if (!listWrap) return;
+
+  if (!arr.length) {
+    listWrap.innerHTML = '<div style="width:100%;height:70px;border:1.5px dashed var(--borde);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;background:var(--fondo);"><span style="font-size:12px;color:var(--gris);">Sin banners — toca "+" para agregar</span></div>';
+    return;
   }
+
+  listWrap.innerHTML = arr.map((img, i) => `
+    <div style="position:relative;border-radius:12px;overflow:hidden;margin-bottom:10px;border:1.5px solid var(--borde);">
+      <img src="${img}" alt="Banner ${i+1}" style="width:100%;display:block;max-height:130px;object-fit:cover;">
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent);display:flex;align-items:flex-end;justify-content:space-between;padding:8px 10px;">
+        <span style="font-size:11px;font-weight:800;color:#fff;">Banner ${i+1} de ${arr.length}</span>
+        <button onclick="eliminarAdBanner(${i})" style="background:rgba(211,47,47,0.92);color:#fff;border:none;border-radius:8px;font-size:11px;padding:4px 10px;font-weight:700;cursor:pointer;font-family:inherit;">🗑 Quitar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function eliminarAdBanner(idx) {
+  const key = getSkinKey();
+  const banners = getAdBanners();
+  const arr = banners[key] || [];
+  arr.splice(idx, 1);
+  saveAdBannersArr(key, arr);
+  renderAdBannerPreview();
+  showToast('🗑️ Banner eliminado');
 }
 
 function cargarAdBanner(input) {
-  const file = input.files && input.files[0];
-  if (!file) return;
-  if (file.size > 8 * 1024 * 1024) { showToast('⚠️ Imagen muy grande (máx 8 MB)'); input.value = ''; return; }
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const imgEl = new Image();
-    imgEl.onload = () => {
-      const canvas = document.createElement('canvas');
-      let w = imgEl.width, h = imgEl.height;
-      const MAX_W = 1080, MAX_H = 600;
-      const ratio = Math.min(MAX_W / w, MAX_H / h, 1);
-      w = Math.round(w * ratio); h = Math.round(h * ratio);
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
-      const compressed = canvas.toDataURL('image/jpeg', 0.82);
-      const key = getSkinKey();
-      saveAdBanner(key, compressed);
-      renderAdBannerPreview();
-      showToast('✅ Banner guardado para "' + (MENU_SKINS[key]?.nombre || key) + '"');
+  const files = input.files;
+  if (!files || !files.length) return;
+  const key = getSkinKey();
+  let loaded = 0;
+  Array.from(files).forEach(file => {
+    if (file.size > 8 * 1024 * 1024) { showToast('⚠️ Imagen muy grande (máx 8 MB)'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imgEl = new Image();
+      imgEl.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = imgEl.width, h = imgEl.height;
+        const MAX_W = 1080, MAX_H = 600;
+        const ratio = Math.min(MAX_W / w, MAX_H / h, 1);
+        w = Math.round(w * ratio); h = Math.round(h * ratio);
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+        const compressed = canvas.toDataURL('image/jpeg', 0.82);
+        const banners = getAdBanners();
+        const arr = banners[key] || [];
+        arr.push(compressed);
+        saveAdBannersArr(key, arr);
+        loaded++;
+        renderAdBannerPreview();
+        if (loaded === files.length)
+          showToast('✅ ' + loaded + ' banner' + (loaded > 1 ? 's' : '') + ' guardado' + (loaded > 1 ? 's' : '') + ' para "' + (MENU_SKINS[key]?.nombre || key) + '"');
+      };
+      imgEl.src = e.target.result;
     };
-    imgEl.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  });
   input.value = '';
 }
 
 function quitarAdBanner() {
   const key = getSkinKey();
-  saveAdBanner(key, null);
+  saveAdBannersArr(key, null);
   renderAdBannerPreview();
-  showToast('🗑️ Banner quitado');
+  showToast('🗑️ Banners quitados');
 }
 
 // ── DESCARGAR MENÚ ESPECIAL EN PDF ──────────────────────────────────────
