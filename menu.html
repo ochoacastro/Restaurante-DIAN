@@ -226,10 +226,11 @@
   #adBannerWrap.visible { display: block; }
   #adBannerImg {
     width: 100%;
+    height: 200px;
     display: block;
-    max-height: 220px;
-    object-fit: cover;
-    object-position: center top;
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
   }
   #adBannerBadge {
     display: none !important;
@@ -1922,10 +1923,10 @@
   <main id="panel" class="panel active">
 
     <!-- BANNER PUBLICITARIO — se muestra si hay anuncio activo -->
-    <div id="adBannerWrap">
-      <img id="adBannerImg" src="" alt="Anuncio especial">
+    <div id="adBannerWrap" role="button" aria-label="Ver menú especial">
+      <!-- Usamos div con background-image para evitar que el teléfono abra la galería -->
+      <div id="adBannerImg"></div>
       <div id="adBannerRipple"></div>
-      <div id="adBannerBadge"><span id="adBannerEmoji">🌷</span><span id="adBannerLabel">Ver menú especial</span></div>
     </div>
 
     <section class="hero" id="heroSection">
@@ -5520,22 +5521,37 @@ window.renderCategoryGridSafe = function() {
   function renderAdBanner() {
     const wrap  = document.getElementById('adBannerWrap');
     const imgEl = document.getElementById('adBannerImg');
-    const emoji = document.getElementById('adBannerEmoji');
-    const label = document.getElementById('adBannerLabel');
     if (!wrap) return;
 
     const data = getAdData();
     if (data && data.img) {
-      imgEl.src = data.img;
-      const badge = SKIN_BADGE[data.skinKey] || SKIN_BADGE.clasico;
-      if (emoji) emoji.textContent = badge.emoji;
-      if (label) label.textContent = badge.label;
+      // background-image: el teléfono NO abre galería ni visor de imágenes
+      imgEl.style.backgroundImage = 'url(' + data.img + ')';
       wrap.classList.add('visible');
+      // Actualizar nombre del botón "Menú Clásico" según skin
+      updateBtnMenuClasico(data.skinKey);
     } else {
       wrap.classList.remove('visible');
-      imgEl.src = '';
+      imgEl.style.backgroundImage = 'none';
+      updateBtnMenuClasico('clasico');
     }
   }
+
+  // Actualizar etiqueta del botón según skin activo
+  function updateBtnMenuClasico(skinKey) {
+    const btn = document.getElementById('btnMenuClasico');
+    if (!btn) return;
+    const LABELS = {
+      clasico:     '📋 Menú Clásico',
+      madre:       '🌷 Menú Día de la Madre',
+      padre:       '👔 Menú Día del Padre',
+      halloween:   '🎃 Menú Halloween',
+      navidad:     '🎄 Menú Navidad',
+      sanvalentin: '💕 Menú San Valentín',
+    };
+    btn.textContent = LABELS[skinKey] || '📋 Menú Clásico';
+  }
+  window.updateBtnMenuClasico = updateBtnMenuClasico;
 
   // Click abre el menú clásico
   const wrap = document.getElementById('adBannerWrap');
@@ -5547,7 +5563,14 @@ window.renderCategoryGridSafe = function() {
 
   // Escuchar cambios desde index.html
   window.addEventListener('storage', e => {
-    if (e.key === SETTINGS_KEY_AD) renderAdBanner();
+    if (e.key === SETTINGS_KEY_AD) {
+      renderAdBanner();
+      // También actualizar nombre del botón si cambia el skin
+      try {
+        const s = JSON.parse(e.newValue || '{}');
+        if (s.classicSkin) updateBtnMenuClasico(s.classicSkin);
+      } catch(_) {}
+    }
   });
 
   // Render inicial
@@ -5747,9 +5770,22 @@ window.renderCategoryGridSafe = function() {
     try { localStorage.setItem('helechos_last_mode', 'restaurante'); } catch(e) {}
   }
 
-  // Botón abrir
+  // Botón abrir — nombre dinámico según skin activo
   const btn = document.getElementById('btnMenuClasico');
-  if (btn) btn.addEventListener('click', openMenuClasico);
+  if (btn) {
+    btn.addEventListener('click', openMenuClasico);
+    // Nombre inicial según skin guardado
+    if (typeof updateBtnMenuClasico === 'function') updateBtnMenuClasico(getSkinKey());
+    else {
+      const _sk = getSkinKey();
+      const _LABELS = {
+        clasico:'📋 Menú Clásico', madre:'🌷 Menú Día de la Madre',
+        padre:'👔 Menú Día del Padre', halloween:'🎃 Menú Halloween',
+        navidad:'🎄 Menú Navidad', sanvalentin:'💕 Menú San Valentín',
+      };
+      btn.textContent = _LABELS[_sk] || '📋 Menú Clásico';
+    }
+  }
 
   // Botón cerrar (único modo de salir)
   const closeBtn = document.getElementById('mcCloseBtn');
@@ -5762,7 +5798,11 @@ window.renderCategoryGridSafe = function() {
       try {
         const parsed = JSON.parse(e.newValue || '{}');
         // Actualizar skin en tiempo real
-        if (parsed.classicSkin !== undefined) applySkin(parsed.classicSkin || 'clasico');
+        if (parsed.classicSkin !== undefined) {
+          applySkin(parsed.classicSkin || 'clasico');
+          // Actualizar nombre del botón
+          if (typeof updateBtnMenuClasico === 'function') updateBtnMenuClasico(parsed.classicSkin || 'clasico');
+        }
         // Actualizar fondo
         const mcBg = document.getElementById('mcBg');
         if (mcBg && parsed.classicMenuBg !== undefined) {
