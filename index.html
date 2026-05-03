@@ -2167,6 +2167,10 @@
   }
   .user-mgmt-btn.del { color: var(--rojo); }
   .user-mgmt-btn:active { opacity: 0.7; }
+  .user-mgmt-btn.toggle-on  { color: #2E7D32; border-color: rgba(46,125,50,0.35); background: rgba(46,125,50,0.08); }
+  .user-mgmt-btn.toggle-off { color: var(--gris); border-color: rgba(128,128,128,0.35); background: rgba(128,128,128,0.08); }
+  .user-mgmt-item.deshabilitado { opacity: 0.45; }
+  .user-mgmt-item.deshabilitado .user-mgmt-name { text-decoration: line-through; }
 
   /* Modal usuario */
   .modal-usuarios { padding-bottom: 36px; }
@@ -4894,8 +4898,8 @@ function renderLoginUserList() {
   const grid = document.getElementById('loginRolGrid');
   if (!grid) return;
   const perms = (typeof loadMasterPerms === 'function') ? loadMasterPerms() : { cocina: true };
-  const meseros = usuarios.filter(u => u.rol === 'mesero');
-  const cajeros = usuarios.filter(u => u.rol === 'cajero');
+  const meseros = usuarios.filter(u => u.rol === 'mesero' && !u.deshabilitado);
+  const cajeros = usuarios.filter(u => u.rol === 'cajero' && !u.deshabilitado);
 
   const roles = [
     { rol: 'admin',   icon: '👑', name: 'Administrador', desc: 'Gestión completa del sistema',           habilitado: true },
@@ -4936,7 +4940,7 @@ function renderLoginUsers() { renderLoginUserList(); }
 function renderLoginCajeroList() {
   const grid = document.getElementById('loginRolGrid');
   if (!grid) return;
-  const cajeros = usuarios.filter(u => u.rol === 'cajero');
+  const cajeros = usuarios.filter(u => u.rol === 'cajero' && !u.deshabilitado);
   let html = `<div style="font-size:12px;color:var(--gris);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;text-align:center;margin-bottom:4px;">Selecciona tu nombre</div>`;
   html += cajeros.map(u => `
     <div class="login-rol-card rol-cajero" onclick="seleccionarUsuarioCajero(${u.id})" style="border-left-color:#1565C0;">
@@ -4966,7 +4970,7 @@ function seleccionarUsuarioCajero(uid) {
 function renderLoginMeseroList() {
   const grid = document.getElementById('loginRolGrid');
   if (!grid) return;
-  const meseros = usuarios.filter(u => u.rol === 'mesero');
+  const meseros = usuarios.filter(u => u.rol === 'mesero' && !u.deshabilitado);
   let html = `<div style="font-size:12px;color:var(--gris);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;text-align:center;margin-bottom:4px;">Selecciona tu nombre</div>`;
   html += meseros.map(u => `
     <div class="login-rol-card rol-mesero" onclick="seleccionarUsuarioMesero(${u.id})">
@@ -5004,6 +5008,7 @@ function seleccionarRolLogin(rol) {
 
   const u = usuarios.find(u => u.rol === rol);
   if (!u) { showToast('⚠️ No hay usuario con ese rol'); return; }
+  if (u.deshabilitado) { showToast('🔒 Este usuario está deshabilitado'); return; }
   loginTargetUser = u;
   irAlPin();
 }
@@ -5018,6 +5023,11 @@ function seleccionarUsuarioMesero(uid) {
 
 // Muestra el formulario PIN
 function irAlPin() {
+  if (loginTargetUser?.deshabilitado) {
+    showToast('🔒 Este usuario está deshabilitado');
+    loginTargetUser = null;
+    return;
+  }
   pinBuffer = '';
   document.getElementById('loginNombreActivo').textContent = loginTargetUser.nombre;
   const _le = document.getElementById('loginError');
@@ -5316,7 +5326,7 @@ function renderUsuariosConfig() {
   if (secBranding) secBranding.style.display = usuarioActivo?.rol === 'master' ? 'block' : 'none';
 
   list.innerHTML = usuarios.map(u => `
-    <div class="user-mgmt-item">
+    <div class="user-mgmt-item${u.deshabilitado ? ' deshabilitado' : ''}">
       <div class="user-mgmt-avatar" style="background:${u.color}">${u.nombre.charAt(0).toUpperCase()}</div>
       <div class="user-mgmt-info">
         <div class="user-mgmt-name">${esc(u.nombre)}</div>
@@ -5329,6 +5339,7 @@ function renderUsuariosConfig() {
       </div>
       <div class="user-mgmt-btns">
         ${u.rol !== 'master' ? `<button class="user-mgmt-btn" onclick="abrirEditarUsuario(${u.id})">✏️</button>` : ''}
+        ${u.rol !== 'master' && usuarioActivo?.rol === 'master' ? `<button class="user-mgmt-btn ${u.deshabilitado ? 'toggle-off' : 'toggle-on'}" onclick="toggleHabilitarUsuario(${u.id})" title="${u.deshabilitado ? 'Habilitar usuario' : 'Deshabilitar usuario'}">${u.deshabilitado ? '🔒' : '✅'}</button>` : ''}
         ${u.rol !== 'master' && usuarios.length > 1 ? `<button class="user-mgmt-btn del" onclick="eliminarUsuario(${u.id})">🗑️</button>` : ''}
         ${u.rol === 'master' && usuarioActivo?.rol === 'master' ? `<button class="user-mgmt-btn" onclick="abrirEditarMaster()" style="background:rgba(123,31,162,0.12);border-color:rgba(123,31,162,0.3);">✏️</button>` : ''}
         ${u.rol === 'master' && usuarioActivo?.rol !== 'master' ? `<span style="font-size:11px;color:var(--gris);font-style:italic;">Protegido</span>` : ''}
@@ -5490,6 +5501,22 @@ function eliminarUsuario(uid) {
     showToast('🗑️ Usuario eliminado');
   }});
 }
+
+function toggleHabilitarUsuario(uid) {
+  if (usuarioActivo?.rol !== 'master') { showToast('⛔ Solo el Master puede habilitar o deshabilitar usuarios'); return; }
+  const u = usuarios.find(x => x.id === uid);
+  if (!u || u.rol === 'master') return;
+  const accion = u.deshabilitado ? 'habilitar' : 'deshabilitar';
+  const icono  = u.deshabilitado ? '✅' : '🔒';
+  confirmar({ icono, titulo: (u.deshabilitado ? 'Habilitar' : 'Deshabilitar') + ' usuario', mensaje:`¿Deseas ${accion} al usuario "${u.nombre}"?`, textoOk: accion.charAt(0).toUpperCase() + accion.slice(1), callback() {
+    u.deshabilitado = !u.deshabilitado;
+    guardarUsuarios();
+    renderUsuariosConfig();
+    renderLoginUserList();
+    showToast(u.deshabilitado ? `🔒 ${u.nombre} deshabilitado` : `✅ ${u.nombre} habilitado`);
+  }});
+}
+
 
 // ── PERSISTENCIA DE ÓRDENES ACTIVAS ──────────────────────────────────
 const ORDENES_KEY = 'helechos_ordenes_activas';
