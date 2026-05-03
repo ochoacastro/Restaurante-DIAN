@@ -1819,6 +1819,138 @@
     text-transform: uppercase;
   }
 
+  /* ══════════════════════════════════════════════════════
+     FONDOS TEMÁTICOS ANIMADOS — un div por skin
+  ══════════════════════════════════════════════════════ */
+  .mc-deco {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .mc-deco span {
+    position: absolute;
+    display: block;
+    animation: mcFloat linear infinite;
+    opacity: 0;
+    user-select: none;
+    will-change: transform, opacity;
+    line-height: 1;
+  }
+  @keyframes mcFloat {
+    0%   { transform: translateY(108vh) rotate(0deg);   opacity: 0; }
+    5%   { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateY(-8vh)  rotate(360deg); opacity: 0; }
+  }
+
+  /* ── MADRE ─────────────── */
+  .mc-deco-madre span { filter: drop-shadow(0 0 6px rgba(255,100,180,0.65)); }
+
+  /* ── PADRE: lluvia de líneas ─ */
+  .mc-deco-padre .mc-rain-line {
+    position: absolute; top: -10%; width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(144,202,249,0.38), transparent);
+    animation: mcRain linear infinite; opacity: 0;
+  }
+  @keyframes mcRain {
+    0%   { transform: translateY(0);     opacity: 0; }
+    5%   { opacity: 1; }
+    95%  { opacity: 1; }
+    100% { transform: translateY(115vh); opacity: 0; }
+  }
+  .mc-deco-padre span { filter: drop-shadow(0 0 8px rgba(144,202,249,0.9)); }
+
+  /* ── HALLOWEEN: murciélagos ─ */
+  @keyframes mcBat {
+    0%   { transform: translate(0,0) rotate(-10deg);    opacity: 0; }
+    5%   { opacity: 0.85; }
+    30%  { transform: translate(28px,-55px) rotate(10deg); }
+    60%  { transform: translate(-18px,-120px) rotate(-8deg); }
+    90%  { opacity: 0.8; }
+    100% { transform: translate(10px,-220px) rotate(5deg); opacity: 0; }
+  }
+  .mc-deco-halloween .mc-bat {
+    position: absolute;
+    animation: mcBat ease-in-out infinite;
+    opacity: 0;
+    font-size: clamp(18px,5vw,30px);
+    filter: drop-shadow(0 0 8px rgba(180,0,255,0.75));
+  }
+  .mc-deco-halloween span { filter: drop-shadow(0 0 6px rgba(255,150,0,0.7)); }
+  /* telarañas esquinas */
+  .mc-deco-halloween::before,
+  .mc-deco-halloween::after {
+    content: ''; position: absolute; width: 120px; height: 120px;
+    background:
+      radial-gradient(circle at 0 0, transparent 58px, rgba(180,0,255,.18) 60px, transparent 62px),
+      radial-gradient(circle at 0 0, transparent 38px, rgba(180,0,255,.14) 40px, transparent 42px),
+      radial-gradient(circle at 0 0, transparent 20px, rgba(180,0,255,.12) 22px, transparent 24px);
+    border-right: 1px solid rgba(180,0,255,.18);
+    border-bottom: 1px solid rgba(180,0,255,.18);
+  }
+  .mc-deco-halloween::before { top:0; left:0;  border-radius:0 0 100% 0; }
+  .mc-deco-halloween::after  { top:0; right:0; border-radius:0 0 0 100%; transform:scaleX(-1); }
+
+  /* ── NAVIDAD: copos de nieve ─ */
+  @keyframes mcSnow {
+    0%   { transform: translateY(-5vh) translateX(0)    rotate(0deg);    opacity: 0; }
+    5%   { opacity: 0.9; }
+    50%  { transform: translateY(50vh) translateX(16px) rotate(180deg); }
+    90%  { opacity: 0.9; }
+    100% { transform: translateY(108vh) translateX(-10px) rotate(360deg); opacity: 0; }
+  }
+  .mc-deco-navidad span { animation-name: mcSnow !important; filter: drop-shadow(0 0 5px rgba(255,255,200,.9)); }
+  /* luces navideñas en tope */
+  .mc-lights {
+    position: absolute; top: 0; left: 0; right: 0; height: 24px;
+    display: flex; overflow: hidden;
+  }
+  .mc-bulb {
+    position: relative; flex-shrink: 0; width: 24px;
+  }
+  .mc-bulb::before {
+    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 1px; height: 7px; background: rgba(255,255,255,.45);
+  }
+  .mc-bulb::after {
+    content: ''; position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+    width: 10px; height: 13px; border-radius: 50% 50% 60% 60%;
+    animation: mcBlink 1.3s ease-in-out infinite alternate;
+  }
+  @keyframes mcBlink { 0% { opacity:.4; } 100% { opacity:1; box-shadow: 0 0 7px 2px currentColor; } }
+  .mc-bulb:nth-child(6n+1)::after  { background:#ff4444; color:#ff4444; }
+  .mc-bulb:nth-child(6n+2)::after  { background:#44ff44; color:#44ff44; }
+  .mc-bulb:nth-child(6n+3)::after  { background:#4488ff; color:#4488ff; }
+  .mc-bulb:nth-child(6n+4)::after  { background:#ffee00; color:#ffee00; }
+  .mc-bulb:nth-child(6n+5)::after  { background:#ff88ff; color:#ff88ff; }
+  .mc-bulb:nth-child(6n+6)::after  { background:#ff8800; color:#ff8800; }
+  .mc-bulb:nth-child(odd) { animation-delay: .6s; }
+
+  /* ── SAN VALENTÍN: corazones ─ */
+  @keyframes mcHeart {
+    0%   { transform: translateY(105vh) scale(.4) rotate(-15deg); opacity:0; }
+    8%   { opacity:.9; }
+    50%  { transform: translateY(42vh) scale(1) rotate(10deg); }
+    92%  { opacity:.85; }
+    100% { transform: translateY(-8vh) scale(.7) rotate(-5deg); opacity:0; }
+  }
+  .mc-deco-sanvalentin span { animation-name: mcHeart !important; filter: drop-shadow(0 0 8px rgba(255,80,130,.8)); }
+  .mc-deco-sanvalentin .mc-glow {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,80,140,.2), transparent 70%);
+    animation: mcGlowPulse 4s ease-in-out infinite alternate;
+  }
+  @keyframes mcGlowPulse { 0% { opacity:.4; transform:scale(.95); } 100% { opacity:1; transform:scale(1.05); } }
+
+  /* ── CLÁSICO: polvo dorado ─── */
+  .mc-deco-clasico span {
+    width: .7em; height: .7em; font-size: 10px;
+    background: radial-gradient(circle, rgba(245,220,130,.9), transparent 70%);
+    border-radius: 50%; filter: blur(1px);
+  }
+
 </style>
 </head>
 <body>
@@ -2003,6 +2135,7 @@
 <div id="menuClasicoView">
   <div class="mc-bg" id="mcBg"></div>
   <div class="mc-bg-overlay"></div>
+  <div class="mc-deco" id="mcDeco" aria-hidden="true"></div>
   <button class="mc-close-btn" id="mcCloseBtn" type="button">✕ Cerrar</button>
   <div class="mc-content">
     <div class="mc-header">
@@ -5756,6 +5889,179 @@ window.renderCategoryGridSafe = function() {
     view.style.setProperty('--mc-item-color', skin.itemColor);
     const footer = document.getElementById('mcFooter');
     if (footer) footer.textContent = skin.footer;
+    // render deco
+    _renderMcDeco(skinKey);
+  }
+
+  // ── Decoración temática ────────────────────────────────────────
+  let _mcDecoTimer = null;
+
+  function _rnd(min, max) { return Math.random() * (max - min) + min; }
+
+  function _renderMcDeco(skinKey) {
+    clearInterval(_mcDecoTimer);
+    const deco = document.getElementById('mcDeco');
+    if (!deco) return;
+    deco.innerHTML = '';
+    deco.className = 'mc-deco mc-deco-' + skinKey;
+
+    const CONFIGS = {
+      clasico: {
+        count: 30,
+        make: () => {
+          const s = document.createElement('span');
+          const sz = _rnd(4, 9);
+          Object.assign(s.style, {
+            left: _rnd(0, 100) + '%',
+            bottom: '-5%',
+            width: sz + 'px', height: sz + 'px',
+            animationDuration: _rnd(8, 18) + 's',
+            animationDelay:    _rnd(0, 14) + 's',
+          });
+          return s;
+        }
+      },
+      madre: {
+        count: 28,
+        emojis: ['🌸','🌷','💐','🌺','🌹','✿'],
+        make: (emojis) => {
+          const s = document.createElement('span');
+          s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+          const sz = _rnd(14, 28);
+          Object.assign(s.style, {
+            left: _rnd(0, 96) + '%',
+            bottom: '-5%',
+            fontSize: sz + 'px',
+            animationDuration: _rnd(7, 16) + 's',
+            animationDelay:    _rnd(0, 12) + 's',
+          });
+          return s;
+        }
+      },
+      padre: {
+        count: 24,
+        emojis: ['⭐','🌟','✨'],
+        make: (emojis, deco) => {
+          // líneas de lluvia
+          for (let i = 0; i < 18; i++) {
+            const l = document.createElement('div');
+            l.className = 'mc-rain-line';
+            const h = _rnd(40, 110);
+            Object.assign(l.style, {
+              left: _rnd(0, 100) + '%',
+              height: h + 'px',
+              animationDuration: _rnd(0.6, 1.4) + 's',
+              animationDelay:    _rnd(0, 2) + 's',
+            });
+            deco.appendChild(l);
+          }
+          const s = document.createElement('span');
+          s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+          Object.assign(s.style, {
+            left: _rnd(0, 94) + '%',
+            bottom: '-5%',
+            fontSize: _rnd(12, 20) + 'px',
+            animationDuration: _rnd(9, 18) + 's',
+            animationDelay:    _rnd(0, 14) + 's',
+          });
+          return s;
+        }
+      },
+      halloween: {
+        count: 20,
+        emojis: ['🎃','🕯️','💀','🕸️','🦇'],
+        make: (emojis, deco) => {
+          // murciélagos
+          if (Math.random() > 0.55) {
+            const b = document.createElement('div');
+            b.className = 'mc-bat';
+            b.textContent = '🦇';
+            Object.assign(b.style, {
+              left: _rnd(5, 88) + '%',
+              bottom: _rnd(5, 30) + '%',
+              animationDuration: _rnd(4, 8) + 's',
+              animationDelay:    _rnd(0, 10) + 's',
+            });
+            deco.appendChild(b);
+          }
+          const s = document.createElement('span');
+          const pool = ['🎃','💀','🕸️','🕯️'];
+          s.textContent = pool[Math.floor(Math.random() * pool.length)];
+          Object.assign(s.style, {
+            left: _rnd(0, 93) + '%',
+            bottom: '-5%',
+            fontSize: _rnd(14, 26) + 'px',
+            animationDuration: _rnd(8, 16) + 's',
+            animationDelay:    _rnd(0, 14) + 's',
+          });
+          return s;
+        }
+      },
+      navidad: {
+        count: 30,
+        emojis: ['❄️','⛄','🎄','✨','🌟'],
+        make: (emojis, deco, idx) => {
+          // luces en tope (solo una vez)
+          if (idx === 0) {
+            const lights = document.createElement('div');
+            lights.className = 'mc-lights';
+            const vw = window.innerWidth || 400;
+            for (let j = 0; j < Math.ceil(vw / 24) + 2; j++) {
+              const b = document.createElement('div');
+              b.className = 'mc-bulb';
+              b.style.animationDelay = (j * 0.07) + 's';
+              lights.appendChild(b);
+            }
+            deco.appendChild(lights);
+          }
+          const s = document.createElement('span');
+          const pool = ['❄️','❅','❆','⛄','🎄','⭐'];
+          s.textContent = pool[Math.floor(Math.random() * pool.length)];
+          Object.assign(s.style, {
+            left: _rnd(0, 96) + '%',
+            top:  '-5%',
+            fontSize: _rnd(12, 22) + 'px',
+            animationDuration: _rnd(6, 14) + 's',
+            animationDelay:    _rnd(0, 12) + 's',
+          });
+          return s;
+        }
+      },
+      sanvalentin: {
+        count: 26,
+        emojis: ['❤️','💕','💖','💗','💓','🌹','💝'],
+        make: (emojis, deco, idx) => {
+          // brillos de fondo (3)
+          if (idx < 3) {
+            const g = document.createElement('div');
+            g.className = 'mc-glow';
+            const sz = _rnd(160, 280);
+            Object.assign(g.style, {
+              width: sz + 'px', height: sz + 'px',
+              left: _rnd(0, 80) + '%', top: _rnd(0, 80) + '%',
+              animationDelay: _rnd(0, 4) + 's',
+            });
+            deco.appendChild(g);
+          }
+          const s = document.createElement('span');
+          s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+          Object.assign(s.style, {
+            left: _rnd(0, 93) + '%',
+            bottom: '-5%',
+            fontSize: _rnd(14, 30) + 'px',
+            animationDuration: _rnd(6, 15) + 's',
+            animationDelay:    _rnd(0, 12) + 's',
+          });
+          return s;
+        }
+      },
+    };
+
+    const cfg = CONFIGS[skinKey] || CONFIGS.clasico;
+    for (let i = 0; i < cfg.count; i++) {
+      const el = cfg.make(cfg.emojis || [], deco, i);
+      if (el) deco.appendChild(el);
+    }
   }
 
   function getClassicBg() {
