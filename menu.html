@@ -1593,7 +1593,16 @@
   #app.hidden #btnMenuClasico           { display: none !important; }
 
   /* ── VISTA MENÚ CLÁSICO ─────────────────────────────── */
+  /* ── MENÚ CLÁSICO: variables de skin ───────────────────────── */
   #menuClasicoView {
+    --mc-acento:      #f5dc82;
+    --mc-acento-rgb:  245,220,130;
+    --mc-cat-grad:    linear-gradient(135deg,#c8620a,#e07a12);
+    --mc-overlay:     rgba(8,6,2,0.82);
+    --mc-bg-default:  linear-gradient(160deg,#0d0a04,#1a1204);
+    --mc-fuente:      'Georgia', serif;
+    --mc-footer-txt:  '❦ Gracias por visitarnos ❦';
+    --mc-item-color:  #f0e8d0;
     display: none;
     position: fixed;
     inset: 0;
@@ -1616,7 +1625,7 @@
     position: fixed;
     inset: 0;
     z-index: 1;
-    background: rgba(8,6,2,0.82);
+    background: var(--mc-overlay);
   }
   .mc-content {
     position: relative;
@@ -1626,7 +1635,7 @@
   .mc-header {
     text-align: center;
     padding: 48px 24px 24px;
-    border-bottom: 1px solid rgba(245,220,130,0.2);
+    border-bottom: 1px solid rgba(var(--mc-acento-rgb),0.2);
     margin-bottom: 8px;
   }
   .mc-logo {
@@ -1635,21 +1644,21 @@
     object-fit: cover;
     margin: 0 auto 12px;
     display: block;
-    border: 2px solid rgba(245,220,130,0.4);
+    border: 2px solid rgba(var(--mc-acento-rgb),0.4);
   }
   .mc-title {
     font-size: 28px;
     font-weight: 900;
-    color: #f5dc82;
+    color: var(--mc-acento);
     letter-spacing: 1px;
     text-transform: uppercase;
-    font-family: 'Georgia', serif;
+    font-family: var(--mc-fuente);
     line-height: 1.15;
     text-shadow: 0 2px 12px rgba(0,0,0,0.6);
   }
   .mc-subtitle {
     font-size: 12px;
-    color: rgba(245,220,130,0.6);
+    color: rgba(var(--mc-acento-rgb),0.6);
     letter-spacing: 3px;
     text-transform: uppercase;
     margin-top: 6px;
@@ -1664,11 +1673,11 @@
     content: '';
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(245,220,130,0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(var(--mc-acento-rgb),0.4), transparent);
   }
   .mc-divider span {
     font-size: 10px;
-    color: rgba(245,220,130,0.5);
+    color: rgba(var(--mc-acento-rgb),0.5);
     letter-spacing: 3px;
     text-transform: uppercase;
   }
@@ -1676,7 +1685,7 @@
     padding: 0 16px 8px;
   }
   .mc-cat-header {
-    background: linear-gradient(135deg, #c8620a, #e07a12);
+    background: var(--mc-cat-grad);
     border-radius: 8px;
     padding: 8px 16px;
     margin-bottom: 10px;
@@ -1702,7 +1711,7 @@
   .mc-item-name {
     font-size: 14px;
     font-weight: 700;
-    color: #f0e8d0;
+    color: var(--mc-item-color);
     line-height: 1.2;
   }
   .mc-item-desc {
@@ -1714,7 +1723,7 @@
   .mc-item-price {
     font-size: 16px;
     font-weight: 900;
-    color: #f5dc82;
+    color: var(--mc-acento);
     white-space: nowrap;
     flex-shrink: 0;
     padding-top: 2px;
@@ -1740,7 +1749,7 @@
     text-align: center;
     padding: 24px 20px 16px;
     font-size: 11px;
-    color: rgba(245,220,130,0.35);
+    color: rgba(var(--mc-acento-rgb),0.35);
     letter-spacing: 2px;
     text-transform: uppercase;
   }
@@ -1927,7 +1936,7 @@
       <div class="mc-subtitle" id="mcSubtitle">Carta del restaurante</div>
     </div>
     <div id="mcBody"></div>
-    <div class="mc-footer">❦ Gracias por visitarnos ❦</div>
+    <div class="mc-footer" id="mcFooter">❦ Gracias por visitarnos ❦</div>
   </div>
 </div>
 
@@ -5444,6 +5453,94 @@ window.renderCategoryGridSafe = function() {
 // ══════════════════════════════════════════════════════
 (function initMenuClasico() {
 
+  // ── Definición de skins predefinidos ──────────────────────────
+  const SKINS = {
+    clasico: {
+      nombre: 'Clásico',
+      acento: '#f5dc82', acentoRgb: '245,220,130',
+      catGrad: 'linear-gradient(135deg,#c8620a,#e07a12)',
+      overlay: 'rgba(8,6,2,0.82)',
+      bgDefault: 'linear-gradient(160deg,#0d0a04,#1a1204)',
+      fuente: "'Georgia', serif",
+      footer: '❦ Gracias por visitarnos ❦',
+      itemColor: '#f0e8d0',
+    },
+    madre: {
+      nombre: 'Día de la Madre 🌸',
+      acento: '#ffb3d9', acentoRgb: '255,179,217',
+      catGrad: 'linear-gradient(135deg,#c2185b,#e91e8c)',
+      overlay: 'rgba(10,2,8,0.80)',
+      bgDefault: 'linear-gradient(160deg,#1a0010,#2d0020)',
+      fuente: "'Georgia', serif",
+      footer: '🌷 Con amor para mamá 🌷',
+      itemColor: '#ffe8f4',
+    },
+    padre: {
+      nombre: 'Día del Padre 👔',
+      acento: '#90caf9', acentoRgb: '144,202,249',
+      catGrad: 'linear-gradient(135deg,#1565c0,#1976d2)',
+      overlay: 'rgba(2,6,18,0.85)',
+      bgDefault: 'linear-gradient(160deg,#020612,#041228)',
+      fuente: "'Georgia', serif",
+      footer: '👔 Para el mejor papá del mundo 👔',
+      itemColor: '#e3f2fd',
+    },
+    halloween: {
+      nombre: 'Halloween 🎃',
+      acento: '#ff9800', acentoRgb: '255,152,0',
+      catGrad: 'linear-gradient(135deg,#4a0080,#6a0dad)',
+      overlay: 'rgba(4,0,8,0.88)',
+      bgDefault: 'linear-gradient(160deg,#0a0010,#1a000a)',
+      fuente: "'Georgia', serif",
+      footer: '🕷️ ¡Trick or treat! 🎃',
+      itemColor: '#ffe0b2',
+    },
+    navidad: {
+      nombre: 'Navidad 🎄',
+      acento: '#ffeb3b', acentoRgb: '255,235,59',
+      catGrad: 'linear-gradient(135deg,#b71c1c,#c62828)',
+      overlay: 'rgba(2,8,2,0.84)',
+      bgDefault: 'linear-gradient(160deg,#020802,#0a1a0a)',
+      fuente: "'Georgia', serif",
+      footer: '🎄 ¡Feliz Navidad y Próspero Año Nuevo! 🎅',
+      itemColor: '#fff9e6',
+    },
+    sanvalentin: {
+      nombre: 'San Valentín ❤️',
+      acento: '#ff6b9d', acentoRgb: '255,107,157',
+      catGrad: 'linear-gradient(135deg,#880e4f,#ad1457)',
+      overlay: 'rgba(12,2,6,0.82)',
+      bgDefault: 'linear-gradient(160deg,#120006,#200010)',
+      fuente: "'Georgia', serif",
+      footer: '💕 Una noche especial para dos 💕',
+      itemColor: '#fce4ec',
+    },
+  };
+  window._MC_SKINS = SKINS; // exponer para index.html
+
+  function getSkinKey() {
+    try {
+      const raw = localStorage.getItem('helechos_menu_settings_v1');
+      if (raw) return JSON.parse(raw).classicSkin || 'clasico';
+    } catch(e) {}
+    return 'clasico';
+  }
+
+  function applySkin(skinKey) {
+    const skin = SKINS[skinKey] || SKINS.clasico;
+    const view = document.getElementById('menuClasicoView');
+    if (!view) return;
+    view.style.setProperty('--mc-acento',     skin.acento);
+    view.style.setProperty('--mc-acento-rgb', skin.acentoRgb);
+    view.style.setProperty('--mc-cat-grad',   skin.catGrad);
+    view.style.setProperty('--mc-overlay',    skin.overlay);
+    view.style.setProperty('--mc-bg-default', skin.bgDefault);
+    view.style.setProperty('--mc-fuente',     skin.fuente);
+    view.style.setProperty('--mc-item-color', skin.itemColor);
+    const footer = document.getElementById('mcFooter');
+    if (footer) footer.textContent = skin.footer;
+  }
+
   function getClassicBg() {
     try {
       const raw = localStorage.getItem('helechos_menu_settings_v1');
@@ -5453,11 +5550,16 @@ window.renderCategoryGridSafe = function() {
   }
 
   function renderMenuClasico() {
+    // Aplicar skin primero
+    const skinKey = getSkinKey();
+    applySkin(skinKey);
+    const skin = SKINS[skinKey] || SKINS.clasico;
+
     // Fondo
     const mcBg = document.getElementById('mcBg');
     const bg = getClassicBg();
     if (mcBg) {
-      mcBg.style.backgroundImage = bg ? `url(${bg})` : 'linear-gradient(160deg,#0d0a04,#1a1204)';
+      mcBg.style.backgroundImage = bg ? `url(${bg})` : skin.bgDefault;
     }
 
     // Logo y nombre
@@ -5545,17 +5647,21 @@ window.renderCategoryGridSafe = function() {
   const closeBtn = document.getElementById('mcCloseBtn');
   if (closeBtn) closeBtn.addEventListener('click', closeMenuClasico);
 
-  // Actualizar fondo cuando cambia desde index.html (storage sync)
+  // Actualizar fondo y skin cuando cambia desde index.html (storage sync)
   window.renderMenuClasico = renderMenuClasico; // exponer globalmente
   window.addEventListener('storage', e => {
     if (e.key === 'helechos_menu_settings_v1') {
       try {
         const parsed = JSON.parse(e.newValue || '{}');
+        // Actualizar skin en tiempo real
+        if (parsed.classicSkin !== undefined) applySkin(parsed.classicSkin || 'clasico');
+        // Actualizar fondo
         const mcBg = document.getElementById('mcBg');
         if (mcBg && parsed.classicMenuBg !== undefined) {
+          const skin = SKINS[parsed.classicSkin || 'clasico'] || SKINS.clasico;
           mcBg.style.backgroundImage = parsed.classicMenuBg
             ? `url(${parsed.classicMenuBg})`
-            : 'linear-gradient(160deg,#0d0a04,#1a1204)';
+            : skin.bgDefault;
         }
       } catch(_) {}
     }
