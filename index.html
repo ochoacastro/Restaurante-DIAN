@@ -3672,41 +3672,60 @@
 
         <div style="height:1px;background:var(--borde);margin:4px 0;"></div>
 
-        <!-- Texto de la cabecera (hero) -->
+        <!-- Cabecera del menú digital -->
         <div>
-          <div class="form-label form-label-small" style="margin-bottom:4px;">✏️ Texto de la cabecera</div>
-          <div style="font-size:11px;color:var(--gris);margin-bottom:12px;line-height:1.5;">
-            Edita el título y la descripción que aparecen en el bloque naranja del menú digital.
+          <div class="form-label form-label-small" style="margin-bottom:4px;">✏️ Cabecera del menú</div>
+          <div style="font-size:11px;color:var(--gris);margin-bottom:14px;line-height:1.5;">
+            Título, subtítulo, alineación y color de fondo del bloque destacado.
           </div>
+
+          <!-- Título -->
           <div style="margin-bottom:10px;">
-            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:5px;">Título (restaurante)</div>
+            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:5px;">Título</div>
             <input type="text" id="cfgHeroTitleRestInput" class="config-input"
               placeholder="Menú del restaurante"
               style="width:100%;box-sizing:border-box;"
               oninput="cfgSaveHeroText()">
           </div>
-          <div style="margin-bottom:10px;">
-            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:5px;">Descripción (restaurante)</div>
+
+          <!-- Subtítulo -->
+          <div style="margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:5px;">Subtítulo</div>
             <input type="text" id="cfgHeroTextRestInput" class="config-input"
               placeholder="Consulta platos, fotos y precios."
               style="width:100%;box-sizing:border-box;"
               oninput="cfgSaveHeroText()">
           </div>
-          <div style="margin-bottom:10px;">
-            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:5px;">Título (domicilio)</div>
-            <input type="text" id="cfgHeroTitleDomInput" class="config-input"
-              placeholder="Menú de domicilio"
-              style="width:100%;box-sizing:border-box;"
-              oninput="cfgSaveHeroText()">
+
+          <!-- Alineación -->
+          <div style="margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:8px;">Alineación del texto</div>
+            <div style="display:flex;gap:8px;">
+              <button id="cfgHeroAlignLeft"   onclick="cfgSetHeroAlign('left')"   style="flex:1;padding:9px 0;border-radius:10px;border:1.5px solid var(--borde);background:var(--fondo);font-size:16px;cursor:pointer;">⬅</button>
+              <button id="cfgHeroAlignCenter" onclick="cfgSetHeroAlign('center')" style="flex:1;padding:9px 0;border-radius:10px;border:1.5px solid var(--borde);background:var(--fondo);font-size:16px;cursor:pointer;">↔</button>
+              <button id="cfgHeroAlignRight"  onclick="cfgSetHeroAlign('right')"  style="flex:1;padding:9px 0;border-radius:10px;border:1.5px solid var(--borde);background:var(--fondo);font-size:16px;cursor:pointer;">➡</button>
+            </div>
           </div>
+
+          <!-- Color de fondo -->
           <div style="margin-bottom:4px;">
-            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:5px;">Descripción (domicilio)</div>
-            <input type="text" id="cfgHeroTextDomInput" class="config-input"
-              placeholder="Toca un plato para agregarlo al pedido."
-              style="width:100%;box-sizing:border-box;"
-              oninput="cfgSaveHeroText()">
+            <div style="font-size:11px;font-weight:700;color:var(--gris-osc);margin-bottom:8px;">Color de fondo <span style="font-weight:400;color:var(--gris);">(cuando no hay foto)</span></div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <input type="color" id="cfgHeroBgColorInput"
+                value="#1A1108"
+                style="width:48px;height:40px;border:none;border-radius:10px;cursor:pointer;background:none;padding:2px;"
+                oninput="cfgSaveHeroText()">
+              <span id="cfgHeroBgColorLabel" style="font-size:13px;font-family:var(--font-num);color:var(--gris-osc);">#1A1108</span>
+              <button onclick="cfgResetHeroBgColor()" style="margin-left:auto;font-size:11px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--borde);background:var(--fondo);color:var(--gris-osc);cursor:pointer;font-family:inherit;">Restablecer</button>
+            </div>
+            <!-- Preview -->
+            <div id="cfgHeroPreviewBox" style="margin-top:10px;border-radius:14px;padding:16px 18px;overflow:hidden;position:relative;">
+              <div id="cfgHeroPreviewTitle"  style="font-size:18px;font-weight:900;color:#fff;line-height:1.2;position:relative;z-index:1;">Título</div>
+              <div id="cfgHeroPreviewSub"    style="font-size:12px;color:rgba(255,255,255,.65);margin-top:4px;position:relative;z-index:1;">Subtítulo</div>
+            </div>
           </div>
-          <div class="qr-note" style="margin-top:8px;">Los cambios se reflejan inmediatamente en el menú digital.</div>
+
+          <div class="qr-note" style="margin-top:10px;">Los cambios se reflejan al instante en el menú digital.</div>
         </div>
 
         <div style="height:1px;background:var(--borde);margin:4px 0;"></div>
@@ -12660,34 +12679,92 @@ function cfgRenderDiseno() {
   // ── Textos del hero ─────────────────
   const tR = document.getElementById('cfgHeroTitleRestInput');
   const dR = document.getElementById('cfgHeroTextRestInput');
-  const tD = document.getElementById('cfgHeroTitleDomInput');
-  const dD = document.getElementById('cfgHeroTextDomInput');
   if (tR) tR.value = s.heroTitleRest || '';
   if (dR) dR.value = s.heroTextRest  || '';
-  if (tD) tD.value = s.heroTitleDom  || '';
-  if (dD) dD.value = s.heroTextDom   || '';
+
+  // Alineación
+  cfgRenderHeroAlignBtns(s.heroAlign || 'left');
+
+  // Color de fondo
+  const colorInput = document.getElementById('cfgHeroBgColorInput');
+  const colorLabel = document.getElementById('cfgHeroBgColorLabel');
+  const color = s.heroBgColor || '#1A1108';
+  if (colorInput) colorInput.value = color;
+  if (colorLabel) colorLabel.textContent = color;
+  cfgUpdateHeroPreview();
+}
+
+function cfgRenderHeroAlignBtns(align) {
+  ['left','center','right'].forEach(a => {
+    const btn = document.getElementById('cfgHeroAlign' + a.charAt(0).toUpperCase() + a.slice(1));
+    if (!btn) return;
+    const isActive = a === align;
+    btn.style.background     = isActive ? 'var(--rappi)'  : 'var(--fondo)';
+    btn.style.borderColor    = isActive ? 'var(--rappi)'  : 'var(--borde)';
+    btn.style.color          = isActive ? '#fff'          : 'var(--negro)';
+    btn.style.fontWeight     = isActive ? '900'           : '400';
+  });
+}
+
+function cfgSetHeroAlign(align) {
+  cfgRenderHeroAlignBtns(align);
+  try {
+    const raw = localStorage.getItem(MENU_SETTINGS_KEY);
+    const ms  = raw ? JSON.parse(raw) : {};
+    ms.heroAlign = align;
+    localStorage.setItem(MENU_SETTINGS_KEY, JSON.stringify(ms));
+    if (window.fbSync) fbSync('menuSettings/heroAlign', align);
+  } catch(e) {}
+  cfgUpdateHeroPreview();
+}
+
+function cfgResetHeroBgColor() {
+  const colorInput = document.getElementById('cfgHeroBgColorInput');
+  const colorLabel = document.getElementById('cfgHeroBgColorLabel');
+  const def = '#1A1108';
+  if (colorInput) colorInput.value = def;
+  if (colorLabel) colorLabel.textContent = def;
+  cfgSaveHeroText();
+}
+
+function cfgUpdateHeroPreview() {
+  const box   = document.getElementById('cfgHeroPreviewBox');
+  const tEl   = document.getElementById('cfgHeroPreviewTitle');
+  const sEl   = document.getElementById('cfgHeroPreviewSub');
+  const tIn   = document.getElementById('cfgHeroTitleRestInput');
+  const sIn   = document.getElementById('cfgHeroTextRestInput');
+  const cIn   = document.getElementById('cfgHeroBgColorInput');
+  if (!box) return;
+  const align = (() => {
+    try { const r = localStorage.getItem(MENU_SETTINGS_KEY); return r ? (JSON.parse(r).heroAlign||'left') : 'left'; } catch(e){return 'left';}
+  })();
+  const color = cIn ? cIn.value : '#1A1108';
+  box.style.background  = color;
+  box.style.textAlign   = align;
+  if (tEl) tEl.textContent = (tIn && tIn.value) || 'Título';
+  if (sEl) sEl.textContent = (sIn && sIn.value) || 'Subtítulo';
 }
 
 function cfgSaveHeroText() {
   const tR = document.getElementById('cfgHeroTitleRestInput');
   const dR = document.getElementById('cfgHeroTextRestInput');
-  const tD = document.getElementById('cfgHeroTitleDomInput');
-  const dD = document.getElementById('cfgHeroTextDomInput');
+  const cIn= document.getElementById('cfgHeroBgColorInput');
+  const colorLabel = document.getElementById('cfgHeroBgColorLabel');
+  if (colorLabel && cIn) colorLabel.textContent = cIn.value;
   try {
     const raw = localStorage.getItem(MENU_SETTINGS_KEY);
     const ms  = raw ? JSON.parse(raw) : {};
     ms.heroTitleRest = tR ? tR.value : (ms.heroTitleRest || '');
     ms.heroTextRest  = dR ? dR.value : (ms.heroTextRest  || '');
-    ms.heroTitleDom  = tD ? tD.value : (ms.heroTitleDom  || '');
-    ms.heroTextDom   = dD ? dD.value : (ms.heroTextDom   || '');
+    ms.heroBgColor   = cIn ? cIn.value : (ms.heroBgColor || '#1A1108');
     localStorage.setItem(MENU_SETTINGS_KEY, JSON.stringify(ms));
     if (window.fbSync) {
       fbSync('menuSettings/heroTitleRest', ms.heroTitleRest || null);
       fbSync('menuSettings/heroTextRest',  ms.heroTextRest  || null);
-      fbSync('menuSettings/heroTitleDom',  ms.heroTitleDom  || null);
-      fbSync('menuSettings/heroTextDom',   ms.heroTextDom   || null);
+      fbSync('menuSettings/heroBgColor',   ms.heroBgColor);
     }
   } catch(e) { showToast('⚠️ No se pudo guardar'); }
+  cfgUpdateHeroPreview();
 }
 
 function cfgMenuImgToDataUrl(file) {
