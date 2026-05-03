@@ -3958,26 +3958,26 @@
   <span id="seccionFirebase" style="display:none;"></span>
   <span id="seccionBackup" style="display:none;"></span>
 
-  <!-- FACTURA ELECTRÓNICA — solo master -->
+  <!-- FACTURA ELECTRÓNICA — solo master ve el toggle, admin/cajero ven el contenido si está habilitada -->
   <div class="cfg-acc" id="cfgAccFE" data-fe-managed="1">
-    <!-- Fila superior: ícono + título + toggle maestro (siempre visible) -->
-    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;" onclick="toggleCfgAccFE(event)">
-      <div class="cfg-acc-icon" id="feIcono">🧾</div>
-      <div style="flex:1;min-width:0;">
-        <div class="cfg-acc-title">Factura Electrónica DIAN</div>
-        <div class="cfg-acc-sub" id="feStatusSub">Deshabilitada — toca el botón para activar</div>
+    <div class="cfg-acc-header" id="feAccHeader" onclick="toggleCfgAccFE(event)">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+        <div class="cfg-acc-icon">🧾</div>
+        <div style="flex:1;min-width:0;">
+          <div class="cfg-acc-title">Factura Electrónica DIAN</div>
+          <div class="cfg-acc-sub" id="feStatusSub">Deshabilitada</div>
+        </div>
+        <!-- Toggle maestro (solo visible para master) -->
+        <div id="feMainToggleWrap" onclick="event.stopPropagation();feToggleHabilitado();"
+             style="display:none;align-items:center;gap:6px;background:var(--gris-cl);border:1.5px solid var(--borde);
+                    border-radius:999px;padding:5px 10px 5px 6px;cursor:pointer;transition:all .2s;flex-shrink:0;">
+          <div id="feMainToggleDot" style="width:22px;height:22px;border-radius:50%;background:#ccc;transition:all .2s;flex-shrink:0;"></div>
+          <span id="feMainToggleLabel" style="font-size:11px;font-weight:700;color:var(--gris);white-space:nowrap;transition:color .2s;">INACTIVO</span>
+        </div>
       </div>
-      <!-- Toggle maestro -->
-      <div id="feMainToggleWrap" onclick="event.stopPropagation();feToggleHabilitado();"
-           style="display:flex;align-items:center;gap:6px;background:var(--gris-cl);border:1.5px solid var(--borde);
-                  border-radius:999px;padding:5px 10px 5px 6px;cursor:pointer;transition:all .2s;flex-shrink:0;">
-        <div id="feMainToggleDot" style="width:22px;height:22px;border-radius:50%;background:#ccc;transition:all .2s;flex-shrink:0;"></div>
-        <span id="feMainToggleLabel" style="font-size:11px;font-weight:700;color:var(--gris);white-space:nowrap;transition:color .2s;">INACTIVO</span>
-      </div>
-      <span class="cfg-acc-arrow" id="feAccArrow" style="margin-left:4px;">▼</span>
+      <span class="cfg-acc-arrow">▼</span>
     </div>
-    <!-- Cuerpo — solo visible si FE está habilitada -->
-    <div class="cfg-acc-body" id="feAccBody" style="display:none;">
+    <div class="cfg-acc-body">
       <div class="cfg-acc-inner" id="feConfigInner"></div>
     </div>
   </div>
@@ -12324,10 +12324,8 @@ function feToggleHabilitado() {
   feApplyHabilitado();
   showToast(cfg.habilitado ? '✅ Factura Electrónica DIAN activada' : '🔒 Factura Electrónica DIAN desactivada', 3000);
   if (!cfg.habilitado) {
-    const body = document.getElementById('feAccBody');
-    if (body) body.style.display = 'none';
-    const arrow = document.getElementById('feAccArrow');
-    if (arrow) arrow.style.transform = '';
+    const acc = document.getElementById('cfgAccFE');
+    if (acc) acc.classList.remove('open');
   }
 }
 
@@ -12337,55 +12335,56 @@ function feApplyHabilitado() {
   const esMaster = rol === 'master';
   const esAdmin  = rol === 'admin' || rol === 'cajero';
 
-  // Visibilidad del accordion completo:
-  // - Master: siempre visible (para habilitar/deshabilitar y configurar)
-  // - Admin/Cajero: visible solo si FE está habilitada
-  // - Mesero/Cocina: nunca
+  // Visibilidad del accordion:
+  // Master: siempre visible | Admin/Cajero: solo si habilitada | Resto: nunca
   const acc = document.getElementById('cfgAccFE');
-  if (acc) {
-    const visible = esMaster || (esAdmin && hab);
-    acc.style.display = visible ? '' : 'none';
+  if (!acc) return;
+  const visible = esMaster || (esAdmin && hab);
+  acc.style.display = visible ? '' : 'none';
+
+  // Toggle maestro — solo para master
+  const wrap = document.getElementById('feMainToggleWrap');
+  const dot  = document.getElementById('feMainToggleDot');
+  const lbl  = document.getElementById('feMainToggleLabel');
+  const sub  = document.getElementById('feStatusSub');
+
+  if (wrap) {
+    wrap.style.display = esMaster ? 'flex' : 'none';
+    wrap.style.background    = hab ? 'rgba(46,125,50,0.1)' : 'var(--gris-cl)';
+    wrap.style.borderColor   = hab ? 'rgba(46,125,50,0.4)' : 'var(--borde)';
   }
+  if (dot) { dot.style.background = hab ? '#2E7D32' : '#ccc'; dot.style.boxShadow = hab ? '0 0 0 3px rgba(46,125,50,0.2)' : 'none'; }
+  if (lbl) { lbl.style.color = hab ? '#2E7D32' : 'var(--gris)'; lbl.textContent = hab ? 'ACTIVO' : 'INACTIVO'; }
+  if (sub) sub.textContent = hab
+    ? (esMaster ? 'Habilitada — toca para configurar' : 'Habilitada')
+    : 'Deshabilitada';
 
-  // Toggle maestro y estado visual (solo aplica si el accordion es visible)
-  const wrap  = document.getElementById('feMainToggleWrap');
-  const dot   = document.getElementById('feMainToggleDot');
-  const lbl   = document.getElementById('feMainToggleLabel');
-  const sub   = document.getElementById('feStatusSub');
-  const body  = document.getElementById('feAccBody');
-
-  // Para admin: ocultar el toggle de habilitar/deshabilitar, mostrar solo el contenido
-  if (wrap) wrap.style.display = esMaster ? 'flex' : 'none';
-
-  if (dot)   { dot.style.background = hab ? '#2E7D32' : '#ccc'; dot.style.boxShadow = hab ? '0 0 0 3px rgba(46,125,50,0.2)' : 'none'; }
-  if (lbl)   { lbl.style.color = hab ? '#2E7D32' : 'var(--gris)'; lbl.textContent = hab ? 'ACTIVO' : 'INACTIVO'; }
-  if (wrap)  { wrap.style.background = hab ? 'rgba(46,125,50,0.1)' : 'var(--gris-cl)'; wrap.style.borderColor = hab ? 'rgba(46,125,50,0.4)' : 'var(--borde)'; }
-  if (sub) {
-    if (esMaster) {
-      sub.textContent = hab ? 'Habilitada — toca ▼ para configurar' : 'Deshabilitada — toca el botón para activar';
-    } else {
-      sub.textContent = 'Factura Electrónica DIAN activa';
+  // Abrir/cerrar el accordion usando la clase estándar del sistema
+  if (hab && visible) {
+    // Si está habilitada y visible: abrir automáticamente y cargar el panel
+    if (!acc.classList.contains('open')) {
+      acc.classList.add('open');
+      const inner = document.getElementById('feConfigInner');
+      if (inner && !inner.innerHTML.trim()) inner.innerHTML = feRenderConfigPanel();
     }
+  } else {
+    // Si está deshabilitada: cerrar
+    acc.classList.remove('open');
   }
-  if (!hab && body) body.style.display = 'none';
 }
 
-// Abrir/cerrar el cuerpo del accordion FE (solo si está habilitado)
+// Abrir/cerrar el accordion FE al tocar el header
 function toggleCfgAccFE(e) {
-  const rol = usuarioActivo?.rol || '';
-  const esMaster = rol === 'master';
   if (!feEsHabilitada()) {
-    if (esMaster) showToast('⚠️ Activa primero la Factura Electrónica con el botón');
+    if (usuarioActivo?.rol === 'master') showToast('⚠️ Activa primero la Factura Electrónica con el botón');
     return;
   }
-  const body  = document.getElementById('feAccBody');
-  const arrow = document.getElementById('feAccArrow');
+  const acc   = document.getElementById('cfgAccFE');
   const inner = document.getElementById('feConfigInner');
-  if (!body) return;
-  const abierto = body.style.display !== 'none';
-  body.style.display  = abierto ? 'none' : '';
-  if (arrow) arrow.style.transform = abierto ? '' : 'rotate(180deg)';
-  if (!abierto && inner) inner.innerHTML = feRenderConfigPanel();
+  if (!acc) return;
+  const abierto = acc.classList.contains('open');
+  acc.classList.toggle('open', !abierto);
+  if (!abierto && inner && !inner.innerHTML.trim()) inner.innerHTML = feRenderConfigPanel();
 }
 
 function feGetCola() { try { const r = localStorage.getItem(FE_COLA_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
