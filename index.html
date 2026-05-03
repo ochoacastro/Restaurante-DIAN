@@ -12548,7 +12548,14 @@ async function cfgQrShare() {
 }
 
 // Prellenar URL con la del propio archivo
-(function(){ const inp = document.getElementById('qrUrlInput'); if (inp && !inp.value) inp.value = 'https://ochoacastro.github.io/Restaurante-los-helechos/menu.html'; })();
+(function(){
+  const inp = document.getElementById('qrUrlInput');
+  if (inp && !inp.value) {
+    const loc = window.location;
+    const base = loc.origin + loc.pathname.replace(/\/[^/]*$/, '/');
+    inp.value = base + 'menu.html';
+  }
+})();
 
 // ══════════════════════════════════════════════════════════════════════
 // MÓDULO FACTURA ELECTRÓNICA — CLIENTE
