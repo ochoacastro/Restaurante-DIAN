@@ -3992,19 +3992,6 @@
           </div>
         </div>
 
-        <!-- Festivos -->
-        <div class="config-field" style="margin-top:6px;">
-          <label>📅 Días festivos</label>
-          <div style="font-size:11px;color:var(--gris);margin-bottom:10px;line-height:1.5;">
-            Agrega fechas festivas en que el negocio estará cerrado, independiente del horario semanal.
-          </div>
-          <div id="festivosWrap" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="date" id="festivoFechaInput" class="config-input" style="flex:1;margin:0;">
-            <input type="text" id="festivoNombreInput" class="config-input" placeholder="Ej: Año Nuevo" style="flex:2;margin:0;">
-            <button onclick="agregarFestivo()" style="background:var(--rappi);color:#fff;border:none;border-radius:var(--r-sm);padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">➕</button>
-          </div>
-        </div>
 
         <div class="config-field">
           <label>Logo para el recibo</label>
@@ -4018,6 +4005,7 @@
           <button id="logoQuitarBtn" style="display:none;width:100%;margin-top:6px;padding:9px;background:white;border:1.5px solid rgba(192,57,43,0.35);color:var(--rojo);border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;" onclick="quitarLogo()">🗑️ Quitar logo</button>
         </div>
 
+        <div id="seccionLoginBranding">
         <div class="config-field">
           <label>🏠 Nombre en pantalla de inicio</label>
           <input class="config-input" id="cfgLoginBrand" placeholder="Ej: Los Helechos">
@@ -4040,6 +4028,7 @@
             <input type="file" id="loginIconFileInput" accept="image/*" style="display:none" onchange="cargarLoginIcon(this)">
           </label>
           <button id="loginIconQuitarBtn" style="display:none;width:100%;padding:9px;background:white;border:1.5px solid rgba(192,57,43,0.35);color:var(--rojo);border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;" onclick="quitarLoginIcon()">🗑️ Quitar imagen, usar emoji</button>
+        </div>
         </div>
 
         <div class="config-field">
@@ -5316,6 +5305,10 @@ function renderUsuariosConfig() {
   // Sección Firebase solo para Master
   const secFB = document.getElementById('seccionFirebase');
   if (secFB) secFB.style.display = usuarioActivo?.rol === 'master' ? 'block' : 'none';
+
+  // Branding pantalla de inicio solo para Master
+  const secBranding = document.getElementById('seccionLoginBranding');
+  if (secBranding) secBranding.style.display = usuarioActivo?.rol === 'master' ? 'block' : 'none';
 
   list.innerHTML = usuarios.map(u => `
     <div class="user-mgmt-item">
