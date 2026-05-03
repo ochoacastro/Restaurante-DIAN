@@ -212,7 +212,7 @@
     text-transform:uppercase; letter-spacing:.8px;
   }
 
-  /* ── BANNER PUBLICITARIO ────────────────────────────────── */
+  /* ── BANNER PUBLICITARIO — CARRUSEL ─────────────────────── */
   #adBannerWrap {
     display: none;
     margin: 0 0 14px 0;
@@ -224,22 +224,53 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.18);
   }
   #adBannerWrap.visible { display: block; }
-  #adBannerImg {
+
+  /* Track de slides */
+  #adBannerTrack {
+    display: flex;
     width: 100%;
+    transition: transform 0.55s cubic-bezier(0.4,0,0.2,1);
+    will-change: transform;
+  }
+  .ad-slide {
+    min-width: 100%;
     height: 200px;
-    display: block;
     background-size: cover;
     background-position: center top;
     background-repeat: no-repeat;
+    flex-shrink: 0;
   }
-  #adBannerBadge {
-    display: none !important;
+
+  /* Puntos indicadores */
+  #adBannerDots {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    pointer-events: none;
   }
+  .ad-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.45);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .ad-dot.active {
+    background: #fff;
+    transform: scale(1.35);
+  }
+
+  /* Legacy compat */
+  #adBannerImg { display: none; }
+  #adBannerBadge { display: none !important; }
   #adBannerRipple {
     position: absolute;
     inset: 0;
     background: rgba(255,255,255,0);
     transition: background 0.18s;
+    pointer-events: none;
   }
   #adBannerWrap:active #adBannerRipple {
     background: rgba(255,255,255,0.12);
@@ -1922,11 +1953,13 @@
 
   <main id="panel" class="panel active">
 
-    <!-- BANNER PUBLICITARIO — se muestra si hay anuncio activo -->
+    <!-- BANNER PUBLICITARIO — CARRUSEL AUTOMÁTICO -->
     <div id="adBannerWrap" role="button" aria-label="Ver menú especial">
-      <!-- Usamos div con background-image para evitar que el teléfono abra la galería -->
-      <div id="adBannerImg"></div>
+      <div id="adBannerTrack"></div>
+      <div id="adBannerDots"></div>
       <div id="adBannerRipple"></div>
+      <!-- legacy compat -->
+      <div id="adBannerImg" style="display:none;"></div>
     </div>
 
     <section class="hero" id="heroSection">
@@ -5511,30 +5544,84 @@ window.renderCategoryGridSafe = function() {
       const raw = localStorage.getItem(SETTINGS_KEY_AD);
       if (!raw) return null;
       const s = JSON.parse(raw);
-      // adBanners es un objeto { skinKey: base64img }
       const skinKey = s.classicSkin || 'clasico';
-      const img = s.adBanners && s.adBanners[skinKey];
-      return img ? { img, skinKey } : null;
+      // adBanners puede ser array (nuevo) o string (legacy)
+      let arr = s.adBanners && s.adBanners[skinKey];
+      if (!arr) return null;
+      if (typeof arr === 'string') arr = [arr]; // migración legacy
+      const speed = (s.adBannerSpeed && s.adBannerSpeed[skinKey]) || 4;
+      return arr.length ? { arr, skinKey, speed } : null;
     } catch(e) { return null; }
+  }
+
+  // ── Carrusel ──────────────────────────────────────────────
+  let _adCarouselTimer = null;
+  let _adCurrentSlide  = 0;
+  let _adTotalSlides   = 0;
+
+  function adCarouselGoTo(idx) {
+    const track = document.getElementById('adBannerTrack');
+    if (!track) return;
+    _adCurrentSlide = ((idx % _adTotalSlides) + _adTotalSlides) % _adTotalSlides;
+    track.style.transform = 'translateX(-' + (_adCurrentSlide * 100) + '%)';
+    // actualizar dots
+    document.querySelectorAll('.ad-dot').forEach((d, i) => d.classList.toggle('active', i === _adCurrentSlide));
+  }
+
+  function adCarouselStart(speed) {
+    clearInterval(_adCarouselTimer);
+    if (_adTotalSlides < 2) return; // no hay nada que rotar
+    _adCarouselTimer = setInterval(() => {
+      adCarouselGoTo(_adCurrentSlide + 1);
+    }, speed * 1000);
   }
 
   function renderAdBanner() {
     const wrap  = document.getElementById('adBannerWrap');
-    const imgEl = document.getElementById('adBannerImg');
-    if (!wrap) return;
+    const track = document.getElementById('adBannerTrack');
+    const dots  = document.getElementById('adBannerDots');
+    if (!wrap || !track) return;
+
+    clearInterval(_adCarouselTimer);
+    _adCurrentSlide = 0;
 
     const data = getAdData();
-    if (data && data.img) {
-      // background-image: el teléfono NO abre galería ni visor de imágenes
-      imgEl.style.backgroundImage = 'url(' + data.img + ')';
-      wrap.classList.add('visible');
-      // Actualizar nombre del botón "Menú Clásico" según skin
-      updateBtnMenuClasico(data.skinKey);
-    } else {
+    if (!data || !data.arr.length) {
       wrap.classList.remove('visible');
-      imgEl.style.backgroundImage = 'none';
+      track.innerHTML = '';
+      if (dots) dots.innerHTML = '';
       updateBtnMenuClasico('clasico');
+      return;
     }
+
+    _adTotalSlides = data.arr.length;
+
+    // Construir slides
+    track.style.transition = 'none';
+    track.style.transform  = 'translateX(0)';
+    track.innerHTML = data.arr.map(img =>
+      `<div class="ad-slide" style="background-image:url(${img});"></div>`
+    ).join('');
+
+    // Puntos indicadores (solo si hay más de 1)
+    if (dots) {
+      dots.innerHTML = _adTotalSlides > 1
+        ? data.arr.map((_, i) => `<div class="ad-dot${i===0?' active':''}"></div>`).join('')
+        : '';
+    }
+
+    // Restaurar transición en el siguiente frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        track.style.transition = 'transform 0.55s cubic-bezier(0.4,0,0.2,1)';
+      });
+    });
+
+    wrap.classList.add('visible');
+    updateBtnMenuClasico(data.skinKey);
+
+    // Arrancar rotación automática
+    adCarouselStart(data.speed);
   }
 
   // Actualizar etiqueta del botón según skin activo
