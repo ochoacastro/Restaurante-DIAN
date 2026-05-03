@@ -277,7 +277,7 @@
   }
 
   .hero{
-    background:linear-gradient(135deg,#1A1108,#2B1A10);
+    background:#1A1108;
     color:#fff;
     border-radius:20px;
     padding:18px;
@@ -3190,13 +3190,30 @@ function applyTheme(){
 
   const hero = $('.hero');
   if(hero){
-    if(settings.heroImage){
-      hero.style.display = '';
-      hero.style.background = `linear-gradient(135deg, rgba(0,0,0,.72), rgba(0,0,0,.52)), url(${settings.heroImage}) center/cover`;
-      hero.style.backgroundSize = 'cover';
-      hero.style.backgroundPosition = 'center';
-      hero.style.color = '#fff';
-    } else {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      const ms  = raw ? JSON.parse(raw) : {};
+      const bgColor = ms.heroBgColor || '#1A1108';
+      const align   = ms.heroAlign   || 'left';
+      if(settings.heroImage){
+        hero.style.display    = '';
+        hero.style.background = `linear-gradient(135deg, rgba(0,0,0,.72), rgba(0,0,0,.52)), url(${settings.heroImage}) center/cover`;
+        hero.style.backgroundSize     = 'cover';
+        hero.style.backgroundPosition = 'center';
+      } else {
+        hero.style.display    = '';
+        hero.style.background = bgColor;
+        hero.style.backgroundSize     = '';
+        hero.style.backgroundPosition = '';
+      }
+      hero.style.color     = '#fff';
+      hero.style.textAlign = align;
+      // sync h1 and p alignment
+      const h1 = hero.querySelector('h1');
+      const p  = hero.querySelector('p');
+      if (h1) h1.style.textAlign = align;
+      if (p)  p.style.textAlign  = align;
+    } catch(e) {
       hero.style.display = 'none';
     }
   }
@@ -3495,20 +3512,20 @@ function updateTop(){
 
   // Textos del hero — personalizables desde el POS
   (function() {
-    let tR = 'Menú del restaurante', dR = 'Solo consulta platos, fotos y precios.';
-    let tD = 'Menú de domicilio',    dD = 'Toca un plato para ver la ficha grande y agregarlo al pedido.';
+    let title = 'Menú del restaurante';
+    let sub   = 'Solo consulta platos, fotos y precios.';
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
       if (raw) {
         const ms = JSON.parse(raw);
-        if (ms.heroTitleRest && ms.heroTitleRest.trim()) tR = ms.heroTitleRest.trim();
-        if (ms.heroTextRest  && ms.heroTextRest.trim())  dR = ms.heroTextRest.trim();
-        if (ms.heroTitleDom  && ms.heroTitleDom.trim())  tD = ms.heroTitleDom.trim();
-        if (ms.heroTextDom   && ms.heroTextDom.trim())   dD = ms.heroTextDom.trim();
+        if (ms.heroTitleRest && ms.heroTitleRest.trim()) title = ms.heroTitleRest.trim();
+        if (ms.heroTextRest  && ms.heroTextRest.trim())  sub   = ms.heroTextRest.trim();
       }
     } catch(e) {}
-    if ($('#heroTitle')) $('#heroTitle').textContent = mode === 'restaurante' ? tR : tD;
-    if ($('#heroText'))  $('#heroText').textContent  = mode === 'restaurante' ? dR : dD;
+    if ($('#heroTitle')) $('#heroTitle').textContent = title;
+    if ($('#heroText'))  $('#heroText').textContent  = sub;
+    // re-apply alignment + bg color
+    if (window.applyTheme) window.applyTheme();
   })();
   $('#badgeFloat').textContent = cart.reduce((s,i)=>s+i.cantidad,0);
   $('#floatSmall').textContent = `${cart.reduce((s,i)=>s+i.cantidad,0)} ítems`;
