@@ -3777,6 +3777,39 @@
           <div class="qr-note" style="margin-top:4px;">Los colores se sincronizan automáticamente con el menú digital al guardar.</div>
         </div>
 
+        <div style="height:1px;background:var(--borde);margin:4px 0;"></div>
+
+        <!-- BANNER PUBLICITARIO POR SKIN -->
+        <div>
+          <div class="form-label form-label-small" style="margin-bottom:4px;">📢 Banner publicitario</div>
+          <div style="font-size:11px;color:var(--gris);margin-bottom:14px;line-height:1.5;">
+            Sube un flyer para el skin activo. Aparece en la parte superior del menú digital y al tocarlo abre el menú especial.
+          </div>
+
+          <!-- Skin selector compacto para el banner -->
+          <div style="font-size:11px;font-weight:800;color:var(--gris-osc);margin-bottom:8px;">Skin activo: <span id="adSkinNombre" style="color:var(--rappi);"></span></div>
+
+          <!-- Preview del banner -->
+          <div id="adBannerPreviewWrap" style="display:none;position:relative;border-radius:12px;overflow:hidden;margin-bottom:10px;border:1.5px solid var(--borde);">
+            <img id="adBannerPreviewImg" src="" alt="Banner" style="width:100%;display:block;max-height:160px;object-fit:cover;">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.5),transparent);display:flex;align-items:flex-end;padding:8px 10px;">
+              <span style="font-size:11px;font-weight:800;color:#fff;">Banner activo para este skin</span>
+            </div>
+          </div>
+          <div id="adBannerEmptyWrap" style="width:100%;height:70px;border:1.5px dashed var(--borde);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;background:var(--fondo);">
+            <span style="font-size:12px;color:var(--gris);">Sin banner para este skin</span>
+          </div>
+
+          <div style="display:flex;gap:8px;">
+            <label style="flex:1;cursor:pointer;">
+              <div class="btn-save-config" style="text-align:center;padding:10px;font-size:13px;width:100%;">📷 Subir banner</div>
+              <input type="file" accept="image/*" hidden id="adBannerInput" onchange="cargarAdBanner(this)">
+            </label>
+            <button id="adBannerQuitarBtn" style="display:none;background:#D32F2F;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;padding:10px 14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;" onclick="quitarAdBanner()">✕ Quitar</button>
+          </div>
+          <div class="qr-note" style="margin-top:8px;">Cada skin tiene su propio banner. Cambia el skin arriba para gestionar los demás banners.</div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -6130,16 +6163,98 @@ function selectSkin(key) {
     c.classList.toggle('active', c.dataset.skin === key);
   });
   renderSkinPhonePreview(key);
+  renderAdBannerPreview();   // actualizar preview del banner
   showToast('🎨 Skin "' + (MENU_SKINS[key]?.nombre || key) + '" aplicado');
 }
 
 // Inicializar cuando se abre la sección de diseño
 (function() {
-  // Render inicial diferido para no bloquear carga
   document.addEventListener('DOMContentLoaded', () => {
     // Se renderiza al abrir el acordeón (ver cfgRenderDiseno)
   });
 })();
+
+// ── BANNER PUBLICITARIO ──────────────────────────────────────────────────
+function getAdBanners() {
+  try {
+    const raw = localStorage.getItem(MENU_SETTINGS_KEY);
+    return raw ? (JSON.parse(raw).adBanners || {}) : {};
+  } catch(e) { return {}; }
+}
+
+function saveAdBanner(skinKey, imgData) {
+  try {
+    const raw = localStorage.getItem(MENU_SETTINGS_KEY);
+    const ms = raw ? JSON.parse(raw) : {};
+    if (!ms.adBanners) ms.adBanners = {};
+    if (imgData) ms.adBanners[skinKey] = imgData;
+    else delete ms.adBanners[skinKey];
+    localStorage.setItem(MENU_SETTINGS_KEY, JSON.stringify(ms));
+    if (window.fbSync) fbSync('menuSettings/adBanners/' + skinKey, imgData || null);
+  } catch(e) { showToast('⚠️ No se pudo guardar el banner'); }
+}
+
+function renderAdBannerPreview() {
+  const key     = getSkinKey();
+  const banners = getAdBanners();
+  const img     = banners[key] || '';
+  const skinObj = MENU_SKINS[key] || MENU_SKINS.clasico;
+
+  // Actualizar etiqueta del skin activo
+  const nombreEl = document.getElementById('adSkinNombre');
+  if (nombreEl) nombreEl.textContent = skinObj.nombre;
+
+  const previewWrap = document.getElementById('adBannerPreviewWrap');
+  const previewImg  = document.getElementById('adBannerPreviewImg');
+  const emptyWrap   = document.getElementById('adBannerEmptyWrap');
+  const quitarBtn   = document.getElementById('adBannerQuitarBtn');
+
+  if (img) {
+    if (previewImg)  previewImg.src = img;
+    if (previewWrap) previewWrap.style.display = '';
+    if (emptyWrap)   emptyWrap.style.display   = 'none';
+    if (quitarBtn)   quitarBtn.style.display   = '';
+  } else {
+    if (previewImg)  previewImg.src = '';
+    if (previewWrap) previewWrap.style.display = 'none';
+    if (emptyWrap)   emptyWrap.style.display   = '';
+    if (quitarBtn)   quitarBtn.style.display   = 'none';
+  }
+}
+
+function cargarAdBanner(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) { showToast('⚠️ Imagen muy grande (máx 8 MB)'); input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const imgEl = new Image();
+    imgEl.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = imgEl.width, h = imgEl.height;
+      const MAX_W = 1080, MAX_H = 600;
+      const ratio = Math.min(MAX_W / w, MAX_H / h, 1);
+      w = Math.round(w * ratio); h = Math.round(h * ratio);
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.82);
+      const key = getSkinKey();
+      saveAdBanner(key, compressed);
+      renderAdBannerPreview();
+      showToast('✅ Banner guardado para "' + (MENU_SKINS[key]?.nombre || key) + '"');
+    };
+    imgEl.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function quitarAdBanner() {
+  const key = getSkinKey();
+  saveAdBanner(key, null);
+  renderAdBannerPreview();
+  showToast('🗑️ Banner quitado');
+}
 
 function saveConfig() {
   const cfgNombre = document.getElementById('cfgNombre').value.trim();
@@ -11987,7 +12102,7 @@ function onCfgAccOpen(id) {
   if (id === 'cfgacc-catimgs')  cfgRenderCatImages();
   if (id === 'cfgacc-productos') { renderProductosConfig(); }
   if (id === 'cfgacc-precios')  { renderPreciosConfig(); }
-  if (id === 'cfgacc-diseno')   { cfgRenderDiseno(); renderClosedBgPreview(); renderClassicBgPreview(); renderSkinGrid(); }
+  if (id === 'cfgacc-diseno')   { cfgRenderDiseno(); renderClosedBgPreview(); renderClassicBgPreview(); renderSkinGrid(); renderAdBannerPreview(); }
   if (id === 'cfgacc-restaurante') { renderHorarios(); renderFestivos(); }
   if (id === 'cfgAccFE') {
     // Handled by toggleCfgAccFE()
@@ -12548,14 +12663,7 @@ async function cfgQrShare() {
 }
 
 // Prellenar URL con la del propio archivo
-(function(){
-  const inp = document.getElementById('qrUrlInput');
-  if (inp && !inp.value) {
-    const loc = window.location;
-    const base = loc.origin + loc.pathname.replace(/\/[^/]*$/, '/');
-    inp.value = base + 'menu.html';
-  }
-})();
+(function(){ const inp = document.getElementById('qrUrlInput'); if (inp && !inp.value) inp.value = 'https://ochoacastro.github.io/Restaurante-los-helechos/menu.html'; })();
 
 // ══════════════════════════════════════════════════════════════════════
 // MÓDULO FACTURA ELECTRÓNICA — CLIENTE
